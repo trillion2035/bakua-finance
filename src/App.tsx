@@ -12,6 +12,8 @@ import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import DashboardPlaceholder from "./pages/dashboard/DashboardPlaceholder";
 import DashboardDocuments from "./pages/dashboard/DashboardDocuments";
+import DashboardSPV from "./pages/dashboard/DashboardSPV";
+import DashboardCapital from "./pages/dashboard/DashboardCapital";
 
 const queryClient = new QueryClient();
 
