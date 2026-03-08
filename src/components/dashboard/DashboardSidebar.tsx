@@ -25,9 +25,9 @@ import { mockCompany } from "@/data/mockDashboardData";
 
 const menuItems = [
   { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
-  { title: "My Documents", url: "/dashboard/documents", icon: FileText },
-  { title: "SPV Details", url: "/dashboard/spv", icon: Building2 },
-  { title: "Capital & Fundraising", url: "/dashboard/capital", icon: Wallet },
+  { title: "Documents", url: "/dashboard/documents", icon: FileText },
+  { title: "SPV", url: "/dashboard/spv", icon: Building2 },
+  { title: "Capital", url: "/dashboard/capital", icon: Wallet },
   { title: "Performance", url: "/dashboard/performance", icon: BarChart3 },
   { title: "Oracle", url: "/dashboard/oracle", icon: Radio },
   { title: "Messages", url: "/dashboard/messages", icon: MessageSquare },
