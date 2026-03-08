@@ -31,8 +31,8 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardOverview />} />
             <Route path="documents" element={<DashboardDocuments />} />
-            <Route path="spv" element={<DashboardPlaceholder />} />
-            <Route path="capital" element={<DashboardPlaceholder />} />
+            <Route path="spv" element={<DashboardSPV />} />
+            <Route path="capital" element={<DashboardCapital />} />
             <Route path="iot" element={<DashboardPlaceholder />} />
             <Route path="performance" element={<DashboardPlaceholder />} />
             <Route path="messages" element={<DashboardPlaceholder />} />
