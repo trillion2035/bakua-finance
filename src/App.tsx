@@ -17,6 +17,7 @@ import DashboardPerformance from "./pages/dashboard/DashboardPerformance";
 import DashboardOracle from "./pages/dashboard/DashboardOracle";
 import DashboardMessages from "./pages/dashboard/DashboardMessages";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
+import DashboardNewOverview from "./pages/dashboard/DashboardNewOverview";
 
 const queryClient = new QueryClient();
 
