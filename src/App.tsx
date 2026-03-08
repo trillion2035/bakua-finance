@@ -12,6 +12,8 @@ import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import DashboardPlaceholder from "./pages/dashboard/DashboardPlaceholder";
 import DashboardDocuments from "./pages/dashboard/DashboardDocuments";
+import DashboardSPV from "./pages/dashboard/DashboardSPV";
+import DashboardCapital from "./pages/dashboard/DashboardCapital";
 
 const queryClient = new QueryClient();
 
@@ -29,8 +31,8 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardOverview />} />
             <Route path="documents" element={<DashboardDocuments />} />
-            <Route path="spv" element={<DashboardPlaceholder />} />
-            <Route path="capital" element={<DashboardPlaceholder />} />
+            <Route path="spv" element={<DashboardSPV />} />
+            <Route path="capital" element={<DashboardCapital />} />
             <Route path="iot" element={<DashboardPlaceholder />} />
             <Route path="performance" element={<DashboardPlaceholder />} />
             <Route path="messages" element={<DashboardPlaceholder />} />
