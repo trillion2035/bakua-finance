@@ -41,7 +41,7 @@ function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any
         { label: "IRR Target", value: spv.target_irr || "—", subtext: "36-month term", icon: Percent },
       ]
     : [
-        { label: "Total Capital Target", value: capitalTarget || "—", subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
+        { label: "Total Capital Target", value: formatCapitalTarget(capitalTarget), subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
         { label: "Funded", value: "—", subtext: "Awaiting documents", icon: TrendingUp },
         { label: "Asset Score™", value: "—", subtext: "Pending analysis", icon: Shield },
         { label: "IRR Target", value: "—", subtext: "Pending model", icon: Percent },
