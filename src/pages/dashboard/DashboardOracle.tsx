@@ -120,7 +120,7 @@ function SummaryKPI({ label, value, subtext, icon: Icon }: { label: string; valu
         </div>
         <div className="space-y-0.5">
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg font-bold font-display text-foreground">{value}</p>
+          <p className="text-lg font-bold text-foreground">{value}</p>
           {subtext && <p className="text-[11px] text-muted-foreground">{subtext}</p>}
         </div>
       </CardContent>
