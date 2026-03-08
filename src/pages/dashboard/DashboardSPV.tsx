@@ -13,6 +13,8 @@ import {
   Shield,
   Copy,
   ChevronDown,
+  Eye,
+  Download,
   ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
