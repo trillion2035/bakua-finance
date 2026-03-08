@@ -134,25 +134,28 @@ const stage3Docs: ProjectDocument[] = [
   { id: "spv12", name: "Closing Certificate", description: "Certificate confirming all conditions precedent satisfied for SPV closing.", category: "platform", status: "verified", source: "platform", stage: "spv_deployment", actions: ["view", "download"], fileName: "SPV01_ClosingCertificate.pdf", fileSize: "0.4MB", uploadedDate: "Oct 1, 2024", subPhase: "Closing" },
 ];
 
-// ─── Stage 4: Listing & Funding ───
+// ─── Stage 4: Listing ───
 
 const stage4Docs: ProjectDocument[] = [
-  // Listing sub-phase
-  { id: "lf1", name: "Smart Contract Technical Specification", description: "Technical specification document for SPV tokenization smart contract on Base Network.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_SC_TechSpec_v1.pdf", fileSize: "3.2MB", uploadedDate: "Oct 2, 2024", subPhase: "Smart Contract" },
-  { id: "lf2", name: "Smart Contract Audit Report", description: "Independent audit of SPV smart contract by CertiK. No critical findings.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_SC_AuditReport_CertiK.pdf", fileSize: "4.5MB", uploadedDate: "Oct 5, 2024", subPhase: "Smart Contract" },
-  { id: "lf3", name: "Smart Contract Deployment Record", description: "On-chain deployment record — Base Network, contract address, constructor args.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_SC_DeploymentRecord.pdf", fileSize: "0.6MB", uploadedDate: "Oct 6, 2024", subPhase: "Smart Contract" },
-  { id: "lf4", name: "IPFS Anchoring Certificate", description: "Certificate confirming all SPV documents anchored to IPFS with content hashes.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_IPFS_AnchoringCert.pdf", fileSize: "0.3MB", uploadedDate: "Oct 6, 2024", subPhase: "Smart Contract" },
-  // Funding sub-phase
-  { id: "lf5", name: "Investor Marketplace Listing Document", description: "Legal offering document for retail and institutional investors. Includes risk disclosures.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_MarketplaceListingDoc.pdf", fileSize: "8.7MB", uploadedDate: "Oct 8, 2024", subPhase: "Funding" },
-  { id: "lf6", name: "Investor Token Conversion Confirmation", description: "Confirmation of token issuance to investors upon USDC deposit.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_TokenConversion_Confirmation.pdf", fileSize: "1.1MB", uploadedDate: "Oct 18, 2024", subPhase: "Funding" },
-  { id: "lf7", name: "Institutional Side Letter", description: "Side letter for institutional investors with enhanced reporting and governance rights.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_InstitutionalSideLetter.pdf", fileSize: "2.3MB", uploadedDate: "Oct 15, 2024", subPhase: "Funding" },
-  { id: "lf8", name: "Funding Completion Certificate", description: "Certificate confirming SPV fully funded — $78,250 USDC from 51 investors.", category: "platform", status: "verified", source: "platform", stage: "listing_funding", actions: ["view", "download"], fileName: "SPV01_FundingCompletionCert.pdf", fileSize: "0.5MB", uploadedDate: "Oct 18, 2024", subPhase: "Funding" },
+  { id: "lf1", name: "Smart Contract Technical Specification", description: "Technical specification document for SPV tokenization smart contract on Base Network.", category: "platform", status: "verified", source: "platform", stage: "listing", actions: ["view", "download"], fileName: "SPV01_SC_TechSpec_v1.pdf", fileSize: "3.2MB", uploadedDate: "Oct 2, 2024", subPhase: "Smart Contract" },
+  { id: "lf2", name: "Smart Contract Audit Report", description: "Independent audit of SPV smart contract by CertiK. No critical findings.", category: "platform", status: "verified", source: "platform", stage: "listing", actions: ["view", "download"], fileName: "SPV01_SC_AuditReport_CertiK.pdf", fileSize: "4.5MB", uploadedDate: "Oct 5, 2024", subPhase: "Smart Contract" },
+  { id: "lf3", name: "Smart Contract Deployment Record", description: "On-chain deployment record — Base Network, contract address, constructor args.", category: "platform", status: "verified", source: "platform", stage: "listing", actions: ["view", "download"], fileName: "SPV01_SC_DeploymentRecord.pdf", fileSize: "0.6MB", uploadedDate: "Oct 6, 2024", subPhase: "Smart Contract" },
+  { id: "lf4", name: "IPFS Anchoring Certificate", description: "Certificate confirming all SPV documents anchored to IPFS with content hashes.", category: "platform", status: "verified", source: "platform", stage: "listing", actions: ["view", "download"], fileName: "SPV01_IPFS_AnchoringCert.pdf", fileSize: "0.3MB", uploadedDate: "Oct 6, 2024", subPhase: "Smart Contract" },
+  { id: "lf5", name: "Investor Marketplace Listing Document", description: "Legal offering document for retail and institutional investors. Includes risk disclosures.", category: "platform", status: "verified", source: "platform", stage: "listing", actions: ["view", "download"], fileName: "SPV01_MarketplaceListingDoc.pdf", fileSize: "8.7MB", uploadedDate: "Oct 8, 2024", subPhase: "Marketplace" },
 ];
 
-// ─── Stage 5: Capital Deployment ───
+// ─── Stage 5: Funding ───
 
 const stage5Docs: ProjectDocument[] = [
-  { id: "cd1", name: "Yellow Card Conversion Confirmation", description: "Confirmation of USDC → FCFA conversion via Yellow Card for milestone disbursement.", category: "platform", status: "verified", source: "platform", stage: "capital_deployment", actions: ["view", "download"], fileName: "SPV01_YellowCard_Conversion_M1-M4.pdf", fileSize: "1.8MB", uploadedDate: "Oct 21, 2024", subPhase: "Disbursement" },
+  { id: "lf6", name: "Investor Token Conversion Confirmation", description: "Confirmation of token issuance to investors upon USDC deposit.", category: "platform", status: "verified", source: "platform", stage: "funding", actions: ["view", "download"], fileName: "SPV01_TokenConversion_Confirmation.pdf", fileSize: "1.1MB", uploadedDate: "Oct 18, 2024" },
+  { id: "lf7", name: "Institutional Side Letter", description: "Side letter for institutional investors with enhanced reporting and governance rights.", category: "platform", status: "verified", source: "platform", stage: "funding", actions: ["view", "download"], fileName: "SPV01_InstitutionalSideLetter.pdf", fileSize: "2.3MB", uploadedDate: "Oct 15, 2024" },
+  { id: "lf8", name: "Funding Completion Certificate", description: "Certificate confirming SPV fully funded — $78,250 USDC from 51 investors.", category: "platform", status: "verified", source: "platform", stage: "funding", actions: ["view", "download"], fileName: "SPV01_FundingCompletionCert.pdf", fileSize: "0.5MB", uploadedDate: "Oct 18, 2024" },
+];
+
+// ─── Stage 6: Capital Disbursement ───
+
+const stage6Docs: ProjectDocument[] = [
+  { id: "cd1", name: "Yellow Card Conversion Confirmation", description: "Confirmation of USDC → FCFA conversion via Yellow Card for milestone disbursement.", category: "platform", status: "verified", source: "platform", stage: "capital_disbursement", actions: ["view", "download"], fileName: "SPV01_YellowCard_Conversion_M1-M4.pdf", fileSize: "1.8MB", uploadedDate: "Oct 21, 2024", subPhase: "Disbursement" },
 ];
 
 // ─── Combined export ───
