@@ -10,8 +10,9 @@ import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
-function formatCurrency(amount: number, currency?: string): string {
-  const formatted = amount.toLocaleString("en-US");
+function formatCurrency(amount: number | string, currency?: string): string {
+  const num = typeof amount === "string" ? parseFloat(amount) : amount;
+  const formatted = isNaN(num) ? String(amount) : num.toLocaleString("en-US");
   return currency ? `${currency} ${formatted}` : formatted;
 }
 
