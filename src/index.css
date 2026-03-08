@@ -72,6 +72,8 @@
     --ring: 220 76% 52%;
     --green: 160 84% 39%;
     --surface: 220 14% 96%;
+    color: hsl(222 47% 11%);
+    background-color: hsl(0 0% 100%);
   }
 }
 
