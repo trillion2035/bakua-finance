@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
-  ChevronRight, ChevronLeft, CheckCircle2, Upload, Plus, Trash2, FileText, X,
+  ChevronRight, ChevronLeft, CheckCircle2, Upload, Plus, Trash2, FileText, X, AlertCircle, Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,37 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { getDocumentCategories, type DocumentCategoryConfig } from "@/data/documentSubmissionConfig";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// ───── Constants ─────
+
+const ACCEPTED_FILE_TYPES = ".pdf,.docx";
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+const COUNTRY_CODES = [
+  { code: "+237", country: "CM", label: "🇨🇲 +237" },
+  { code: "+234", country: "NG", label: "🇳🇬 +234" },
+  { code: "+254", country: "KE", label: "🇰🇪 +254" },
+  { code: "+233", country: "GH", label: "🇬🇭 +233" },
+  { code: "+27", country: "ZA", label: "🇿🇦 +27" },
+  { code: "+225", country: "CI", label: "🇨🇮 +225" },
+  { code: "+221", country: "SN", label: "🇸🇳 +221" },
+  { code: "+256", country: "UG", label: "🇺🇬 +256" },
+  { code: "+255", country: "TZ", label: "🇹🇿 +255" },
+  { code: "+250", country: "RW", label: "🇷🇼 +250" },
+  { code: "+1", country: "US", label: "🇺🇸 +1" },
+  { code: "+44", country: "GB", label: "🇬🇧 +44" },
+  { code: "+33", country: "FR", label: "🇫🇷 +33" },
+  { code: "+49", country: "DE", label: "🇩🇪 +49" },
+  { code: "+971", country: "AE", label: "🇦🇪 +971" },
+];
 
 // ───── Types ─────
 
@@ -18,6 +49,8 @@ interface KYCPerson {
   role: string;
   idType: "national_id" | "passport";
   uploaded: boolean;
+  whatsappCountryCode: string;
+  whatsappNumber: string;
 }
 
 interface OtherDoc {
@@ -34,6 +67,74 @@ interface WizardState {
   otherDocs: Record<string, OtherDoc[]>; // categoryKey -> other docs
 }
 
+// ───── File validation helper ─────
+
+function validateFile(file: File): string | null {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext !== "pdf" && ext !== "docx") {
+    return `"${file.name}" is not a supported format. Please upload PDF or DOCX files only.`;
+  }
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return `"${file.name}" exceeds the ${MAX_FILE_SIZE_MB}MB limit.`;
+  }
+  return null;
+}
+
+// ───── Validation errors ─────
+
+interface ValidationErrors {
+  projectDescription?: string;
+  projectDocs?: string;
+  legal?: string;
+  kyc?: string;
+  financial?: string;
+}
+
+function getSubmissionErrors(state: WizardState): ValidationErrors {
+  const errors: ValidationErrors = {};
+
+  // 1. Project description min 100 chars
+  if (state.projectDescription.trim().length < 100) {
+    errors.projectDescription = "Project description must be at least 100 characters.";
+  }
+
+  // 2. Project docs: at least one of business-plan, pitch-deck, project-brochure uploaded
+  const requiredProjectDocs = ["business-plan", "pitch-deck", "project-brochure"];
+  const hasProjectDoc = requiredProjectDocs.some((id) => state.uploadedDocs.has(id));
+  if (!hasProjectDoc) {
+    errors.projectDocs = "Upload at least one of: Business Plan, Pitch Deck, or Project Brochure.";
+  }
+
+  // 3. Legal: registration-cert uploaded
+  if (!state.uploadedDocs.has("registration-cert")) {
+    errors.legal = "Business Registration / Incorporation Certificate must be uploaded.";
+  }
+
+  // 4. KYC: primary signatory (first person) must have name, role, whatsapp, and ID uploaded
+  const primary = state.kycPersons[0];
+  if (!primary) {
+    errors.kyc = "Primary signatory information is required.";
+  } else {
+    const missing: string[] = [];
+    if (!primary.name.trim()) missing.push("full name");
+    if (!primary.role.trim()) missing.push("role");
+    if (!primary.whatsappNumber.trim()) missing.push("WhatsApp number");
+    if (!primary.uploaded) missing.push("ID document upload");
+    if (missing.length > 0) {
+      errors.kyc = `Primary signatory is missing: ${missing.join(", ")}.`;
+    }
+  }
+
+  // 5. Financial: at least one of financial-statements, financial-projections, revenue-records uploaded
+  const requiredFinancialDocs = ["financial-statements", "financial-projections", "revenue-records"];
+  const hasFinancialDoc = requiredFinancialDocs.some((id) => state.uploadedDocs.has(id));
+  if (!hasFinancialDoc) {
+    errors.financial = "Upload at least one of: Financial Statements, Financial Projections, or Revenue / Sales Records.";
+  }
+
+  return errors;
+}
+
 // ───── Step Components ─────
 
 function StepProjectDescription({
@@ -45,6 +146,9 @@ function StepProjectDescription({
   onChange: (v: string) => void;
   sector: string;
 }) {
+  const charCount = value.length;
+  const isShort = charCount > 0 && charCount < 100;
+
   return (
     <div className="space-y-4">
       <div>
@@ -56,12 +160,12 @@ function StepProjectDescription({
       </div>
       <Textarea
         placeholder="Describe your project — what it does, where it operates, key objectives, and what the capital will be used for..."
-        className="min-h-[180px] bg-secondary border-border"
+        className={cn("min-h-[180px] bg-secondary border-border", isShort && "border-amber-500 focus-visible:ring-amber-500")}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
-      <p className="text-xs text-muted-foreground">
-        {value.length}/2000 characters
+      <p className={cn("text-xs", isShort ? "text-amber-600" : "text-muted-foreground")}>
+        {charCount}/2000 characters {isShort && `(minimum 100 required — ${100 - charCount} more needed)`}
       </p>
     </div>
   );
@@ -84,18 +188,45 @@ function StepSelectAndUpload({
   uploadedDocs: Set<string>;
   otherDocs: OtherDoc[];
   onToggleDoc: (docId: string) => void;
-  onUploadDoc: (docId: string) => void;
+  onUploadDoc: (docId: string, file: File) => void;
   onAddOther: () => void;
   onRemoveOther: (id: string) => void;
-  onUploadOther: (id: string) => void;
+  onUploadOther: (id: string, file: File) => void;
   onOtherNameChange: (id: string, name: string) => void;
 }) {
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const handleFileSelect = (docId: string, isOther: boolean) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ACCEPTED_FILE_TYPES;
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const error = validateFile(file);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      if (isOther) {
+        onUploadOther(docId, file);
+      } else {
+        onUploadDoc(docId, file);
+      }
+    };
+    input.click();
+  };
+
   return (
     <div className="space-y-5">
       <div>
         <h3 className="text-base font-bold text-foreground">{category.label}</h3>
         <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Accepted formats: <span className="font-medium">PDF, DOCX</span> · Max {MAX_FILE_SIZE_MB}MB per file
+      </p>
 
       {/* Selection phase */}
       <div className="space-y-1">
@@ -128,7 +259,7 @@ function StepSelectAndUpload({
                         size="sm"
                         variant="outline"
                         className="gap-1.5 text-xs shrink-0"
-                        onClick={() => onUploadDoc(doc.id)}
+                        onClick={() => handleFileSelect(doc.id, false)}
                       >
                         <Upload className="h-3.5 w-3.5" /> Upload
                       </Button>
@@ -165,7 +296,7 @@ function StepSelectAndUpload({
                   size="sm"
                   variant="outline"
                   className="gap-1.5 text-xs shrink-0"
-                  onClick={() => onUploadOther(od.id)}
+                  onClick={() => handleFileSelect(od.id, true)}
                   disabled={!od.name.trim()}
                 >
                   <Upload className="h-3.5 w-3.5" /> Upload
@@ -198,12 +329,32 @@ function StepKYC({
   onUpdatePerson: (id: string, field: keyof KYCPerson, value: string) => void;
   onUploadId: (id: string) => void;
 }) {
+  const handleUploadClick = (personId: string) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ACCEPTED_FILE_TYPES;
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const error = validateFile(file);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      onUploadId(personId);
+    };
+    input.click();
+  };
+
   return (
     <div className="space-y-5">
       <div>
         <h3 className="text-base font-bold text-foreground">Identity & KYC</h3>
         <p className="text-sm text-muted-foreground mt-1">
           Provide identity documents for key signatories and management team members.
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Accepted formats: <span className="font-medium">PDF, DOCX</span> · Max {MAX_FILE_SIZE_MB}MB per file
         </p>
       </div>
 
@@ -213,6 +364,7 @@ function StepKYC({
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {idx === 0 ? "Primary Signatory" : idx === 1 ? "Secondary Signatory" : `Additional Signatory ${idx - 1}`}
+                {idx === 0 && <span className="text-destructive ml-1">*</span>}
               </span>
               {idx > 1 && (
                 <button onClick={() => onRemovePerson(person.id)} className="text-muted-foreground hover:text-destructive">
@@ -222,7 +374,9 @@ function StepKYC({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Full Name</label>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Full Name {idx === 0 && <span className="text-destructive">*</span>}
+                </label>
                 <Input
                   placeholder="Full legal name"
                   value={person.name}
@@ -231,7 +385,9 @@ function StepKYC({
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Role / Title</label>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Role / Title {idx === 0 && <span className="text-destructive">*</span>}
+                </label>
                 <Input
                   placeholder="e.g. Director, CEO"
                   value={person.role}
@@ -240,6 +396,38 @@ function StepKYC({
                 />
               </div>
             </div>
+
+            {/* WhatsApp number */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
+                <Phone className="h-3 w-3" /> WhatsApp Number {idx === 0 && <span className="text-destructive">*</span>}
+              </label>
+              <div className="flex gap-2">
+                <Select
+                  value={person.whatsappCountryCode}
+                  onValueChange={(v) => onUpdatePerson(person.id, "whatsappCountryCode", v)}
+                >
+                  <SelectTrigger className="w-[120px] h-9 text-sm bg-secondary border-border">
+                    <SelectValue placeholder="Code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COUNTRY_CODES.map((cc) => (
+                      <SelectItem key={cc.code} value={cc.code}>
+                        {cc.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="e.g. 6 70 00 00 00"
+                  value={person.whatsappNumber}
+                  onChange={(e) => onUpdatePerson(person.id, "whatsappNumber", e.target.value.replace(/[^0-9\s]/g, ""))}
+                  className="flex-1 h-9 text-sm bg-secondary border-border"
+                  type="tel"
+                />
+              </div>
+            </div>
+
             <div>
               <label className="text-xs text-muted-foreground mb-1.5 block">ID Type</label>
               <div className="flex gap-3">
@@ -272,7 +460,7 @@ function StepKYC({
                   size="sm"
                   variant="outline"
                   className="gap-1.5 text-xs"
-                  onClick={() => onUploadId(person.id)}
+                  onClick={() => handleUploadClick(person.id)}
                   disabled={!person.name.trim()}
                 >
                   <Upload className="h-3.5 w-3.5" /> Upload {person.idType === "passport" ? "Passport" : "National ID"}
@@ -294,6 +482,27 @@ function StepKYC({
   );
 }
 
+// ───── Validation Summary ─────
+
+function ValidationSummary({ errors }: { errors: ValidationErrors }) {
+  const entries = Object.entries(errors);
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 space-y-2">
+      <div className="flex items-center gap-2">
+        <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+        <span className="text-sm font-semibold text-destructive">Please complete the following before submitting:</span>
+      </div>
+      <ul className="space-y-1 ml-6">
+        {entries.map(([key, msg]) => (
+          <li key={key} className="text-xs text-destructive list-disc">{msg}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // ───── Main Wizard ─────
 
 interface DocumentWizardProps {
@@ -307,14 +516,15 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
   const totalSteps = 1 + categories.length;
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   const [state, setState] = useState<WizardState>({
     projectDescription: "",
     selectedDocs: {},
     uploadedDocs: new Set(),
     kycPersons: [
-      { id: "p1", name: "", role: "", idType: "national_id", uploaded: false },
-      { id: "p2", name: "", role: "", idType: "national_id", uploaded: false },
+      { id: "p1", name: "", role: "", idType: "national_id", uploaded: false, whatsappCountryCode: "+237", whatsappNumber: "" },
+      { id: "p2", name: "", role: "", idType: "national_id", uploaded: false, whatsappCountryCode: "+237", whatsappNumber: "" },
     ],
     otherDocs: {},
   });
@@ -329,7 +539,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     });
   };
 
-  const uploadDoc = (docId: string) => {
+  const uploadDoc = (docId: string, _file?: File) => {
     setState((prev) => {
       const newUploaded = new Set(prev.uploadedDocs);
       newUploaded.add(docId);
@@ -358,7 +568,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     }));
   };
 
-  const uploadOther = (catKey: string, id: string) => {
+  const uploadOther = (catKey: string, id: string, _file?: File) => {
     setState((prev) => ({
       ...prev,
       otherDocs: {
@@ -385,7 +595,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
       ...prev,
       kycPersons: [
         ...prev.kycPersons,
-        { id: `p-${Date.now()}`, name: "", role: "", idType: "national_id", uploaded: false },
+        { id: `p-${Date.now()}`, name: "", role: "", idType: "national_id", uploaded: false, whatsappCountryCode: "+237", whatsappNumber: "" },
       ],
     }));
   };
@@ -427,21 +637,35 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     state.kycPersons.length +
     Object.values(state.otherDocs).flat().length;
 
+  // Validation
+  const validationErrors = getSubmissionErrors(state);
+  const hasErrors = Object.keys(validationErrors).length > 0;
+
   // Navigation
   const handleNext = () => {
-    if (currentStep === 0 && !state.projectDescription.trim()) {
-      toast.error("Please provide a project description before continuing.");
+    if (currentStep === 0 && state.projectDescription.trim().length < 100) {
+      toast.error(`Project description needs at least 100 characters (currently ${state.projectDescription.trim().length}).`);
       return;
     }
     if (currentStep < totalSteps - 1) {
       setCurrentStep((s) => s + 1);
+      setShowValidationErrors(false);
     } else {
+      // Final submit
+      if (hasErrors) {
+        setShowValidationErrors(true);
+        toast.error("Please complete all required sections before submitting.");
+        return;
+      }
       setSubmitted(true);
     }
   };
 
   const handlePrev = () => {
-    if (currentStep > 0) setCurrentStep((s) => s - 1);
+    if (currentStep > 0) {
+      setCurrentStep((s) => s - 1);
+      setShowValidationErrors(false);
+    }
   };
 
   const isLast = currentStep === totalSteps - 1;
@@ -519,7 +743,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
         {stepLabels.map((label, idx) => (
           <button
             key={label}
-            onClick={() => setCurrentStep(idx)}
+            onClick={() => { setCurrentStep(idx); setShowValidationErrors(false); }}
             className={cn(
               "text-xs px-3 py-1.5 rounded-full border transition-colors",
               idx === currentStep
@@ -534,6 +758,9 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
           </button>
         ))}
       </div>
+
+      {/* Validation errors on last step */}
+      {showValidationErrors && isLast && <ValidationSummary errors={validationErrors} />}
 
       {/* Step content */}
       <div className="min-h-[300px]">
@@ -560,10 +787,10 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
             uploadedDocs={state.uploadedDocs}
             otherDocs={state.otherDocs[currentCategory.key] || []}
             onToggleDoc={(docId) => toggleDoc(currentCategory.key, docId)}
-            onUploadDoc={uploadDoc}
+            onUploadDoc={(docId, file) => uploadDoc(docId, file)}
             onAddOther={() => addOther(currentCategory.key)}
             onRemoveOther={(id) => removeOther(currentCategory.key, id)}
-            onUploadOther={(id) => uploadOther(currentCategory.key, id)}
+            onUploadOther={(id, file) => uploadOther(currentCategory.key, id, file)}
             onOtherNameChange={(id, name) => otherNameChange(currentCategory.key, id, name)}
           />
         )}
