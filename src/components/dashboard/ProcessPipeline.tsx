@@ -1,8 +1,10 @@
 import { mockSPV, type ProcessStep, type ProcessStepStatus } from "@/data/mockDashboardData";
-import { Check, Loader2, Clock, ChevronDown, ChevronUp, FileUp } from "lucide-react";
+import { getDocsByStage, stepIdToStage } from "@/data/mockDocumentsData";
+import { Check, Loader2, Clock, ChevronDown, ChevronUp, FileUp, FileText } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 function StatusIcon({ status }: { status: ProcessStepStatus }) {
   if (status === "completed")
@@ -38,10 +40,12 @@ function statusColor(status: ProcessStepStatus) {
 
 function StepCard({ step, isLast }: { step: ProcessStep; isLast: boolean }) {
   const [expanded, setExpanded] = useState(step.status === "in_progress");
+  const navigate = useNavigate();
+  const stage = stepIdToStage[step.id];
+  const stageDocs = stage ? getDocsByStage(stage) : [];
 
   return (
     <div className="relative flex gap-4">
-      {/* Vertical connector line */}
       {!isLast && (
         <div className="absolute left-4 top-10 w-px bg-border" style={{ bottom: "-8px" }} />
       )}
@@ -55,14 +59,19 @@ function StepCard({ step, isLast }: { step: ProcessStep; isLast: boolean }) {
         >
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-bold text-foreground">
-                {step.title}
-              </span>
+              <span className="text-sm font-bold text-foreground">{step.title}</span>
               <span className={cn("text-[10px] font-semibold tracking-wider uppercase", statusColor(step.status))}>
                 {statusLabel(step.status)}
               </span>
             </div>
-            <span className="text-xs text-muted-foreground">{step.dateRange}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{step.dateRange}</span>
+              {stageDocs.length > 0 && (
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <FileText className="h-3 w-3" /> {stageDocs.length} docs
+                </span>
+              )}
+            </div>
           </div>
           {expanded ? (
             <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -77,17 +86,25 @@ function StepCard({ step, isLast }: { step: ProcessStep; isLast: boolean }) {
             {step.details && (
               <p className="text-sm text-foreground leading-relaxed">{step.details}</p>
             )}
-            {step.status === "pending" && step.id === 1 && (
-              <Button size="sm" className="gap-2 mt-2">
-                <FileUp className="h-3.5 w-3.5" />
-                Submit Documents
-              </Button>
-            )}
             {step.status === "in_progress" && (
               <div className="flex items-center gap-2 text-xs text-gold">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 Awaiting next milestone confirmation
               </div>
+            )}
+            {stageDocs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate("/dashboard/documents");
+                }}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                View {stageDocs.length} Documents
+              </Button>
             )}
           </div>
         )}
@@ -103,9 +120,7 @@ export function ProcessPipeline() {
     <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-base font-bold text-foreground tracking-tight">
-            Process Status
-          </h3>
+          <h3 className="text-base font-bold text-foreground tracking-tight">Process Status</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {mockSPV.id} · {mockSPV.name}
           </p>
@@ -114,7 +129,6 @@ export function ProcessPipeline() {
           <div className="text-xs text-muted-foreground">
             {steps.filter((s) => s.status === "completed").length} of {steps.length} complete
           </div>
-          {/* Mini progress bar */}
           <div className="flex gap-1 mt-1.5">
             {steps.map((s) => (
               <div
