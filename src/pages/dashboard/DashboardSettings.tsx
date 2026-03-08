@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Building2,
-  Users,
-  Bell,
-  Shield,
-  Save,
-  UserPlus,
-  LogOut,
-  Trash2,
-} from "lucide-react";
+import { Building2, Users, Bell, Shield, Save, UserPlus, LogOut, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -17,13 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { mockCompanyProfile, mockTeamMembers } from "@/data/mockMessagesSettingsData";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export default function DashboardSettings() {
   const { toast } = useToast();
-  const [profile, setProfile] = useState(mockCompanyProfile);
+  const { user, profile, signOut, refreshProfile } = useAuth();
+  const navigate = useNavigate();
+
+  const [fullName, setFullName] = useState(profile?.full_name || "");
+  const [companyName, setCompanyName] = useState(profile?.company_name || "");
+  const [saving, setSaving] = useState(false);
   const [notifications, setNotifications] = useState({
     milestoneAlerts: true,
     sensorAlerts: true,
@@ -33,31 +30,41 @@ export default function DashboardSettings() {
     marketingEmails: false,
   });
 
-  const handleSave = () => {
-    toast({
-      title: "Settings saved",
-      description: "Your changes have been saved successfully.",
-    });
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: fullName, company_name: companyName })
+      .eq("user_id", user.id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      await refreshProfile();
+      toast({ title: "Settings saved", description: "Your changes have been saved successfully." });
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/signin");
   };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your company profile, team, and notification preferences
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">Manage your company profile and preferences</p>
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">
         <TabsList className="bg-secondary">
           <TabsTrigger value="profile" className="text-xs">Company Profile</TabsTrigger>
-          <TabsTrigger value="team" className="text-xs">Team</TabsTrigger>
           <TabsTrigger value="notifications" className="text-xs">Notifications</TabsTrigger>
           <TabsTrigger value="security" className="text-xs">Security</TabsTrigger>
         </TabsList>
 
-        {/* Company Profile */}
         <TabsContent value="profile" className="space-y-4">
           <Card>
             <CardHeader>
@@ -65,136 +72,32 @@ export default function DashboardSettings() {
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-sm">Company Information</CardTitle>
               </div>
-              <CardDescription className="text-xs">
-                This information is displayed to investors and on your SPV listing.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label className="text-xs">Full Name</Label>
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} className="text-sm" />
+                </div>
+                <div className="space-y-2">
                   <Label className="text-xs">Company Name</Label>
-                  <Input
-                    value={profile.name}
-                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-                    className="text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Short Name</Label>
-                  <Input
-                    value={profile.shortName}
-                    onChange={(e) => setProfile({ ...profile, shortName: e.target.value })}
-                    className="text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Registration No.</Label>
-                  <Input value={profile.registrationNo} disabled className="text-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Tax ID</Label>
-                  <Input value={profile.taxId} disabled className="text-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Country</Label>
-                  <Input value={profile.country} disabled className="text-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Region</Label>
-                  <Input
-                    value={profile.region}
-                    onChange={(e) => setProfile({ ...profile, region: e.target.value })}
-                    className="text-sm"
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label className="text-xs">Address</Label>
-                  <Input
-                    value={profile.address}
-                    onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                    className="text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Phone</Label>
-                  <Input
-                    value={profile.phone}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                    className="text-sm"
-                  />
+                  <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="text-sm" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Email</Label>
-                  <Input
-                    value={profile.email}
-                    onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                    className="text-sm"
-                  />
+                  <Input value={user?.email || ""} disabled className="text-sm" />
                 </div>
               </div>
               <Separator />
               <div className="flex justify-end">
-                <Button size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-1" />
-                  Save Changes
+                <Button size="sm" onClick={handleSave} disabled={saving}>
+                  <Save className="h-4 w-4 mr-1" />{saving ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Team */}
-        <TabsContent value="team" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-sm">Team Members</CardTitle>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => toast({ title: "Coming soon", description: "Team invitations will be available once backend is connected." })}>
-                  <UserPlus className="h-4 w-4 mr-1" />
-                  Invite
-                </Button>
-              </div>
-              <CardDescription className="text-xs">
-                Manage who has access to this dashboard.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Name</TableHead>
-                    <TableHead className="text-xs">Email</TableHead>
-                    <TableHead className="text-xs">Role</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockTeamMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="text-xs font-medium">{member.name}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{member.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={member.role === "Admin" ? "default" : "secondary"} className="text-[10px]">
-                          {member.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={member.status === "active" ? "outline" : "secondary"} className="text-[10px]">
-                          {member.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Notifications */}
         <TabsContent value="notifications" className="space-y-4">
           <Card>
             <CardHeader>
@@ -202,18 +105,15 @@ export default function DashboardSettings() {
                 <Bell className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-sm">Notification Preferences</CardTitle>
               </div>
-              <CardDescription className="text-xs">
-                Choose which notifications you want to receive.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {[
-                { key: "milestoneAlerts" as const, label: "Milestone Disbursement Alerts", desc: "Get notified when oracle triggers are met and funds are released" },
-                { key: "sensorAlerts" as const, label: "IoT Sensor Alerts", desc: "Alerts when sensor readings breach thresholds or devices go offline" },
+                { key: "milestoneAlerts" as const, label: "Milestone Disbursement Alerts", desc: "Get notified when oracle triggers are met" },
+                { key: "sensorAlerts" as const, label: "IoT Sensor Alerts", desc: "Alerts when sensor readings breach thresholds" },
                 { key: "investorMessages" as const, label: "Investor Messages", desc: "Notifications for new messages from investors" },
-                { key: "weeklyReport" as const, label: "Weekly Performance Report", desc: "Automated summary of harvest, sensor, and financial metrics" },
-                { key: "ndviUpdates" as const, label: "NDVI Satellite Updates", desc: "Notifications when new Sentinel-2 satellite data is processed" },
-                { key: "marketingEmails" as const, label: "Marketing & Updates", desc: "Bakua platform news, feature updates, and events" },
+                { key: "weeklyReport" as const, label: "Weekly Performance Report", desc: "Automated summary of metrics" },
+                { key: "ndviUpdates" as const, label: "NDVI Satellite Updates", desc: "Notifications when new satellite data is processed" },
+                { key: "marketingEmails" as const, label: "Marketing & Updates", desc: "Platform news and events" },
               ].map((item) => (
                 <div key={item.key} className="flex items-center justify-between py-2">
                   <div className="space-y-0.5">
@@ -222,24 +122,14 @@ export default function DashboardSettings() {
                   </div>
                   <Switch
                     checked={notifications[item.key]}
-                    onCheckedChange={(checked) =>
-                      setNotifications((prev) => ({ ...prev, [item.key]: checked }))
-                    }
+                    onCheckedChange={(checked) => setNotifications((prev) => ({ ...prev, [item.key]: checked }))}
                   />
                 </div>
               ))}
-              <Separator />
-              <div className="flex justify-end">
-                <Button size="sm" onClick={handleSave}>
-                  <Save className="h-4 w-4 mr-1" />
-                  Save Preferences
-                </Button>
-              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Security */}
         <TabsContent value="security" className="space-y-4">
           <Card>
             <CardHeader>
@@ -247,31 +137,8 @@ export default function DashboardSettings() {
                 <Shield className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-sm">Security</CardTitle>
               </div>
-              <CardDescription className="text-xs">
-                Manage your account security and authentication.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between py-2">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-foreground">Two-Factor Authentication</p>
-                  <p className="text-xs text-muted-foreground">Add an extra layer of security to your account</p>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => toast({ title: "Coming soon", description: "2FA will be available once authentication is connected." })}>
-                  Enable
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between py-2">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-foreground">Change Password</p>
-                  <p className="text-xs text-muted-foreground">Update your account password</p>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => toast({ title: "Coming soon", description: "Password management will be available once authentication is connected." })}>
-                  Update
-                </Button>
-              </div>
-              <Separator />
               <div className="flex items-center justify-between py-2">
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium text-foreground">Active Sessions</p>
@@ -283,30 +150,10 @@ export default function DashboardSettings() {
               <div className="flex items-center justify-between py-2">
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium text-foreground">Log Out</p>
-                  <p className="text-xs text-muted-foreground">Sign out of your account on this device</p>
+                  <p className="text-xs text-muted-foreground">Sign out of your account</p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5"
-                  onClick={() => toast({ title: "Coming soon", description: "Logout will be available once authentication is connected." })}
-                >
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={handleSignOut}>
                   <LogOut className="h-3.5 w-3.5" /> Log Out
-                </Button>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between py-2">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-destructive">Delete Account</p>
-                  <p className="text-xs text-muted-foreground">Permanently delete your account and all associated data</p>
-                </div>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="gap-1.5"
-                  onClick={() => toast({ title: "Coming soon", description: "Account deletion will be available once authentication is connected.", variant: "destructive" })}
-                >
-                  <Trash2 className="h-3.5 w-3.5" /> Delete
                 </Button>
               </div>
             </CardContent>
