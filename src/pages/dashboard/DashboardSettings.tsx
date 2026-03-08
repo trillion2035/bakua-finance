@@ -21,6 +21,9 @@ export default function DashboardSettings() {
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [companyName, setCompanyName] = useState(profile?.company_name || "");
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const [notifications, setNotifications] = useState({
     milestoneAlerts: true,
     sensorAlerts: true,
@@ -49,6 +52,20 @@ export default function DashboardSettings() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/signin");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteText !== "DELETE") return;
+    setDeleting(true);
+    const { error } = await supabase.functions.invoke("delete-account");
+    setDeleting(false);
+    if (error) {
+      toast({ title: "Error", description: "Failed to delete account. Please contact support.", variant: "destructive" });
+    } else {
+      await signOut();
+      navigate("/");
+      toast({ title: "Account deleted", description: "Your account has been permanently deleted." });
+    }
   };
 
   return (
