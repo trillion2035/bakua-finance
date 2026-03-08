@@ -125,7 +125,7 @@ export default function DashboardNewOverview() {
       </div>
 
       <EmptyKPICards capitalTarget={capitalTarget} spv={spv} />
-      {!spv && <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />}
+      <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />
       {spv && (
         <div className="bg-card border border-border rounded-lg p-6">
           <h3 className="text-base font-bold text-foreground tracking-tight mb-2">Active SPV</h3>
