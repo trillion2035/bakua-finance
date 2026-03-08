@@ -30,6 +30,61 @@ const countries = [
   "United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
 ];
 
+const countryCurrency: Record<string, { code: string; symbol: string }> = {
+  "United States": { code: "USD", symbol: "$" }, "United Kingdom": { code: "GBP", symbol: "£" },
+  "Canada": { code: "CAD", symbol: "CA$" }, "Australia": { code: "AUD", symbol: "A$" },
+  "Japan": { code: "JPY", symbol: "¥" }, "China": { code: "CNY", symbol: "¥" },
+  "India": { code: "INR", symbol: "₹" }, "Brazil": { code: "BRL", symbol: "R$" },
+  "Mexico": { code: "MXN", symbol: "MX$" }, "South Africa": { code: "ZAR", symbol: "R" },
+  "Nigeria": { code: "NGN", symbol: "₦" }, "Kenya": { code: "KES", symbol: "KSh" },
+  "Ghana": { code: "GHS", symbol: "GH₵" }, "Egypt": { code: "EGP", symbol: "E£" },
+  "Morocco": { code: "MAD", symbol: "MAD " }, "Tanzania": { code: "TZS", symbol: "TSh" },
+  "Ethiopia": { code: "ETB", symbol: "Br" }, "Uganda": { code: "UGX", symbol: "USh" },
+  "Rwanda": { code: "RWF", symbol: "RF" }, "Cameroon": { code: "XAF", symbol: "FCFA " },
+  "Côte d'Ivoire": { code: "XOF", symbol: "CFA " }, "Senegal": { code: "XOF", symbol: "CFA " },
+  "Mali": { code: "XOF", symbol: "CFA " }, "Burkina Faso": { code: "XOF", symbol: "CFA " },
+  "Benin": { code: "XOF", symbol: "CFA " }, "Togo": { code: "XOF", symbol: "CFA " },
+  "Niger": { code: "XOF", symbol: "CFA " }, "Guinea-Bissau": { code: "XOF", symbol: "CFA " },
+  "Chad": { code: "XAF", symbol: "FCFA " }, "Central African Republic": { code: "XAF", symbol: "FCFA " },
+  "Congo (Republic)": { code: "XAF", symbol: "FCFA " }, "Gabon": { code: "XAF", symbol: "FCFA " },
+  "Equatorial Guinea": { code: "XAF", symbol: "FCFA " },
+  "Germany": { code: "EUR", symbol: "€" }, "France": { code: "EUR", symbol: "€" },
+  "Italy": { code: "EUR", symbol: "€" }, "Spain": { code: "EUR", symbol: "€" },
+  "Netherlands": { code: "EUR", symbol: "€" }, "Belgium": { code: "EUR", symbol: "€" },
+  "Austria": { code: "EUR", symbol: "€" }, "Portugal": { code: "EUR", symbol: "€" },
+  "Ireland": { code: "EUR", symbol: "€" }, "Finland": { code: "EUR", symbol: "€" },
+  "Greece": { code: "EUR", symbol: "€" }, "Luxembourg": { code: "EUR", symbol: "€" },
+  "Slovakia": { code: "EUR", symbol: "€" }, "Slovenia": { code: "EUR", symbol: "€" },
+  "Estonia": { code: "EUR", symbol: "€" }, "Latvia": { code: "EUR", symbol: "€" },
+  "Lithuania": { code: "EUR", symbol: "€" }, "Malta": { code: "EUR", symbol: "€" },
+  "Cyprus": { code: "EUR", symbol: "€" }, "Croatia": { code: "EUR", symbol: "€" },
+  "Switzerland": { code: "CHF", symbol: "CHF " }, "Sweden": { code: "SEK", symbol: "kr" },
+  "Norway": { code: "NOK", symbol: "kr" }, "Denmark": { code: "DKK", symbol: "kr" },
+  "Poland": { code: "PLN", symbol: "zł" }, "Czech Republic": { code: "CZK", symbol: "Kč" },
+  "Hungary": { code: "HUF", symbol: "Ft" }, "Romania": { code: "RON", symbol: "lei" },
+  "Turkey": { code: "TRY", symbol: "₺" }, "Russia": { code: "RUB", symbol: "₽" },
+  "Ukraine": { code: "UAH", symbol: "₴" }, "Israel": { code: "ILS", symbol: "₪" },
+  "Saudi Arabia": { code: "SAR", symbol: "SAR " }, "United Arab Emirates": { code: "AED", symbol: "AED " },
+  "Qatar": { code: "QAR", symbol: "QR" }, "Kuwait": { code: "KWD", symbol: "KD" },
+  "Bahrain": { code: "BHD", symbol: "BD" }, "Oman": { code: "OMR", symbol: "OMR " },
+  "Pakistan": { code: "PKR", symbol: "₨" }, "Bangladesh": { code: "BDT", symbol: "৳" },
+  "Sri Lanka": { code: "LKR", symbol: "Rs" }, "Indonesia": { code: "IDR", symbol: "Rp" },
+  "Malaysia": { code: "MYR", symbol: "RM" }, "Thailand": { code: "THB", symbol: "฿" },
+  "Philippines": { code: "PHP", symbol: "₱" }, "Vietnam": { code: "VND", symbol: "₫" },
+  "South Korea": { code: "KRW", symbol: "₩" }, "Singapore": { code: "SGD", symbol: "S$" },
+  "New Zealand": { code: "NZD", symbol: "NZ$" }, "Argentina": { code: "ARS", symbol: "AR$" },
+  "Chile": { code: "CLP", symbol: "CL$" }, "Colombia": { code: "COP", symbol: "CO$" },
+  "Peru": { code: "PEN", symbol: "S/" }, "Jamaica": { code: "JMD", symbol: "J$" },
+  "Trinidad and Tobago": { code: "TTD", symbol: "TT$" },
+  "Zambia": { code: "ZMW", symbol: "ZK" }, "Zimbabwe": { code: "ZWL", symbol: "Z$" },
+  "Mozambique": { code: "MZN", symbol: "MT" }, "Botswana": { code: "BWP", symbol: "P" },
+  "Namibia": { code: "NAD", symbol: "N$" }, "Malawi": { code: "MWK", symbol: "MK" },
+};
+
+function getCurrencyForCountry(country: string) {
+  return countryCurrency[country] || { code: "USD", symbol: "$" };
+}
+
 const assetTypes = [
   "Energy & Solar",
   "Agriculture",
