@@ -32,7 +32,7 @@ const Index = () => {
       <HowItWorks />
       <WhyBakua />
       <AssetClasses />
-      <SPVMarketplace />
+      
       <ProcessTimeline />
       <InvestorsSection />
       <OnboardCTA onOpenModal={openModal} onScrollTo={scrollTo} />
