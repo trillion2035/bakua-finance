@@ -4,6 +4,7 @@ import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { Wallet } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProjectOwnerSignIn = () => {
   const navigate = useNavigate();
@@ -12,13 +13,22 @@ const ProjectOwnerSignIn = () => {
   const [loading, setLoading] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
+      if (error) throw error;
+      toast.success("Signed in successfully!");
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sign in");
+    } finally {
       setLoading(false);
-      toast.info("Sign in functionality coming soon.");
-    }, 1000);
+    }
   };
 
   const handleConnectWallet = () => {
