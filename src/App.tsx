@@ -15,6 +15,7 @@ import DashboardDocuments from "./pages/dashboard/DashboardDocuments";
 import DashboardSPV from "./pages/dashboard/DashboardSPV";
 import DashboardCapital from "./pages/dashboard/DashboardCapital";
 import DashboardPerformance from "./pages/dashboard/DashboardPerformance";
+import DashboardOracle from "./pages/dashboard/DashboardOracle";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="spv" element={<DashboardSPV />} />
             <Route path="capital" element={<DashboardCapital />} />
             <Route path="performance" element={<DashboardPerformance />} />
+            <Route path="oracle" element={<DashboardOracle />} />
             <Route path="messages" element={<DashboardPlaceholder />} />
             <Route path="settings" element={<DashboardPlaceholder />} />
           </Route>

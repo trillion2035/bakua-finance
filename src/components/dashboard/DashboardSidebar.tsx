@@ -3,8 +3,8 @@ import {
   FileText,
   Building2,
   Wallet,
-  
   BarChart3,
+  Radio,
   MessageSquare,
   Settings,
 } from "lucide-react";
@@ -29,6 +29,7 @@ const menuItems = [
   { title: "SPV Details", url: "/dashboard/spv", icon: Building2 },
   { title: "Capital & Fundraising", url: "/dashboard/capital", icon: Wallet },
   { title: "Performance", url: "/dashboard/performance", icon: BarChart3 },
+  { title: "Oracle", url: "/dashboard/oracle", icon: Radio },
   { title: "Messages", url: "/dashboard/messages", icon: MessageSquare },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
 ];
