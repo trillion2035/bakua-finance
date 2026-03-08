@@ -279,6 +279,36 @@ export default function DashboardSettings() {
                 </div>
                 <Badge variant="outline" className="text-[10px]">Current</Badge>
               </div>
+              <Separator />
+              <div className="flex items-center justify-between py-2">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">Log Out</p>
+                  <p className="text-xs text-muted-foreground">Sign out of your account on this device</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => toast({ title: "Coming soon", description: "Logout will be available once authentication is connected." })}
+                >
+                  <LogOut className="h-3.5 w-3.5" /> Log Out
+                </Button>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between py-2">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-destructive">Delete Account</p>
+                  <p className="text-xs text-muted-foreground">Permanently delete your account and all associated data</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="gap-1.5"
+                  onClick={() => toast({ title: "Coming soon", description: "Account deletion will be available once authentication is connected.", variant: "destructive" })}
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Delete
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
