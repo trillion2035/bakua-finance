@@ -4,6 +4,18 @@ import { cn } from "@/lib/utils";
 import { useOwnerSpvs, useSpvMilestones, useInvestorSegments } from "@/hooks/useSpvData";
 import { useAuth } from "@/hooks/useAuth";
 
+function formatCapitalTarget(raw: string): string {
+  if (!raw) return "—";
+  const match = raw.match(/^([^\d]*)([\d,.\s]+)(.*)$/);
+  if (!match) return raw;
+  const prefix = match[1].trim();
+  const numStr = match[2].replace(/[,\s]/g, "");
+  const suffix = match[3].trim();
+  const num = Number(numStr);
+  if (isNaN(num)) return raw;
+  return [prefix, new Intl.NumberFormat("en-US").format(num), suffix].filter(Boolean).join(" ");
+}
+
 export default function DashboardCapital() {
   const { data: spvs, isLoading } = useOwnerSpvs();
   const { user } = useAuth();
@@ -26,7 +38,7 @@ export default function DashboardCapital() {
         { label: "Disbursed", value: `${disbursedCount}/${totalMilestones}`, sub: spv.total_disbursed ? `${spv.total_disbursed.toLocaleString()} ${spv.currency}` : "—", icon: ArrowRight, color: "text-amber-600" },
       ]
     : [
-        { label: "Total Capital Target", value: capitalTarget || "—", sub: "As submitted", icon: DollarSign, color: "text-primary" },
+        { label: "Total Capital Target", value: formatCapitalTarget(capitalTarget), sub: "As submitted", icon: DollarSign, color: "text-primary" },
         { label: "Funded", value: "—", sub: "Awaiting SPV setup", icon: TrendingUp, color: "text-muted-foreground" },
         { label: "Total Investors", value: "0", sub: "No investors yet", icon: Users, color: "text-muted-foreground" },
         { label: "Disbursed", value: "—", sub: "Awaiting funding", icon: ArrowRight, color: "text-muted-foreground" },
