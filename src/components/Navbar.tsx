@@ -20,9 +20,7 @@ const Navbar = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => vo
       <div className="hidden lg:flex items-center gap-9">
         {[
           { label: "How It Works", id: "how" },
-          { label: "Why Bakua", id: "why" },
           { label: "Asset Classes", id: "assets" },
-          { label: "SPV Marketplace", id: "spvs" },
           { label: "For Investors", id: "investors" },
         ].map((link) => (
           <a
@@ -59,7 +57,7 @@ const Navbar = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => vo
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="absolute top-full left-0 right-0 bg-background border-b border-border p-6 flex flex-col gap-4 lg:hidden shadow-lg">
-          {["How It Works:how", "Why Bakua:why", "Asset Classes:assets", "SPV Marketplace:spvs", "For Investors:investors"].map((item) => {
+          {["How It Works:how", "Asset Classes:assets", "For Investors:investors"].map((item) => {
             const [label, id] = item.split(":");
             return (
               <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); onScrollTo(id); setMobileOpen(false); }} className="text-sm text-foreground/70 hover:text-foreground">
