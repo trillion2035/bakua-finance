@@ -10,10 +10,15 @@ import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
+function formatCurrency(amount: number, currency?: string): string {
+  const formatted = amount.toLocaleString("en-US");
+  return currency ? `${currency} ${formatted}` : formatted;
+}
+
 function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any }) {
   const kpis = spv
     ? [
-        { label: "Total Capital Target", value: spv.target_amount ? `${(spv.target_amount / 1000000).toFixed(0)}M ${spv.currency}` : "—", subtext: spv.target_amount_usd || "Not set", icon: DollarSign },
+        { label: "Total Capital Target", value: spv.target_amount ? formatCurrency(spv.target_amount, spv.currency) : "—", subtext: spv.target_amount_usd || "Not set", icon: DollarSign },
         { label: "Funded", value: spv.funded_percent ? `${spv.funded_percent}%` : "—", subtext: spv.funded_percent === 100 ? "Fully funded" : "In progress", icon: TrendingUp },
         { label: "Asset Score™", value: "AS-88", subtext: "Standard Grade", icon: Shield },
         { label: "IRR Target", value: spv.target_irr || "—", subtext: "36-month term", icon: Percent },
