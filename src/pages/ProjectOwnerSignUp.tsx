@@ -268,8 +268,26 @@ const ProjectOwnerSignUp = () => {
               </select>
             </div>
             <div>
-              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Capital Raise Target (USD)</label>
-              <Input required type="text" placeholder="e.g. $2,000,000" value={form.capitalTarget} onChange={(e) => setForm({ ...form, capitalTarget: e.target.value })} className="bg-secondary border-border" />
+              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">
+                Capital Raise Target{form.country ? ` (${getCurrencyForCountry(form.country).code})` : ""}
+              </label>
+              <Input
+                required
+                type="text"
+                placeholder={form.country ? `e.g. ${getCurrencyForCountry(form.country).symbol}2,000,000` : "Select country first"}
+                value={form.capitalTarget}
+                onChange={(e) => {
+                  const { symbol } = getCurrencyForCountry(form.country);
+                  const raw = e.target.value;
+                  // Prevent removing the currency prefix
+                  if (!raw.startsWith(symbol) && form.country) {
+                    setForm({ ...form, capitalTarget: symbol });
+                  } else {
+                    setForm({ ...form, capitalTarget: raw });
+                  }
+                }}
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Password</label>
