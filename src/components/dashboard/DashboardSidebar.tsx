@@ -3,6 +3,8 @@ import {
   FileText,
   Building2,
   Wallet,
+  BarChart3,
+  Radio,
   
   BarChart3,
   MessageSquare,
