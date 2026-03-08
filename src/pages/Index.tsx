@@ -5,7 +5,6 @@ import HowItWorks from "@/components/HowItWorks";
 import WhyBakua from "@/components/WhyBakua";
 import AssetClasses from "@/components/AssetClasses";
 import ProcessTimeline from "@/components/ProcessTimeline";
-import SPVMarketplace from "@/components/SPVMarketplace";
 import InvestorsSection from "@/components/InvestorsSection";
 import OnboardCTA from "@/components/OnboardCTA";
 
@@ -33,7 +32,7 @@ const Index = () => {
       <HowItWorks />
       <WhyBakua />
       <AssetClasses />
-      <SPVMarketplace />
+      
       <ProcessTimeline />
       <InvestorsSection />
       <OnboardCTA onOpenModal={openModal} onScrollTo={scrollTo} />

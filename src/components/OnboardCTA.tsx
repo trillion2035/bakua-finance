@@ -52,10 +52,10 @@ const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) =
           ))}
         </div>
         <button
-          onClick={() => onScrollTo("spvs")}
+onClick={() => onScrollTo("investors")}
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-primary-foreground text-primary text-[13px] font-semibold hover:-translate-y-0.5 transition-all"
         >
-          Browse Opportunities →
+          Learn More →
         </button>
       </div>
     </div>
