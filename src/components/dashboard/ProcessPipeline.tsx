@@ -55,7 +55,7 @@ function StepCard({ step, isLast }: { step: ProcessStep; isLast: boolean }) {
         >
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-display text-sm font-bold text-foreground">
+              <span className="text-sm font-bold text-foreground">
                 {step.title}
               </span>
               <span className={cn("text-[10px] font-semibold tracking-wider uppercase", statusColor(step.status))}>
