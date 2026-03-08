@@ -23,7 +23,7 @@ const WhyBakua = () => (
             The infrastructure finance gap ends here.
           </h2>
           <p className="text-[16px] text-muted-foreground font-light max-w-[460px] leading-relaxed mb-10">
-            Sub-Saharan Africa alone needs $130B+ in annual infrastructure investment. Traditional financing takes years and excludes most projects.
+            Emerging markets need $2.5T+ in annual infrastructure investment. Traditional financing takes years and excludes most projects.
           </p>
           <div className="flex flex-col gap-1">
             {reasons.map((r, i) => (

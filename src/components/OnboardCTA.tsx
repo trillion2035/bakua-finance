@@ -2,7 +2,15 @@ import { Check } from "lucide-react";
 
 const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void; onScrollTo: (id: string) => void }) => (
   <section id="onboard" className="py-28 px-6 md:px-10 lg:px-16">
-    <div className="max-w-[1100px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div className="max-w-[1100px] mx-auto">
+      <span className="text-[11px] tracking-[4px] font-semibold text-primary font-display mb-4 block uppercase">Get Started</span>
+      <h2 className="font-display text-[clamp(32px,4vw,48px)] font-extrabold tracking-[-1.5px] leading-[1.05] text-foreground mb-4">
+        Ready to build with Bakua?
+      </h2>
+      <p className="text-[16px] text-muted-foreground font-light max-w-[480px] leading-relaxed mb-14">
+        Whether you're funding infrastructure or investing in it, we make the process seamless.
+      </p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
       {/* Project Owners */}
       <div className="bg-secondary rounded-2xl p-10 md:p-12 border border-border relative overflow-hidden">
         <div className="absolute -bottom-12 -right-12 w-[200px] h-[200px] rounded-full bg-primary/5" />
@@ -57,6 +65,7 @@ onClick={() => onScrollTo("investors")}
         >
           Learn More →
         </button>
+      </div>
       </div>
     </div>
   </section>
