@@ -66,6 +66,7 @@ onClick={() => onScrollTo("investors")}
           Learn More →
         </button>
       </div>
+      </div>
     </div>
   </section>
 );
