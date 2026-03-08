@@ -14,7 +14,7 @@ function EmptyKPICards({ capitalTarget }: { capitalTarget: string }) {
   const kpis = [
     { label: "Total Capital Target", value: capitalTarget || "—", subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
     { label: "Funded", value: "—", subtext: "Awaiting documents", icon: TrendingUp },
-    { label: "Credit Score", value: "—", subtext: "Pending analysis", icon: Shield },
+    { label: "Asset Score™", value: "—", subtext: "Pending analysis", icon: Shield },
     { label: "IRR Target", value: "—", subtext: "Pending model", icon: Percent },
   ];
 
