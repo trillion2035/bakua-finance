@@ -29,14 +29,14 @@ const Index = () => {
     <div className="bg-background text-foreground overflow-x-hidden">
       <Navbar onOpenModal={openModal} onScrollTo={scrollTo} />
       <Hero onOpenModal={openModal} onScrollTo={scrollTo} />
+      <SocialProof />
       <HowItWorks />
       <WhyBakua />
       <AssetClasses />
-      <ProcessTimeline />
       <SPVMarketplace />
+      <ProcessTimeline />
       <InvestorsSection />
       <OnboardCTA onOpenModal={openModal} onScrollTo={scrollTo} />
-      <SocialProof />
       <Footer onOpenModal={openModal} onScrollTo={scrollTo} />
     </div>
   );
