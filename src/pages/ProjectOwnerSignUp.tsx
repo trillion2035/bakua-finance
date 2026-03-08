@@ -4,6 +4,7 @@ import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { saveUserProfile } from "@/data/userContext";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const countries = [
   "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
@@ -44,6 +45,7 @@ const assetTypes = [
 
 const ProjectOwnerSignUp = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("business");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -116,10 +118,22 @@ const ProjectOwnerSignUp = () => {
             <img src={bakuaLogo} alt="Bakua Finance" className="h-7" />
           </Link>
           <h2 className="font-display text-2xl font-extrabold tracking-tight mb-1 text-foreground">Create your account</h2>
-          <p className="text-[14px] text-muted-foreground mb-8">
+          <p className="text-[14px] text-muted-foreground mb-6">
             Already have an account?{" "}
             <Link to="/signin" className="text-primary hover:underline font-medium">Sign in</Link>
           </p>
+
+          <Tabs value={activeTab} onValueChange={(v) => {
+            setActiveTab(v);
+            if (v === "investor") {
+              navigate("/earn");
+            }
+          }} className="mb-6">
+            <TabsList className="w-full">
+              <TabsTrigger value="business" className="flex-1 text-[13px]">Business Account</TabsTrigger>
+              <TabsTrigger value="investor" className="flex-1 text-[13px]">Investor Account</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="grid grid-cols-2 gap-3">
