@@ -44,7 +44,7 @@ export function DashboardSidebar() {
       <SidebarHeader className="border-b border-border px-4 py-5">
         {!collapsed ? (
           <div>
-            <div className="font-display text-sm font-bold text-foreground tracking-tight">
+            <div className="text-sm font-bold text-foreground tracking-tight">
               {mockCompany.shortName}
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
