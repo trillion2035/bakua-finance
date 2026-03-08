@@ -4,41 +4,41 @@ import {
   DollarSign, TrendingUp, Shield, Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getUserProfile } from "@/data/userContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useOwnerSpvs } from "@/hooks/useSpvData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
-// ───── Dynamic KPI Cards ─────
-
-function EmptyKPICards({ capitalTarget }: { capitalTarget: string }) {
-  const kpis = [
-    { label: "Total Capital Target", value: capitalTarget || "—", subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
-    { label: "Funded", value: "—", subtext: "Awaiting documents", icon: TrendingUp },
-    { label: "Asset Score™", value: "—", subtext: "Pending analysis", icon: Shield },
-    { label: "IRR Target", value: "—", subtext: "Pending model", icon: Percent },
-  ];
+function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any }) {
+  const kpis = spv
+    ? [
+        { label: "Total Capital Target", value: spv.target_amount ? `${(spv.target_amount / 1000000).toFixed(0)}M ${spv.currency}` : "—", subtext: spv.target_amount_usd || "Not set", icon: DollarSign },
+        { label: "Funded", value: spv.funded_percent ? `${spv.funded_percent}%` : "—", subtext: spv.funded_percent === 100 ? "Fully funded" : "In progress", icon: TrendingUp },
+        { label: "Asset Score™", value: "AS-88", subtext: "Standard Grade", icon: Shield },
+        { label: "IRR Target", value: spv.target_irr || "—", subtext: "36-month term", icon: Percent },
+      ]
+    : [
+        { label: "Total Capital Target", value: capitalTarget || "—", subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
+        { label: "Funded", value: "—", subtext: "Awaiting documents", icon: TrendingUp },
+        { label: "Asset Score™", value: "—", subtext: "Pending analysis", icon: Shield },
+        { label: "IRR Target", value: "—", subtext: "Pending model", icon: Percent },
+      ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {kpis.map((kpi) => (
         <div key={kpi.label} className="bg-card border border-border rounded-lg p-5 flex flex-col gap-2">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] tracking-[2px] text-muted-foreground font-semibold uppercase">
-              {kpi.label}
-            </span>
+            <span className="text-[10px] tracking-[2px] text-muted-foreground font-semibold uppercase">{kpi.label}</span>
             <kpi.icon className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="text-2xl font-extrabold tracking-tight text-muted-foreground/50">
-            {kpi.value}
-          </div>
+          <div className="text-2xl font-extrabold tracking-tight text-foreground">{kpi.value}</div>
           <span className="text-xs text-muted-foreground">{kpi.subtext}</span>
         </div>
       ))}
     </div>
   );
 }
-
-// ───── Process Pipeline ─────
 
 const processSteps: { id: number; title: string; description: string; status: ProcessStepStatus; dateRange: string; actionable: boolean }[] = [
   { id: 1, title: "Document Submission", description: "Register and upload all required project documents for review.", status: "pending", dateRange: "Not started", actionable: true },
@@ -67,14 +67,7 @@ function EmptyProcessPipeline({ onStartUpload }: { onStartUpload: () => void }) 
           <h3 className="text-base font-bold text-foreground tracking-tight">Process Status</h3>
           <p className="text-xs text-muted-foreground mt-0.5">0 of {processSteps.length} complete</p>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground">0 of {processSteps.length} complete</div>
-          <div className="flex gap-1 mt-1.5">
-            {processSteps.map((s) => <div key={s.id} className="h-1.5 w-8 rounded-full bg-secondary" />)}
-          </div>
-        </div>
       </div>
-
       <div className="space-y-0">
         {processSteps.map((step, i) => (
           <div key={step.id} className="relative flex gap-4">
@@ -106,29 +99,40 @@ function EmptyProcessPipeline({ onStartUpload }: { onStartUpload: () => void }) 
   );
 }
 
-// ───── Main ─────
-
 export default function DashboardNewOverview() {
   const [showWizard, setShowWizard] = useState(false);
-  const profile = getUserProfile();
+  const { profile, user } = useAuth();
+  const { data: spvs } = useOwnerSpvs();
+
+  const spv = spvs?.[0];
+  const firstName = profile?.full_name?.split(" ")[0] || "there";
+  const companyName = profile?.company_name || "";
+  const capitalTarget = user?.user_metadata?.capital_target || "";
 
   if (showWizard) {
-    return <DocumentWizard sector={profile.assetType || "default"} onBack={() => setShowWizard(false)} />;
+    return <DocumentWizard sector={user?.user_metadata?.asset_type || "default"} onBack={() => setShowWizard(false)} />;
   }
 
   return (
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-          Welcome back, {profile.firstName} {profile.lastName}
+          Welcome back, {firstName}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {profile.company} · 0 active SPVs
+          {companyName} · {spvs?.length || 0} active SPV{(spvs?.length || 0) !== 1 ? "s" : ""}
         </p>
       </div>
 
-      <EmptyKPICards capitalTarget={profile.capitalTarget} />
-      <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />
+      <EmptyKPICards capitalTarget={capitalTarget} spv={spv} />
+      {!spv && <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />}
+      {spv && (
+        <div className="bg-card border border-border rounded-lg p-6">
+          <h3 className="text-base font-bold text-foreground tracking-tight mb-2">Active SPV</h3>
+          <p className="text-sm text-muted-foreground">{spv.spv_code} · {spv.name}</p>
+          <p className="text-xs text-muted-foreground mt-1">Status: {spv.status} · {spv.total_investors} investors · {spv.disbursed_percent}% disbursed</p>
+        </div>
+      )}
     </div>
   );
 }

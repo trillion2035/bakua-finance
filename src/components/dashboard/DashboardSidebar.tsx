@@ -7,9 +7,10 @@ import {
   Radio,
   MessageSquare,
   Settings,
+  LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -19,9 +20,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { mockCompany } from "@/data/mockDashboardData";
+import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
   { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
@@ -38,6 +40,16 @@ export function DashboardSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
+
+  const companyName = profile?.company_name || "My Company";
+  const shortName = companyName.split(" ").map(w => w[0]).join("").slice(0, 4).toUpperCase();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/signin");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -45,16 +57,16 @@ export function DashboardSidebar() {
         {!collapsed ? (
           <div>
             <div className="text-sm font-bold text-foreground tracking-tight">
-              {mockCompany.shortName}
+              {shortName}
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
-              {mockCompany.name}
+              {companyName}
             </div>
           </div>
         ) : (
           <div className="flex items-center justify-center">
             <span className="text-xs font-bold text-primary">
-              {mockCompany.shortName.slice(0, 2)}
+              {shortName.slice(0, 2)}
             </span>
           </div>
         )}
@@ -94,6 +106,21 @@ export function DashboardSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-border p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Sign Out"
+              onClick={handleSignOut}
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary cursor-pointer"
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              {!collapsed && <span>Sign Out</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
