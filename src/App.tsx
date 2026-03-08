@@ -8,6 +8,7 @@ import ProjectOwnerSignUp from "./pages/ProjectOwnerSignUp";
 import ProjectOwnerSignIn from "./pages/ProjectOwnerSignIn";
 import Marketplace from "./pages/Marketplace";
 import InvestorDashboard from "./pages/InvestorDashboard";
+import InvestorSPVDetail from "./pages/InvestorSPVDetail";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
