@@ -63,7 +63,7 @@ const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) =
           ))}
         </div>
         <button
-          onClick={() => navigate("/marketplace")}
+          onClick={() => navigate("/earn")}
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-primary-foreground text-primary text-[13px] font-semibold hover:-translate-y-0.5 transition-all"
         >
           Earn Now →

@@ -36,7 +36,7 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
               List Your Project
             </button>
             <a
-              href="/marketplace"
+              href="/earn"
               className="px-8 py-4 rounded-xl text-[14px] font-semibold text-foreground border border-border hover:border-primary/50 hover:text-primary hover:-translate-y-0.5 transition-all duration-200"
             >
               Browse Opportunities
