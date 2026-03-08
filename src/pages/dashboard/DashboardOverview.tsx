@@ -1,0 +1,25 @@
+import { KPICards } from "@/components/dashboard/KPICards";
+import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
+import { mockCompany, mockSPV } from "@/data/mockDashboardData";
+
+export default function DashboardOverview() {
+  return (
+    <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
+      {/* Page header */}
+      <div>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+          Welcome back, {mockCompany.contact}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {mockCompany.name} · {mockSPV.spvCount || 1} active SPV{(mockSPV as any).spvCount > 1 ? "s" : ""}
+        </p>
+      </div>
+
+      {/* KPI summary cards */}
+      <KPICards />
+
+      {/* Process pipeline */}
+      <ProcessPipeline />
+    </div>
+  );
+}
