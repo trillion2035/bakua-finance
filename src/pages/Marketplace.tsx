@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import bakuaLogo from "@/assets/bakua-logo.png";
 import { Zap, TrendingUp, Droplets, Wallet, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import WalletConnectModal from "@/components/investor/WalletConnectModal";
+import InvestModal from "@/components/investor/InvestModal";
 
 const spvs = [
   {
@@ -53,16 +55,28 @@ const spvs = [
 ];
 
 const Marketplace = () => {
+  const navigate = useNavigate();
   const [walletConnected, setWalletConnected] = useState(false);
-  const [connectingWallet, setConnectingWallet] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [investModalOpen, setInvestModalOpen] = useState(false);
+  const [selectedSPV, setSelectedSPV] = useState<typeof spvs[0] | null>(null);
 
-  const handleConnectWallet = () => {
-    setConnectingWallet(true);
-    setTimeout(() => {
-      setConnectingWallet(false);
-      setWalletConnected(true);
-      toast.success("Wallet connected successfully!");
-    }, 1500);
+  const handleWalletConnected = (_wallet: string, _address: string) => {
+    setWalletConnected(true);
+    setWalletModalOpen(false);
+    toast.success("Wallet connected! You can now invest in SPVs.");
+  };
+
+  const handleInvestClick = (spv: typeof spvs[0]) => {
+    setSelectedSPV(spv);
+    setInvestModalOpen(true);
+  };
+
+  const handleInvested = (_spvId: number, amount: string, currency: string) => {
+    setInvestModalOpen(false);
+    toast.success(`Successfully invested $${amount} ${currency}!`);
+    // Navigate to investor dashboard after a moment
+    setTimeout(() => navigate("/investor"), 1000);
   };
 
   return (
@@ -74,18 +88,25 @@ const Marketplace = () => {
         </Link>
         <div className="flex items-center gap-3">
           {walletConnected ? (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(var(--green))]/10 border border-[hsl(var(--green))]/20 text-[13px] font-medium text-[hsl(var(--green))]">
-              <div className="w-2 h-2 rounded-full bg-[hsl(var(--green))]" />
-              0x1a2b...9f3e
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/investor")}
+                className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                My Portfolio
+              </button>
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(var(--green))]/10 border border-[hsl(var(--green))]/20 text-[13px] font-medium text-[hsl(var(--green))]">
+                <div className="w-2 h-2 rounded-full bg-[hsl(var(--green))]" />
+                0x1a2b...9f3e
+              </div>
             </div>
           ) : (
             <button
-              onClick={handleConnectWallet}
-              disabled={connectingWallet}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all disabled:opacity-60"
+              onClick={() => setWalletModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all"
             >
               <Wallet className="w-4 h-4" />
-              {connectingWallet ? "Connecting..." : "Connect Wallet"}
+              Connect Wallet
             </button>
           )}
         </div>
@@ -107,7 +128,6 @@ const Marketplace = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {spvs.map((spv) => (
             <div key={spv.id} className="glass-card rounded-2xl border border-border overflow-hidden flex flex-col">
-              {/* Card header */}
               <div className="p-6 pb-4">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -119,8 +139,6 @@ const Marketplace = () => {
                 </div>
                 <h3 className="font-display text-[17px] font-bold tracking-tight mb-1">{spv.name}</h3>
                 <p className="text-[12px] text-muted-foreground leading-relaxed mb-4">{spv.desc}</p>
-
-                {/* Highlights */}
                 <div className="flex flex-wrap gap-1.5 mb-5">
                   {spv.highlights.map((h) => (
                     <span key={h} className="px-2 py-0.5 rounded-md bg-secondary text-[10px] text-muted-foreground border border-border">
@@ -130,7 +148,6 @@ const Marketplace = () => {
                 </div>
               </div>
 
-              {/* Stats */}
               <div className="px-6 py-4 border-t border-border bg-secondary/30 flex-1">
                 <div className="grid grid-cols-3 gap-3 mb-4">
                   <div>
@@ -146,39 +163,32 @@ const Marketplace = () => {
                     <div className="font-display text-[14px] font-bold">{spv.minInvest}</div>
                   </div>
                 </div>
-
-                {/* Progress bar */}
                 <div className="mb-3">
                   <div className="flex justify-between text-[11px] text-muted-foreground mb-1.5">
                     <span>Raised: {spv.raised}</span>
                     <span>Target: {spv.target}</span>
                   </div>
                   <div className="h-1.5 bg-border rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${spv.progress}%` }}
-                    />
+                    <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${spv.progress}%` }} />
                   </div>
                 </div>
               </div>
 
-              {/* Action */}
               <div className="p-6 pt-4 border-t border-border">
                 {walletConnected ? (
                   <button
-                    onClick={() => toast.info("Investment flow coming soon.")}
+                    onClick={() => handleInvestClick(spv)}
                     className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all flex items-center justify-center gap-2"
                   >
                     Invest Now <ExternalLink className="w-3.5 h-3.5" />
                   </button>
                 ) : (
                   <button
-                    onClick={handleConnectWallet}
-                    disabled={connectingWallet}
-                    className="w-full py-3 rounded-xl bg-secondary text-foreground text-[13px] font-semibold border border-border hover:border-primary/40 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                    onClick={() => setWalletModalOpen(true)}
+                    className="w-full py-3 rounded-xl bg-secondary text-foreground text-[13px] font-semibold border border-border hover:border-primary/40 transition-all flex items-center justify-center gap-2"
                   >
                     <Wallet className="w-3.5 h-3.5" />
-                    {connectingWallet ? "Connecting..." : "Connect Wallet"}
+                    Connect Wallet
                   </button>
                 )}
               </div>
@@ -186,6 +196,19 @@ const Marketplace = () => {
           ))}
         </div>
       </div>
+
+      {/* Modals */}
+      <WalletConnectModal
+        open={walletModalOpen}
+        onOpenChange={setWalletModalOpen}
+        onConnected={handleWalletConnected}
+      />
+      <InvestModal
+        open={investModalOpen}
+        onOpenChange={setInvestModalOpen}
+        spv={selectedSPV}
+        onInvested={handleInvested}
+      />
     </div>
   );
 };
