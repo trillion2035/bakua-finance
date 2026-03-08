@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { saveUserProfile } from "@/data/userContext";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const countries = [
@@ -30,69 +30,56 @@ const countries = [
 ];
 
 const assetTypes = [
-  "Energy & Solar", "Agriculture", "Real Estate", "Land & Forestry",
-  "Mobility & EV", "Hospitality", "Aviation", "Industrial",
-  "Waste & Energy", "Water Utilities", "Other",
+  "Energy & Solar",
+  "Agriculture",
+  "Real Estate",
+  "Land & Forestry",
+  "Mobility & EV",
+  "Hospitality",
+  "Aviation",
+  "Industrial",
+  "Waste & Energy",
+  "Water Utilities",
+  "Other",
 ];
 
 const ProjectOwnerSignUp = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("business");
   const [form, setForm] = useState({
-    firstName: "", lastName: "", company: "", email: "",
-    country: "", assetType: "", capitalTarget: "",
-    password: "", confirm: "",
+    firstName: "",
+    lastName: "",
+    company: "",
+    email: "",
+    country: "",
+    assetType: "",
+    capitalTarget: "",
+    password: "",
+    confirm: "",
   });
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
     if (form.password !== form.confirm) {
       toast.error("Passwords do not match");
       return;
     }
     setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            full_name: `${form.firstName} ${form.lastName}`,
-            company_name: form.company,
-          },
-        },
-      });
-      if (error) throw error;
-
-      // Update profile with additional info
-      if (data.user) {
-        await supabase.from("profiles").update({
-          full_name: `${form.firstName} ${form.lastName}`,
-          company_name: form.company,
-        }).eq("user_id", data.user.id);
-
-        // Assign project_owner role
-        await supabase.from("user_roles").insert({
-          user_id: data.user.id,
-          role: "project_owner" as any,
-        });
-      }
-
-      toast.success("Account created! Check your email to confirm.");
-      if (data.session) {
-        navigate("/dashboard");
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create account");
-    } finally {
+    saveUserProfile({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      company: form.company,
+      email: form.email,
+      country: form.country,
+      assetType: form.assetType,
+      capitalTarget: form.capitalTarget,
+    });
+    setTimeout(() => {
       setLoading(false);
-    }
+      toast.success("Business account created!");
+      navigate("/dashboard");
+    }, 1500);
   };
 
   const selectClasses =
@@ -138,7 +125,9 @@ const ProjectOwnerSignUp = () => {
 
           <Tabs value={activeTab} onValueChange={(v) => {
             setActiveTab(v);
-            if (v === "investor") navigate("/earn");
+            if (v === "investor") {
+              navigate("/earn");
+            }
           }} className="mb-6">
             <TabsList className="w-full">
               <TabsTrigger value="business" className="flex-1 text-[13px]">Business Account</TabsTrigger>
@@ -150,68 +139,113 @@ const ProjectOwnerSignUp = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">First Name</label>
-                <Input required placeholder="John" value={form.firstName}
+                <Input
+                  required
+                  placeholder="John"
+                  value={form.firstName}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                  className="bg-secondary border-border" />
+                  className="bg-secondary border-border"
+                />
               </div>
               <div>
                 <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Last Name</label>
-                <Input required placeholder="Doe" value={form.lastName}
+                <Input
+                  required
+                  placeholder="Doe"
+                  value={form.lastName}
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                  className="bg-secondary border-border" />
+                  className="bg-secondary border-border"
+                />
               </div>
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Company / Project Name</label>
-              <Input required placeholder="Acme Infrastructure Ltd" value={form.company}
+              <Input
+                required
+                placeholder="Acme Infrastructure Ltd"
+                value={form.company}
                 onChange={(e) => setForm({ ...form, company: e.target.value })}
-                className="bg-secondary border-border" />
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Email</label>
-              <Input required type="email" placeholder="you@company.com" value={form.email}
+              <Input
+                required
+                type="email"
+                placeholder="you@company.com"
+                value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="bg-secondary border-border" />
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Country</label>
-              <select required value={form.country}
+              <select
+                required
+                value={form.country}
                 onChange={(e) => setForm({ ...form, country: e.target.value })}
-                className={selectClasses}>
+                className={selectClasses}
+              >
                 <option value="">Select your country</option>
-                {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+                {countries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
               </select>
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Asset Type</label>
-              <select required value={form.assetType}
+              <select
+                required
+                value={form.assetType}
                 onChange={(e) => setForm({ ...form, assetType: e.target.value })}
-                className={selectClasses}>
+                className={selectClasses}
+              >
                 <option value="">Select asset type</option>
-                {assetTypes.map((a) => <option key={a} value={a}>{a}</option>)}
+                {assetTypes.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
               </select>
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Capital Raise Target (USD)</label>
-              <Input required type="text" placeholder="e.g. $2,000,000" value={form.capitalTarget}
+              <Input
+                required
+                type="text"
+                placeholder="e.g. $2,000,000"
+                value={form.capitalTarget}
                 onChange={(e) => setForm({ ...form, capitalTarget: e.target.value })}
-                className="bg-secondary border-border" />
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Password</label>
-              <Input required type="password" placeholder="Min. 8 characters" value={form.password}
+              <Input
+                required
+                type="password"
+                placeholder="Min. 8 characters"
+                value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="bg-secondary border-border" />
+                className="bg-secondary border-border"
+              />
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Confirm Password</label>
-              <Input required type="password" placeholder="Re-enter password" value={form.confirm}
+              <Input
+                required
+                type="password"
+                placeholder="Re-enter password"
+                value={form.confirm}
                 onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                className="bg-secondary border-border" />
+                className="bg-secondary border-border"
+              />
             </div>
 
-            <button type="submit" disabled={loading}
-              className="mt-2 w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all disabled:opacity-60"
+            >
               {loading ? "Creating account..." : "Create Business Account"}
             </button>
           </form>

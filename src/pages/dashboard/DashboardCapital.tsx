@@ -1,32 +1,43 @@
-import { useSPVData } from "@/contexts/SPVDataContext";
+import {
+  mockFundingSummary,
+  mockMilestones,
+  mockInvestorSegments,
+} from "@/data/mockSPVData";
+import { mockSPV } from "@/data/mockDashboardData";
 import { Progress } from "@/components/ui/progress";
-import { Wallet, Users, TrendingUp, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  Wallet,
+  Users,
+  Clock,
+  CheckCircle2,
+  TrendingUp,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function DashboardCapital() {
-  const { spv, milestones, investorSegments } = useSPVData();
-
-  if (!spv) return <div className="p-8 text-muted-foreground">No SPV found.</div>;
-
-  const disbursedCount = milestones.filter((m) => m.status === "disbursed").length;
-  const totalTarget = spv.target_amount ? `${(spv.target_amount / 1_000_000).toFixed(0)}M ${spv.currency}` : "—";
-  const totalDisbursed = spv.total_disbursed ? `${(spv.total_disbursed / 1_000_000).toFixed(1)}M ${spv.currency}` : "—";
-  const remaining = spv.remaining_in_vault ? `${(spv.remaining_in_vault / 1_000_000).toFixed(1)}M ${spv.currency}` : "—";
+  const disbursedMilestones = mockMilestones.filter((m) => m.status === "disbursed").length;
 
   return (
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Capital & Fundraising</h1>
-        <p className="text-sm text-muted-foreground mt-1">{spv.spv_code} · {spv.name}</p>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+          Capital & Fundraising
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {mockSPV.id} · {mockSPV.name}
+        </p>
       </div>
 
-      {/* KPIs */}
+      {/* Funding KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Raised", value: spv.target_amount_usd || "—", sub: totalTarget, icon: Wallet, color: "text-primary" },
-          { label: "Funded", value: `${spv.funded_percent || 0}%`, sub: "in 10 days", icon: TrendingUp, color: "text-emerald-600" },
-          { label: "Total Investors", value: String(spv.total_investors || 0), sub: "across 3 continents", icon: Users, color: "text-primary" },
-          { label: "Disbursed", value: `${disbursedCount}/${milestones.length}`, sub: totalDisbursed, icon: ArrowRight, color: "text-amber-600" },
+          { label: "Total Raised", value: mockFundingSummary.totalTargetUSD, sub: mockFundingSummary.totalTarget, icon: Wallet, color: "text-primary" },
+          { label: "Funded", value: `${mockFundingSummary.fundedPercent}%`, sub: `in ${mockFundingSummary.fundingDuration}`, icon: TrendingUp, color: "text-emerald-600" },
+          { label: "Total Investors", value: String(mockFundingSummary.totalInvestors), sub: "across 3 continents", icon: Users, color: "text-primary" },
+          { label: "Disbursed", value: `${disbursedMilestones}/${mockMilestones.length}`, sub: mockFundingSummary.totalDisbursed, icon: ArrowRight, color: "text-amber-600" },
         ].map((kpi) => (
           <div key={kpi.label} className="bg-card border border-border rounded-lg p-5 flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -41,16 +52,18 @@ export default function DashboardCapital() {
 
       {/* Funding Progress */}
       <div className="bg-card border border-border rounded-lg p-6">
-        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">Funding Progress</h2>
+        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
+          Funding Progress
+        </h2>
         <div className="space-y-2 mb-4">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Capital Raised</span>
-            <span className="font-semibold text-foreground">{spv.target_amount_usd}</span>
+            <span className="font-semibold text-foreground">{mockFundingSummary.totalTargetUSD}</span>
           </div>
-          <Progress value={spv.funded_percent || 0} className="h-3" />
+          <Progress value={mockFundingSummary.fundedPercent} className="h-3" />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Listed: {spv.listing_date}</span>
-            <span>Fully funded: {spv.fully_funded_date}</span>
+            <span>Listed: {mockFundingSummary.listingDate}</span>
+            <span>Fully funded: {mockFundingSummary.fullyFundedDate}</span>
           </div>
         </div>
 
@@ -67,13 +80,13 @@ export default function DashboardCapital() {
               </tr>
             </thead>
             <tbody>
-              {investorSegments.map((seg) => (
-                <tr key={seg.id} className="border-b border-border last:border-0">
+              {mockInvestorSegments.map((seg) => (
+                <tr key={seg.name} className="border-b border-border last:border-0">
                   <td className="py-2.5 pr-3 font-medium text-foreground">{seg.name}</td>
-                  <td className="py-2.5 pr-3 text-right text-muted-foreground">{seg.usdc_raised}</td>
-                  <td className="py-2.5 pr-3 text-right text-muted-foreground hidden sm:table-cell">{seg.fcfa_equivalent}</td>
-                  <td className="py-2.5 pr-3 text-right font-medium text-foreground">{seg.percent_of_spv}</td>
-                  <td className="py-2.5 text-right text-muted-foreground">{seg.investor_count}</td>
+                  <td className="py-2.5 pr-3 text-right text-muted-foreground">{seg.usdcRaised}</td>
+                  <td className="py-2.5 pr-3 text-right text-muted-foreground hidden sm:table-cell">{seg.fcfaEquivalent}</td>
+                  <td className="py-2.5 pr-3 text-right font-medium text-foreground">{seg.percentOfSPV}</td>
+                  <td className="py-2.5 text-right text-muted-foreground">{seg.investorCount}</td>
                 </tr>
               ))}
             </tbody>
@@ -81,38 +94,54 @@ export default function DashboardCapital() {
         </div>
       </div>
 
-      {/* Milestones */}
+      {/* Milestone Disbursements */}
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Milestone Disbursements</h2>
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
+            Milestone Disbursements
+          </h2>
           <div className="flex gap-1">
-            {milestones.map((m) => (
-              <div key={m.id} className={cn("h-2 w-10 rounded-full", m.status === "disbursed" ? "bg-emerald-500" : "bg-amber-400")} />
+            {mockMilestones.map((m) => (
+              <div
+                key={m.id}
+                className={cn(
+                  "h-2 w-10 rounded-full",
+                  m.status === "disbursed" ? "bg-emerald-500" : "bg-amber-400"
+                )}
+              />
             ))}
           </div>
         </div>
 
         <div className="space-y-4">
-          {milestones.map((m) => (
+          {mockMilestones.map((m) => (
             <div key={m.id} className="border border-border rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className={cn("w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5", m.status === "disbursed" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600")}>
+                <div className={cn(
+                  "w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                  m.status === "disbursed" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                )}>
                   {m.status === "disbursed" ? <CheckCircle2 className="h-4 w-4" /> : <Loader2 className="h-4 w-4 animate-spin" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-sm font-bold text-foreground">{m.milestone_code} — {m.name}</span>
+                    <span className="text-sm font-bold text-foreground">{m.id} — {m.name}</span>
                     <span className="text-sm font-bold text-foreground">{m.amount}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{m.recipients}</p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border", m.status === "disbursed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200")}>
+                    <span className={cn(
+                      "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border",
+                      m.status === "disbursed"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200"
+                    )}>
                       {m.status === "disbursed" ? "Disbursed" : "Pending"}
                     </span>
-                    <span className="text-[11px] text-muted-foreground">{m.date_disbursed}</span>
+                    <span className="text-[11px] text-muted-foreground">{m.dateDisbursed}</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-2 bg-muted/50 rounded px-2 py-1.5">
-                    <strong className="text-foreground">Oracle trigger:</strong> {m.oracle_trigger}
+                    <strong className="text-foreground">Oracle trigger:</strong> {m.oracleTrigger}
                   </p>
                 </div>
               </div>
@@ -120,9 +149,12 @@ export default function DashboardCapital() {
           ))}
         </div>
 
+        {/* Remaining balance */}
         <div className="mt-4 p-3 bg-muted/50 border border-border rounded-lg flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Remaining in vault (M5 + DSRA reserve)</span>
-          <span className="font-bold text-foreground">{remaining} + {spv.dsra_reserve}</span>
+          <span className="font-bold text-foreground">
+            {mockFundingSummary.remainingInVault} + {mockFundingSummary.dsraReserve}
+          </span>
         </div>
       </div>
     </div>

@@ -1,26 +1,9 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "./DashboardSidebar";
-import { Outlet, Navigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { SPVDataProvider, useSPVData } from "@/contexts/SPVDataContext";
+import { Outlet } from "react-router-dom";
+import { mockCompany } from "@/data/mockDashboardData";
 
-function DashboardInner() {
-  const { user, loading } = useAuth();
-  const { profile } = useSPVData();
-  const profileName = profile?.full_name || profile?.company_name || user?.email || "";
-
-  if (loading) {
-    return (
-      <div className="light-page min-h-screen flex items-center justify-center bg-background">
-        <div className="text-muted-foreground text-sm">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/signin" replace />;
-  }
-
+export default function DashboardLayout() {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full light-page">
@@ -38,7 +21,7 @@ function DashboardInner() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green" />
                 <span className="text-xs text-muted-foreground hidden sm:inline">
-                  {profileName || user.email}
+                  {mockCompany.contact}
                 </span>
               </div>
             </div>
@@ -51,13 +34,5 @@ function DashboardInner() {
         </div>
       </div>
     </SidebarProvider>
-  );
-}
-
-export default function DashboardLayout() {
-  return (
-    <SPVDataProvider>
-      <DashboardInner />
-    </SPVDataProvider>
   );
 }
