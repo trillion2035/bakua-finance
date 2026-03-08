@@ -4,9 +4,56 @@ import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
+const countries = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
+  "Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia",
+  "Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo (DRC)","Congo (Republic)",
+  "Costa Rica","Côte d'Ivoire","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic",
+  "Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland",
+  "France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea",
+  "Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq",
+  "Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kosovo",
+  "Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania",
+  "Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius",
+  "Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia",
+  "Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway",
+  "Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland",
+  "Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines",
+  "Samoa","San Marino","São Tomé and Príncipe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore",
+  "Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan",
+  "Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo",
+  "Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates",
+  "United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
+];
+
+const assetTypes = [
+  "Energy & Solar",
+  "Agriculture",
+  "Real Estate",
+  "Land & Forestry",
+  "Mobility & EV",
+  "Hospitality",
+  "Aviation",
+  "Industrial",
+  "Waste & Energy",
+  "Water Utilities",
+  "Other",
+];
+
 const ProjectOwnerSignUp = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", company: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    company: "",
+    email: "",
+    country: "",
+    assetType: "",
+    capitalTarget: "",
+    password: "",
+    confirm: "",
+  });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -18,10 +65,13 @@ const ProjectOwnerSignUp = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      toast.success("Account created! We'll be in touch shortly.");
+      toast.success("Business account created! We'll be in touch shortly.");
       navigate("/");
     }, 1500);
   };
+
+  const selectClasses =
+    "w-full h-10 rounded-md border border-border bg-secondary px-3 text-[14px] text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background";
 
   return (
     <div className="light-page min-h-screen bg-background flex">
@@ -35,7 +85,7 @@ const ProjectOwnerSignUp = () => {
             Fund your infrastructure project on-chain.
           </h1>
           <p className="text-[15px] text-muted-foreground leading-relaxed max-w-[400px]">
-            Create your account, upload your project documents, and receive a term sheet within 72 hours.
+            Create your business account, upload your project documents, and receive a term sheet within 72 hours.
           </p>
           <div className="flex flex-col gap-3 mt-10">
             {["No upfront fees", "AI-powered document review", "Capital in as little as 60 days"].map((item) => (
@@ -50,8 +100,8 @@ const ProjectOwnerSignUp = () => {
       </div>
 
       {/* Right form panel */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-[420px]">
+      <div className="flex-1 flex items-center justify-center p-6 md:p-12 overflow-y-auto">
+        <div className="w-full max-w-[420px] py-8">
           <Link to="/" className="lg:hidden mb-8 block">
             <img src={bakuaLogo} alt="Bakua Finance" className="h-7" />
           </Link>
@@ -62,15 +112,27 @@ const ProjectOwnerSignUp = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Full Name</label>
-              <Input
-                required
-                placeholder="John Doe"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="bg-secondary border-border"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">First Name</label>
+                <Input
+                  required
+                  placeholder="John"
+                  value={form.firstName}
+                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                  className="bg-secondary border-border"
+                />
+              </div>
+              <div>
+                <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Last Name</label>
+                <Input
+                  required
+                  placeholder="Doe"
+                  value={form.lastName}
+                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                  className="bg-secondary border-border"
+                />
+              </div>
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Company / Project Name</label>
@@ -90,6 +152,45 @@ const ProjectOwnerSignUp = () => {
                 placeholder="you@company.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Country</label>
+              <select
+                required
+                value={form.country}
+                onChange={(e) => setForm({ ...form, country: e.target.value })}
+                className={selectClasses}
+              >
+                <option value="">Select your country</option>
+                {countries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Asset Type</label>
+              <select
+                required
+                value={form.assetType}
+                onChange={(e) => setForm({ ...form, assetType: e.target.value })}
+                className={selectClasses}
+              >
+                <option value="">Select asset type</option>
+                {assetTypes.map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Capital Raise Target (USD)</label>
+              <Input
+                required
+                type="text"
+                placeholder="e.g. $2,000,000"
+                value={form.capitalTarget}
+                onChange={(e) => setForm({ ...form, capitalTarget: e.target.value })}
                 className="bg-secondary border-border"
               />
             </div>
@@ -121,7 +222,7 @@ const ProjectOwnerSignUp = () => {
               disabled={loading}
               className="mt-2 w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all disabled:opacity-60"
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? "Creating account..." : "Create Business Account"}
             </button>
           </form>
 
