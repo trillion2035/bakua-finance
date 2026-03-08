@@ -22,6 +22,7 @@ import DashboardOracle from "./pages/dashboard/DashboardOracle";
 import DashboardMessages from "./pages/dashboard/DashboardMessages";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
 import DashboardNewOverview from "./pages/dashboard/DashboardNewOverview";
+import DashboardLayoutPublic from "./components/dashboard/DashboardLayoutPublic";
 
 const queryClient = new QueryClient();
 
@@ -50,7 +51,7 @@ const App = () => (
               <Route path="messages" element={<DashboardMessages />} />
               <Route path="settings" element={<DashboardSettings />} />
             </Route>
-            <Route path="/dashboard2" element={<DashboardLayout />}>
+            <Route path="/dashboard2" element={<DashboardLayoutPublic />}>
               <Route index element={<DashboardOverview />} />
             </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
