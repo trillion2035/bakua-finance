@@ -4,6 +4,7 @@ import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { Wallet } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProjectOwnerSignIn = () => {
   const navigate = useNavigate();
@@ -12,13 +13,38 @@ const ProjectOwnerSignIn = () => {
   const [loading, setLoading] = useState(false);
   const [connectingWallet, setConnectingWallet] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
+      if (error) throw error;
+      toast.success("Signed in successfully!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast.error(error.message || "Invalid email or password");
+    } finally {
       setLoading(false);
-      toast.info("Sign in functionality coming soon.");
-    }, 1000);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!form.email) {
+      toast.error("Enter your email first");
+      return;
+    }
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(form.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Password reset email sent!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reset email");
+    }
   };
 
   const handleConnectWallet = () => {
@@ -63,9 +89,7 @@ const ProjectOwnerSignIn = () => {
             <button
               onClick={() => setTab("owner")}
               className={`flex-1 py-2 rounded-md text-[13px] font-semibold transition-all ${
-                tab === "owner"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                tab === "owner" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Project Owner
@@ -73,9 +97,7 @@ const ProjectOwnerSignIn = () => {
             <button
               onClick={() => setTab("investor")}
               className={`flex-1 py-2 rounded-md text-[13px] font-semibold transition-all ${
-                tab === "investor"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                tab === "investor" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               Investor
@@ -92,38 +114,28 @@ const ProjectOwnerSignIn = () => {
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
                   <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Email</label>
-                  <Input
-                    required
-                    type="email"
-                    placeholder="you@company.com"
+                  <Input required type="email" placeholder="you@company.com"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="bg-secondary border-border"
-                  />
+                    className="bg-secondary border-border" />
                 </div>
                 <div>
                   <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Password</label>
-                  <Input
-                    required
-                    type="password"
-                    placeholder="Enter your password"
+                  <Input required type="password" placeholder="Enter your password"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="bg-secondary border-border"
-                  />
+                    className="bg-secondary border-border" />
                 </div>
 
                 <div className="flex justify-end">
-                  <button type="button" className="text-[12px] text-primary hover:underline">
+                  <button type="button" onClick={handleForgotPassword}
+                    className="text-[12px] text-primary hover:underline">
                     Forgot password?
                   </button>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all disabled:opacity-60"
-                >
+                <button type="submit" disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all disabled:opacity-60">
                   {loading ? "Signing in..." : "Sign In"}
                 </button>
               </form>
