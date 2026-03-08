@@ -10,9 +10,11 @@ import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
-function formatCurrency(amount: number | string, currency?: string): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  const formatted = isNaN(num) ? String(amount) : num.toLocaleString("en-US");
+function formatCurrency(amount: number | string | null, currency?: string | null): string {
+  if (amount == null) return "—";
+  const num = Number(amount);
+  if (isNaN(num)) return String(amount);
+  const formatted = new Intl.NumberFormat("en-US").format(num);
   return currency ? `${currency} ${formatted}` : formatted;
 }
 
