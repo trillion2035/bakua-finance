@@ -74,8 +74,8 @@ const Marketplace = () => {
         </Link>
         <div className="flex items-center gap-3">
           {walletConnected ? (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-[13px] font-medium text-green-400">
-              <div className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[hsl(var(--green))]/10 border border-[hsl(var(--green))]/20 text-[13px] font-medium text-[hsl(var(--green))]">
+              <div className="w-2 h-2 rounded-full bg-[hsl(var(--green))]" />
               0x1a2b...9f3e
             </div>
           ) : (
