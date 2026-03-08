@@ -10,12 +10,6 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
 
       <div className="relative z-10 max-w-[1100px] mx-auto">
         <div className="flex flex-col items-center text-center">
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50 backdrop-blur-sm mb-8 animate-fade-up">
-            <div className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-dot" />
-            <span className="text-[11px] font-medium text-muted-foreground tracking-wide">$9.9M deployed · 100% on-time repayment</span>
-          </div>
-
           {/* Headline */}
           <h1 className="font-display text-[clamp(42px,6.5vw,80px)] font-extrabold leading-[0.95] tracking-[-3px] text-foreground mb-7 animate-fade-up" style={{ animationDelay: "0.08s" }}>
             Infrastructure Capital,{" "}
