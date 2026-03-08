@@ -40,10 +40,10 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 animate-fade-up" style={{ animationDelay: "0.4s" }}>
             {[
-              { num: "$9.9M", label: "Capital deployed" },
+              { num: "$147K", label: "Capital deployed" },
               { num: "16.1%", label: "Average yield" },
-              { num: "10+", label: "Active SPVs" },
-              { num: "8+", label: "African markets" },
+              { num: "3", label: "Active SPVs" },
+              { num: "100%", label: "On-time repayments" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="font-display text-[26px] font-extrabold text-foreground tracking-tight">

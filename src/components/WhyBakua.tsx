@@ -10,7 +10,7 @@ const reasons = [
 const metrics = [
   { value: "$15T", label: "Global infrastructure gap by 2040" },
   { value: "$340B+", label: "On-chain stablecoin liquidity seeking yield" },
-  { value: "12–22%", label: "Typical infrastructure yield on Bakua" },
+  { value: "12–21%", label: "Typical investor yield on Bakua" },
 ];
 
 const WhyBakua = () => (

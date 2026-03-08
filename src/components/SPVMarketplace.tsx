@@ -88,6 +88,7 @@ const SPVMarketplace = () => {
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );
