@@ -213,7 +213,7 @@ export default function DashboardOracle() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-xl font-bold text-foreground">Oracle</h1>
+        <h1 className="text-xl font-bold text-foreground">Oracle</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Live IoT telemetry, satellite data &amp; on-chain trigger events for SPV-01
         </p>
