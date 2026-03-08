@@ -20,9 +20,7 @@ const Navbar = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => vo
       <div className="hidden lg:flex items-center gap-9">
         {[
           { label: "How It Works", id: "how" },
-          { label: "Why Bakua", id: "why" },
           { label: "Asset Classes", id: "assets" },
-          { label: "SPV Marketplace", id: "spvs" },
           { label: "For Investors", id: "investors" },
         ].map((link) => (
           <a
