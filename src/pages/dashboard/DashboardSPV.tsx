@@ -90,7 +90,6 @@ export default function DashboardSPV() {
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Asset Score™</h3>
               {scoreDimensions?.map((dim) => (
                 <ScoreBar key={dim.id} label={dim.name} score={dim.score} weight={dim.weight || ""} />
-                </div>
               ))}
             </div>
           </div>
