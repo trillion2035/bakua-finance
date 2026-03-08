@@ -1,14 +1,10 @@
 import { useState, useRef } from "react";
 import {
-  mockDocuments,
   stageLabels,
   type ProcessStage,
-  getDocsByStage,
-  stepIdToStage,
 } from "@/data/mockDocumentsData";
-import { mockSPV } from "@/data/mockDashboardData";
 import { Upload, CheckCircle2, Clock, AlertCircle, FileText } from "lucide-react";
-import { StageSection } from "@/components/dashboard/documents/StageSection";
+import { useOwnerSpvs, useSpvDocuments } from "@/hooks/useSpvData";
 
 function UploadDropZone() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -19,78 +15,60 @@ function UploadDropZone() {
     >
       <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
       <p className="text-sm font-medium text-foreground">Drop files or click to upload</p>
-      <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG, XLSX, KML — max 20MB</p>
-      <input ref={fileRef} type="file" className="hidden" multiple accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.kml" />
+      <p className="text-xs text-muted-foreground mt-1">PDF, DOCX — max 10MB</p>
+      <input ref={fileRef} type="file" className="hidden" multiple accept=".pdf,.docx" />
     </div>
   );
 }
 
 export default function DashboardDocuments() {
-  const allDocs = mockDocuments;
-  const processSteps = mockSPV.processSteps;
+  const { data: spvs, isLoading } = useOwnerSpvs();
+  const spv = spvs?.[0];
+  const { data: docs } = useSpvDocuments(spv?.id);
 
-  const stats = {
-    total: allDocs.length,
-    verified: allDocs.filter((d) => d.status === "verified").length,
-    pending: allDocs.filter((d) => d.status === "pending").length,
-    action: allDocs.filter((d) => d.status === "action_required").length,
-  };
+  if (isLoading) return <div className="p-6 text-muted-foreground">Loading...</div>;
 
-  const stages: { stage: ProcessStage; stepId: number }[] = [
-    { stage: "document_submission", stepId: 1 },
-    { stage: "asset_standardization", stepId: 2 },
-    { stage: "spv_deployment", stepId: 3 },
-    { stage: "listing", stepId: 4 },
-    { stage: "funding", stepId: 5 },
-    { stage: "capital_disbursement", stepId: 6 },
-  ];
+  if (!docs || docs.length === 0) {
+    return (
+      <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
+            <p className="text-sm text-muted-foreground mt-1">0 documents</p>
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-lg p-12 text-center space-y-3">
+          <FileText className="h-10 w-10 text-muted-foreground mx-auto" />
+          <h3 className="text-base font-bold text-foreground">No documents yet</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Documents will appear here once you submit your project documents through the Overview tab. Start by clicking "Submit Documents" on the Process Status pipeline.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-            My Documents
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {stats.total} documents across {stages.length} stages
-          </p>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
+          <p className="text-sm text-muted-foreground mt-1">{docs.length} document{docs.length !== 1 ? "s" : ""}</p>
         </div>
         <UploadDropZone />
       </div>
 
-      {/* Stats bar */}
-      <div className="flex gap-4 flex-wrap">
-        <div className="flex items-center gap-1.5 text-xs text-emerald-600">
-          <CheckCircle2 className="h-3.5 w-3.5" /> {stats.verified} Verified
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-amber-600">
-          <Clock className="h-3.5 w-3.5" /> {stats.pending} Pending
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-red-600">
-          <AlertCircle className="h-3.5 w-3.5" /> {stats.action} Action Required
-        </div>
-      </div>
-
-      {/* Stage-grouped document sections */}
-      <div className="space-y-4">
-        {stages.map(({ stage, stepId }) => {
-          const step = processSteps.find((s) => s.id === stepId);
-          const status = (step?.status as "completed" | "in_progress" | "pending") || "pending";
-          const docs = getDocsByStage(stage);
-
-          return (
-            <StageSection
-              key={stage}
-              stage={stage}
-              stepNumber={stepId}
-              status={status}
-              docs={docs}
-              defaultOpen={status === "completed" || status === "in_progress"}
-            />
-          );
-        })}
+      <div className="space-y-3">
+        {docs.map((doc) => (
+          <div key={doc.id} className="bg-card border border-border rounded-lg p-4 flex items-center gap-3">
+            <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+              {doc.purpose && <p className="text-xs text-muted-foreground truncate">{doc.purpose}</p>}
+            </div>
+            {doc.signed_date && <span className="text-xs text-muted-foreground shrink-0">{doc.signed_date}</span>}
+          </div>
+        ))}
       </div>
     </div>
   );
