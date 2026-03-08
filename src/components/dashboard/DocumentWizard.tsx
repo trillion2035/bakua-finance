@@ -306,6 +306,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
   // Steps: 0 = project description, 1..N = categories
   const totalSteps = 1 + categories.length;
   const [currentStep, setCurrentStep] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
 
   const [state, setState] = useState<WizardState>({
     projectDescription: "",
@@ -435,8 +436,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     if (currentStep < totalSteps - 1) {
       setCurrentStep((s) => s + 1);
     } else {
-      toast.success("All documents submitted! Your application is now under review.");
-      onBack();
+      setSubmitted(true);
     }
   };
 
@@ -449,6 +449,37 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
 
   // Step labels for progress
   const stepLabels = ["Description", ...categories.map((c) => c.label)];
+
+  if (submitted) {
+    return (
+      <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
+        <button
+          onClick={onBack}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors mb-3 flex items-center gap-1"
+        >
+          ← Back to Overview
+        </button>
+        <div className="bg-card border border-border rounded-lg p-8 text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-green/15 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="h-7 w-7 text-green" />
+          </div>
+          <h2 className="text-xl font-extrabold tracking-tight text-foreground">Documents Submitted</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            Your {totalUploaded} document{totalUploaded !== 1 ? "s" : ""} have been submitted for review.
+            Our team will begin processing your application shortly.
+          </p>
+          <div className="flex gap-3 justify-center pt-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setSubmitted(false); setCurrentStep(0); }}>
+              <FileText className="h-3.5 w-3.5" /> Edit & Add More Documents
+            </Button>
+            <Button size="sm" className="gap-1.5" onClick={onBack}>
+              Return to Dashboard <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">

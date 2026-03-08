@@ -103,8 +103,7 @@ export function getDocumentCategories(sector: string): DocumentCategoryConfig[] 
       description: "Financial records demonstrating your project's fiscal health.",
       allowOther: true,
       documents: [
-        { id: "financial-statements", name: "Audited Financial Statements", description: "Income statements, balance sheets, and cash flow (3+ years)." },
-        { id: "bank-confirmation", name: "Bank Account Confirmation Letter", description: "Official bank letter confirming account details and standing." },
+        { id: "financial-statements", name: "Financial Statements", description: "Income statements, balance sheets, and cash flow statements." },
         { id: "financial-projections", name: "Financial Projections / Model", description: "Forward-looking revenue and cost projections." },
         { id: "revenue-records", name: "Revenue / Sales Records", description: "Historical revenue or sales documentation." },
         { id: "tax-returns", name: "Tax Returns", description: "Filed tax returns for previous fiscal years." },

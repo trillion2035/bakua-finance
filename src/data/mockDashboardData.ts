@@ -41,7 +41,7 @@ export const mockSPV: SPVSummary = {
   capitalTarget: "47M FCFA",
   capitalTargetRaw: 47000000,
   fundedPercent: 100,
-  creditScore: "HS-88",
+  creditScore: "AS-88",
   creditScoreRaw: 88,
   irrTarget: "19.2%",
   irrTargetRaw: 19.2,
@@ -59,10 +59,10 @@ export const mockSPV: SPVSummary = {
     {
       id: 2,
       title: "Asset Standardization",
-      description: "AI engine processes documents, generates credit score and financial model.",
+      description: "AI engine processes documents, generates Asset Score™ and financial model.",
       status: "completed",
       dateRange: "Sep 13–15, 2024",
-      details: "Harvest Score™ HS-88 (Standard Grade). 6 dimensions analysed. AI Engine v2.1.",
+      details: "Asset Score™ AS-88 (Standard Grade). 6 dimensions analysed. AI Engine v2.1.",
     },
     {
       id: 3,
@@ -94,7 +94,7 @@ export const mockSPV: SPVSummary = {
 export const mockKPIs: KPIData[] = [
   { label: "Total Capital Target", value: "47M FCFA", subtext: "~$78,300 USD" },
   { label: "Funded", value: "100%", subtext: "Fully funded" },
-  { label: "Credit Score", value: "HS-88", subtext: "Standard Grade" },
+  { label: "Asset Score™", value: "AS-88", subtext: "Standard Grade" },
   { label: "IRR Target", value: "19.2%", subtext: "36-month term" },
 ];
 
