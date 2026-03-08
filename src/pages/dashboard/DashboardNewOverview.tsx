@@ -18,6 +18,20 @@ function formatCurrency(amount: number | string | null, currency?: string | null
   return currency ? `${currency} ${formatted}` : formatted;
 }
 
+function formatCapitalTarget(raw: string): string {
+  if (!raw) return "—";
+  // Extract currency prefix and numeric part, e.g. "FCFA 47000000" or "$2000000"
+  const match = raw.match(/^([^\d]*)([\d,.\s]+)(.*)$/);
+  if (!match) return raw;
+  const prefix = match[1].trim();
+  const numStr = match[2].replace(/[,\s]/g, "");
+  const suffix = match[3].trim();
+  const num = Number(numStr);
+  if (isNaN(num)) return raw;
+  const formatted = new Intl.NumberFormat("en-US").format(num);
+  return [prefix, formatted, suffix].filter(Boolean).join(" ");
+}
+
 function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any }) {
   const kpis = spv
     ? [
@@ -27,7 +41,7 @@ function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any
         { label: "IRR Target", value: spv.target_irr || "—", subtext: "36-month term", icon: Percent },
       ]
     : [
-        { label: "Total Capital Target", value: capitalTarget || "—", subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
+        { label: "Total Capital Target", value: formatCapitalTarget(capitalTarget), subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
         { label: "Funded", value: "—", subtext: "Awaiting documents", icon: TrendingUp },
         { label: "Asset Score™", value: "—", subtext: "Pending analysis", icon: Shield },
         { label: "IRR Target", value: "—", subtext: "Pending model", icon: Percent },
