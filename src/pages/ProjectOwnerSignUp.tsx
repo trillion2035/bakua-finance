@@ -64,10 +64,19 @@ const ProjectOwnerSignUp = () => {
       return;
     }
     setLoading(true);
+    saveUserProfile({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      company: form.company,
+      email: form.email,
+      country: form.country,
+      assetType: form.assetType,
+      capitalTarget: form.capitalTarget,
+    });
     setTimeout(() => {
       setLoading(false);
-      toast.success("Business account created! We'll be in touch shortly.");
-      navigate("/");
+      toast.success("Business account created!");
+      navigate("/dashboard");
     }, 1500);
   };
 
