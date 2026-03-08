@@ -3,7 +3,7 @@ import {
   FileText,
   Building2,
   Wallet,
-  Radio,
+  
   BarChart3,
   MessageSquare,
   Settings,
@@ -28,7 +28,6 @@ const menuItems = [
   { title: "My Documents", url: "/dashboard/documents", icon: FileText },
   { title: "SPV Details", url: "/dashboard/spv", icon: Building2 },
   { title: "Capital & Fundraising", url: "/dashboard/capital", icon: Wallet },
-  { title: "IoT Data", url: "/dashboard/iot", icon: Radio },
   { title: "Performance", url: "/dashboard/performance", icon: BarChart3 },
   { title: "Messages", url: "/dashboard/messages", icon: MessageSquare },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
