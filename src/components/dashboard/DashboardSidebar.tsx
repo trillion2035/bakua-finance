@@ -5,8 +5,6 @@ import {
   Wallet,
   BarChart3,
   Radio,
-  
-  BarChart3,
   MessageSquare,
   Settings,
 } from "lucide-react";
