@@ -165,21 +165,14 @@ export default function DashboardSettings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { key: "milestoneAlerts" as const, label: "Milestone Disbursement Alerts", desc: "Get notified when oracle triggers are met" },
-                { key: "sensorAlerts" as const, label: "IoT Sensor Alerts", desc: "Alerts when sensor readings breach thresholds" },
-                { key: "investorMessages" as const, label: "Investor Messages", desc: "Notifications for new messages from investors" },
-                { key: "weeklyReport" as const, label: "Weekly Performance Report", desc: "Automated summary of metrics" },
-                { key: "ndviUpdates" as const, label: "NDVI Satellite Updates", desc: "Notifications when new satellite data is processed" },
-                { key: "marketingEmails" as const, label: "Marketing & Updates", desc: "Platform news and events" },
-              ].map((item) => (
+              {notificationItems.map((item) => (
                 <div key={item.key} className="flex items-center justify-between py-2">
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium text-foreground">{item.label}</p>
                     <p className="text-xs text-muted-foreground">{item.desc}</p>
                   </div>
                   <Switch
-                    checked={notifications[item.key]}
+                    checked={notifications[item.key] ?? item.defaultOn}
                     onCheckedChange={(checked) => setNotifications((prev) => ({ ...prev, [item.key]: checked }))}
                   />
                 </div>
