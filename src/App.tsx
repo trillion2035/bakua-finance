@@ -42,6 +42,9 @@ const App = () => (
             <Route path="messages" element={<DashboardMessages />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
+          <Route path="/dashboard2" element={<DashboardLayout />}>
+            <Route index element={<DashboardNewOverview />} />
+          </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
