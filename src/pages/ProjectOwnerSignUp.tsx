@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import bakuaLogo from "@/assets/bakua-logo-white.png";
+import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
@@ -24,7 +24,7 @@ const ProjectOwnerSignUp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="light-page min-h-screen bg-background flex">
       {/* Left branding panel */}
       <div className="hidden lg:flex lg:w-[45%] bg-primary/5 border-r border-border flex-col justify-between p-12">
         <Link to="/">
