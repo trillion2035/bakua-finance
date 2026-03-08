@@ -11,7 +11,7 @@ export default function DashboardOverview() {
           Welcome back, {mockCompany.contact}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {mockCompany.name} · {mockSPV.spvCount || 1} active SPV{(mockSPV as any).spvCount > 1 ? "s" : ""}
+          {mockCompany.name} · {mockCompany.spvCount} active SPV{mockCompany.spvCount > 1 ? "s" : ""}
         </p>
       </div>
 
