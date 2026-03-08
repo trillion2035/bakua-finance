@@ -166,6 +166,7 @@ export const mockDocuments: ProjectDocument[] = [
   ...stage3Docs,
   ...stage4Docs,
   ...stage5Docs,
+  ...stage6Docs,
 ];
 
 /** Get documents for a specific process stage */
