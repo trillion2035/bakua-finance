@@ -435,8 +435,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     if (currentStep < totalSteps - 1) {
       setCurrentStep((s) => s + 1);
     } else {
-      toast.success("All documents submitted! Your application is now under review.");
-      onBack();
+      setSubmitted(true);
     }
   };
 
