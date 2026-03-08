@@ -59,10 +59,10 @@ export const mockSPV: SPVSummary = {
     {
       id: 2,
       title: "Asset Standardization",
-      description: "AI engine processes documents, generates credit score and financial model.",
+      description: "AI engine processes documents, generates Asset Score™ and financial model.",
       status: "completed",
       dateRange: "Sep 13–15, 2024",
-      details: "Harvest Score™ HS-88 (Standard Grade). 6 dimensions analysed. AI Engine v2.1.",
+      details: "Asset Score™ AS-88 (Standard Grade). 6 dimensions analysed. AI Engine v2.1.",
     },
     {
       id: 3,
