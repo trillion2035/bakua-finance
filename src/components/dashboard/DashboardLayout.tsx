@@ -14,9 +14,6 @@ export default function DashboardLayout() {
           <header className="h-14 flex items-center gap-3 border-b border-border px-4 bg-background sticky top-0 z-30">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
             <div className="h-5 w-px bg-border" />
-            <span className="font-display text-sm font-semibold text-foreground tracking-tight">
-              Bakua
-            </span>
             <span className="text-[10px] tracking-[2px] text-muted-foreground font-semibold uppercase">
               Business Portal
             </span>
