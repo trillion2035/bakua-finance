@@ -45,6 +45,7 @@ const assetTypes = [
 
 const ProjectOwnerSignUp = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("business");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
