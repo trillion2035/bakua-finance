@@ -89,12 +89,7 @@ export default function DashboardSPV() {
             <div className="bg-card border border-border rounded-lg p-6 space-y-4">
               <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Asset Score™</h3>
               {scoreDimensions?.map((dim) => (
-                <div key={dim.id} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">{dim.name}</span>
-                    <span className="font-bold text-foreground">{dim.score}/100</span>
-                  </div>
-                  <ScoreBar score={dim.score} />
+                <ScoreBar key={dim.id} label={dim.name} score={dim.score} weight={dim.weight || ""} />
                 </div>
               ))}
             </div>
