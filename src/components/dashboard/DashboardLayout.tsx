@@ -53,3 +53,11 @@ function DashboardInner() {
     </SidebarProvider>
   );
 }
+
+export default function DashboardLayout() {
+  return (
+    <SPVDataProvider>
+      <DashboardInner />
+    </SPVDataProvider>
+  );
+}
