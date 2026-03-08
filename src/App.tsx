@@ -28,7 +28,7 @@ const App = () => (
           <Route path="/earn" element={<Marketplace />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardOverview />} />
-            <Route path="documents" element={<DashboardPlaceholder />} />
+            <Route path="documents" element={<DashboardDocuments />} />
             <Route path="spv" element={<DashboardPlaceholder />} />
             <Route path="capital" element={<DashboardPlaceholder />} />
             <Route path="iot" element={<DashboardPlaceholder />} />
