@@ -55,7 +55,7 @@ const ProjectOwnerSignUp = () => {
           <Link to="/" className="lg:hidden mb-8 block">
             <img src={bakuaLogo} alt="Bakua Finance" className="h-7" />
           </Link>
-          <h2 className="font-display text-2xl font-extrabold tracking-tight mb-1">Create your account</h2>
+          <h2 className="font-display text-2xl font-extrabold tracking-tight mb-1 text-foreground">Create your account</h2>
           <p className="text-[14px] text-muted-foreground mb-8">
             Already have an account?{" "}
             <Link to="/signin" className="text-primary hover:underline font-medium">Sign in</Link>
