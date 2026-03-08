@@ -1,42 +1,197 @@
 import { useState } from "react";
-import { FileText, ArrowRight, Clock, CheckCircle2, Upload, ChevronRight } from "lucide-react";
+import {
+  FileText, ArrowRight, Clock, CheckCircle2, Upload, ChevronRight,
+  DollarSign, TrendingUp, Shield, Percent, FileUp, Loader2, Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { requiredDocsByAssetType, type DocumentCategory, categoryLabels, categoryIcons } from "@/data/mockDocumentsData";
 import { toast } from "sonner";
+import type { ProcessStepStatus } from "@/data/mockDashboardData";
+
+// ───── Empty KPI Cards (same layout as KPICards.tsx) ─────
+
+const emptyKPIs = [
+  { label: "Total Capital Target", value: "—", subtext: "Not yet determined" },
+  { label: "Funded", value: "—", subtext: "Awaiting documents" },
+  { label: "Credit Score", value: "—", subtext: "Pending analysis" },
+  { label: "IRR Target", value: "—", subtext: "Pending model" },
+];
+
+const kpiIcons = [DollarSign, TrendingUp, Shield, Percent];
+const kpiAccents = ["text-muted-foreground", "text-muted-foreground", "text-muted-foreground", "text-muted-foreground"];
+
+function EmptyKPICards() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {emptyKPIs.map((kpi, i) => {
+        const Icon = kpiIcons[i];
+        return (
+          <div
+            key={kpi.label}
+            className="bg-card border border-border rounded-lg p-5 flex flex-col gap-2"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] tracking-[2px] text-muted-foreground font-semibold uppercase">
+                {kpi.label}
+              </span>
+              <Icon className={`h-4 w-4 ${kpiAccents[i]}`} />
+            </div>
+            <div className="text-2xl font-extrabold tracking-tight text-muted-foreground/50">
+              {kpi.value}
+            </div>
+            {kpi.subtext && (
+              <span className="text-xs text-muted-foreground">{kpi.subtext}</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ───── Process Pipeline (all pending, step 1 actionable) ─────
 
 const processSteps = [
   {
     id: 1,
     title: "Document Submission",
-    description: "Upload all required project documents for verification.",
+    description: "Register and upload all required project documents for review.",
+    status: "pending" as ProcessStepStatus,
+    dateRange: "Not started",
     actionable: true,
   },
   {
     id: 2,
     title: "Asset Standardization",
-    description: "Our AI engine analyses your documents, generates your Harvest Score™ and financial model.",
+    description: "AI engine processes documents, generates credit score and financial model.",
+    status: "pending" as ProcessStepStatus,
+    dateRange: "Awaiting documents",
     actionable: false,
   },
   {
     id: 3,
     title: "SPV Deployment",
-    description: "Legal entity is incorporated, contracts executed, and smart contract deployed on-chain.",
+    description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.",
+    status: "pending" as ProcessStepStatus,
+    dateRange: "Awaiting standardization",
     actionable: false,
   },
   {
     id: 4,
     title: "Listing & Funding",
-    description: "Your SPV is listed on our marketplace for investors to fund.",
+    description: "SPV listed on marketplace. Investors deposit capital until target is met.",
+    status: "pending" as ProcessStepStatus,
+    dateRange: "Awaiting deployment",
     actionable: false,
   },
   {
     id: 5,
     title: "Capital Deployment",
     description: "Funds released in milestones, verified by IoT oracles and smart contracts.",
+    status: "pending" as ProcessStepStatus,
+    dateRange: "Awaiting funding",
     actionable: false,
   },
 ];
+
+function StatusIcon({ status, isFirst }: { status: ProcessStepStatus; isFirst?: boolean }) {
+  if (status === "completed")
+    return (
+      <div className="w-8 h-8 rounded-full bg-green/20 flex items-center justify-center shrink-0">
+        <Check className="w-4 h-4 text-green" />
+      </div>
+    );
+  if (status === "in_progress")
+    return (
+      <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center shrink-0">
+        <Loader2 className="w-4 h-4 text-gold animate-spin" />
+      </div>
+    );
+  if (isFirst)
+    return (
+      <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+        <ArrowRight className="w-4 h-4 text-primary" />
+      </div>
+    );
+  return (
+    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
+      <Clock className="w-4 h-4 text-muted-foreground" />
+    </div>
+  );
+}
+
+function EmptyProcessPipeline({ onStartUpload }: { onStartUpload: () => void }) {
+  const steps = processSteps;
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-base font-bold text-foreground tracking-tight">
+            Process Status
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            0 of {steps.length} complete
+          </p>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-muted-foreground">
+            0 of {steps.length} complete
+          </div>
+          <div className="flex gap-1 mt-1.5">
+            {steps.map((s) => (
+              <div
+                key={s.id}
+                className="h-1.5 w-8 rounded-full bg-secondary"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-0">
+        {steps.map((step, i) => (
+          <div key={step.id} className="relative flex gap-4">
+            {i < steps.length - 1 && (
+              <div className="absolute left-4 top-10 w-px bg-border" style={{ bottom: "-8px" }} />
+            )}
+
+            <StatusIcon status={step.status} isFirst={step.id === 1} />
+
+            <div className="flex-1 min-w-0 pb-6">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-bold text-foreground">
+                  {step.title}
+                </span>
+                {step.id === 1 ? (
+                  <span className="text-[10px] font-semibold tracking-wider uppercase text-primary">
+                    Start Here
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
+                    Pending
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">{step.dateRange}</span>
+
+              {step.actionable && (
+                <div className="mt-3 bg-secondary/50 border border-border rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <Button size="sm" className="gap-2" onClick={onStartUpload}>
+                    <FileUp className="h-3.5 w-3.5" />
+                    Submit Documents
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ───── Document Submission Wizard ─────
 
@@ -79,7 +234,7 @@ function DocumentSubmissionWizard({ onBack }: { onBack: () => void }) {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-[900px] mx-auto space-y-6">
+    <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
       {/* Header */}
       <div>
         <button
@@ -143,10 +298,7 @@ function DocumentSubmissionWizard({ onBack }: { onBack: () => void }) {
         {categoryDocs.map((doc) => {
           const uploaded = isDocUploaded(doc.name);
           return (
-            <div
-              key={doc.name}
-              className="flex items-center gap-4 px-4 py-4"
-            >
+            <div key={doc.name} className="flex items-center gap-4 px-4 py-4">
               <div className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
                 uploaded ? "bg-green/15" : "bg-secondary"
@@ -207,110 +359,22 @@ export default function DashboardNewOverview() {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-[1000px] mx-auto space-y-8">
-      {/* Welcome */}
+    <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
+      {/* Page header — same as DashboardOverview */}
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-          Welcome to Bakua
+          Welcome back, Emmanuel Nkweti
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Let's get your infrastructure project ready for on-chain capital. Follow the steps below to get started.
+          Menoua Highlands Coffee Cooperative · 0 active SPVs
         </p>
       </div>
 
-      {/* Empty state card */}
-      <div className="bg-card border border-border rounded-lg p-8 text-center">
-        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FileText className="h-8 w-8 text-primary" />
-        </div>
-        <h2 className="text-lg font-bold text-foreground mb-2">
-          No data yet
-        </h2>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-          Your dashboard will come alive once you submit your project documents. Start by uploading the required files — our AI engine will take it from there.
-        </p>
-        <Button onClick={() => setShowWizard(true)} className="gap-2">
-          <Upload className="h-4 w-4" />
-          Start Document Submission
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* KPI cards — empty state */}
+      <EmptyKPICards />
 
-      {/* Process roadmap */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h3 className="text-base font-bold text-foreground tracking-tight mb-1">
-          Your Journey
-        </h3>
-        <p className="text-xs text-muted-foreground mb-6">
-          5 steps from project submission to capital deployment
-        </p>
-
-        <div className="space-y-0">
-          {processSteps.map((step, i) => (
-            <div key={step.id} className="relative flex gap-4">
-              {/* Connector line */}
-              {i < processSteps.length - 1 && (
-                <div className="absolute left-4 top-10 w-px bg-border" style={{ bottom: "-8px" }} />
-              )}
-
-              {/* Step icon */}
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                step.id === 1 ? "bg-primary/15" : "bg-secondary"
-              )}>
-                {step.id === 1 ? (
-                  <ArrowRight className="w-4 h-4 text-primary" />
-                ) : (
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0 pb-6">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-bold text-foreground">
-                    {step.title}
-                  </span>
-                  {step.id === 1 ? (
-                    <span className="text-[10px] font-semibold tracking-wider uppercase text-primary">
-                      Start Here
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">
-                      Pending
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
-
-                {step.actionable && (
-                  <Button
-                    size="sm"
-                    className="mt-3 gap-1.5"
-                    onClick={() => setShowWizard(true)}
-                  >
-                    <Upload className="h-3.5 w-3.5" /> Begin Upload
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Quick stats (all zero) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: "Documents", value: "0 / 18" },
-          { label: "Harvest Score™", value: "—" },
-          { label: "Capital Raised", value: "$0" },
-          { label: "SPV Status", value: "Not Started" },
-        ].map((s) => (
-          <div key={s.label} className="bg-card border border-border rounded-lg p-4 text-center">
-            <div className="text-lg font-extrabold text-foreground">{s.value}</div>
-            <div className="text-[11px] text-muted-foreground mt-1 uppercase tracking-wide">{s.label}</div>
-          </div>
-        ))}
-      </div>
+      {/* Process pipeline — all pending, step 1 actionable */}
+      <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />
     </div>
   );
 }
