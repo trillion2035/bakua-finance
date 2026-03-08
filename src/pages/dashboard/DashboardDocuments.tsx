@@ -40,8 +40,9 @@ export default function DashboardDocuments() {
     { stage: "document_submission", stepId: 1 },
     { stage: "asset_standardization", stepId: 2 },
     { stage: "spv_deployment", stepId: 3 },
-    { stage: "listing_funding", stepId: 4 },
-    { stage: "capital_deployment", stepId: 5 },
+    { stage: "listing", stepId: 4 },
+    { stage: "funding", stepId: 5 },
+    { stage: "capital_disbursement", stepId: 6 },
   ];
 
   return (

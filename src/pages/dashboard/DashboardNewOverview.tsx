@@ -44,8 +44,9 @@ const processSteps: { id: number; title: string; description: string; status: Pr
   { id: 1, title: "Document Submission", description: "Register and upload all required project documents for review.", status: "pending", dateRange: "Not started", actionable: true },
   { id: 2, title: "Asset Standardization", description: "AI engine processes documents, generates Asset Score™ and financial model.", status: "pending", dateRange: "Awaiting documents", actionable: false },
   { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "pending", dateRange: "Awaiting standardization", actionable: false },
-  { id: 4, title: "Listing & Funding", description: "SPV listed on marketplace. Investors deposit capital until target is met.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
-  { id: 5, title: "Capital Deployment", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
+  { id: 4, title: "Listing", description: "Smart contract deployed, audited, and SPV listed on the investor marketplace.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
+  { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
+  { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
 ];
 
 function StatusIcon({ status, isFirst }: { status: ProcessStepStatus; isFirst?: boolean }) {
