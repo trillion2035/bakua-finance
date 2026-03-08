@@ -35,6 +35,7 @@ const App = () => (
           <Route path="/signin" element={<ProjectOwnerSignIn />} />
           <Route path="/earn" element={<Marketplace />} />
           <Route path="/investor" element={<InvestorDashboard />} />
+          <Route path="/investor/spv/:id" element={<InvestorSPVDetail />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardNewOverview />} />
             <Route path="documents" element={<DashboardDocuments />} />
