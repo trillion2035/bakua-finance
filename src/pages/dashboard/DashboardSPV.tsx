@@ -57,7 +57,7 @@ export default function DashboardSPV() {
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
           SPV Details
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -71,7 +71,7 @@ export default function DashboardSPV() {
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <Building2 className="h-4 w-4 text-primary" />
-            <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
               Entity Information
             </h2>
           </div>
@@ -102,11 +102,11 @@ export default function DashboardSPV() {
         {/* Asset Score */}
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
               Asset Score™
             </h2>
             <div className="text-right">
-              <div className="font-display text-3xl font-extrabold text-primary">{mockSPV.creditScore}</div>
+              <div className="text-3xl font-extrabold text-primary">{mockSPV.creditScore}</div>
               <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Standard Grade</span>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default function DashboardSPV() {
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <ExternalLink className="h-4 w-4 text-primary" />
-          <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
             Smart Contracts — {mockSPVEntity.network}
           </h2>
         </div>
@@ -154,7 +154,7 @@ export default function DashboardSPV() {
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <FileCheck className="h-4 w-4 text-primary" />
-          <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
             Legal Documents ({mockLegalDocs.length})
           </h2>
         </div>

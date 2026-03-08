@@ -23,7 +23,7 @@ export default function DashboardCapital() {
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
           Capital & Fundraising
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -44,7 +44,7 @@ export default function DashboardCapital() {
               <span className="text-[10px] tracking-[2px] text-muted-foreground font-semibold uppercase">{kpi.label}</span>
               <kpi.icon className={cn("h-4 w-4", kpi.color)} />
             </div>
-            <div className={cn("font-display text-2xl font-extrabold tracking-tight", kpi.color)}>{kpi.value}</div>
+            <div className={cn("text-2xl font-extrabold tracking-tight", kpi.color)}>{kpi.value}</div>
             <span className="text-xs text-muted-foreground">{kpi.sub}</span>
           </div>
         ))}
@@ -52,7 +52,7 @@ export default function DashboardCapital() {
 
       {/* Funding Progress */}
       <div className="bg-card border border-border rounded-lg p-6">
-        <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider mb-4">
+        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-4">
           Funding Progress
         </h2>
         <div className="space-y-2 mb-4">
@@ -97,7 +97,7 @@ export default function DashboardCapital() {
       {/* Milestone Disbursements */}
       <div className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
             Milestone Disbursements
           </h2>
           <div className="flex gap-1">
@@ -126,7 +126,7 @@ export default function DashboardCapital() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <span className="text-sm font-bold text-foreground">{m.id} — {m.name}</span>
-                    <span className="font-display text-sm font-bold text-foreground">{m.amount}</span>
+                    <span className="text-sm font-bold text-foreground">{m.amount}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{m.recipients}</p>
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -152,7 +152,7 @@ export default function DashboardCapital() {
         {/* Remaining balance */}
         <div className="mt-4 p-3 bg-muted/50 border border-border rounded-lg flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Remaining in vault (M5 + DSRA reserve)</span>
-          <span className="font-display font-bold text-foreground">
+          <span className="font-bold text-foreground">
             {mockFundingSummary.remainingInVault} + {mockFundingSummary.dsraReserve}
           </span>
         </div>

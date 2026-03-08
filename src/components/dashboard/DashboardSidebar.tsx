@@ -53,7 +53,7 @@ export function DashboardSidebar() {
           </div>
         ) : (
           <div className="flex items-center justify-center">
-            <span className="font-display text-xs font-bold text-primary">
+            <span className="text-xs font-bold text-primary">
               {mockCompany.shortName.slice(0, 2)}
             </span>
           </div>

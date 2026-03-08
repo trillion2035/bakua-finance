@@ -280,7 +280,7 @@ export default function DashboardOracle() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-baseline gap-1">
-                      <span className={`text-2xl font-bold font-display ${statusColor[sensor.status]}`}>
+                      <span className={`text-2xl font-bold ${statusColor[sensor.status]}`}>
                         {sensor.current}
                       </span>
                       <span className="text-xs text-muted-foreground">{sensor.unit}</span>

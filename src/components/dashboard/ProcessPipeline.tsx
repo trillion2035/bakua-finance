@@ -103,7 +103,7 @@ export function ProcessPipeline() {
     <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-display text-base font-bold text-foreground tracking-tight">
+          <h3 className="text-base font-bold text-foreground tracking-tight">
             Process Status
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
