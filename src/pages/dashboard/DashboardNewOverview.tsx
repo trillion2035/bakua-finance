@@ -42,7 +42,7 @@ function EmptyKPICards({ capitalTarget }: { capitalTarget: string }) {
 
 const processSteps: { id: number; title: string; description: string; status: ProcessStepStatus; dateRange: string; actionable: boolean }[] = [
   { id: 1, title: "Document Submission", description: "Register and upload all required project documents for review.", status: "pending", dateRange: "Not started", actionable: true },
-  { id: 2, title: "Asset Standardization", description: "AI engine processes documents, generates credit score and financial model.", status: "pending", dateRange: "Awaiting documents", actionable: false },
+  { id: 2, title: "Asset Standardization", description: "AI engine processes documents, generates Asset Score™ and financial model.", status: "pending", dateRange: "Awaiting documents", actionable: false },
   { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "pending", dateRange: "Awaiting standardization", actionable: false },
   { id: 4, title: "Listing & Funding", description: "SPV listed on marketplace. Investors deposit capital until target is met.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
   { id: 5, title: "Capital Deployment", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },

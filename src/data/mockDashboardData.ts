@@ -41,7 +41,7 @@ export const mockSPV: SPVSummary = {
   capitalTarget: "47M FCFA",
   capitalTargetRaw: 47000000,
   fundedPercent: 100,
-  creditScore: "HS-88",
+  creditScore: "AS-88",
   creditScoreRaw: 88,
   irrTarget: "19.2%",
   irrTargetRaw: 19.2,

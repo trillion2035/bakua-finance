@@ -99,11 +99,11 @@ export default function DashboardSPV() {
           </div>
         </div>
 
-        {/* Credit Score / Harvest Score */}
+        {/* Asset Score */}
         <div className="bg-card border border-border rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-display text-sm font-bold text-foreground uppercase tracking-wider">
-              Credit Score
+              Asset Score™
             </h2>
             <div className="text-right">
               <div className="font-display text-3xl font-extrabold text-primary">{mockSPV.creditScore}</div>
