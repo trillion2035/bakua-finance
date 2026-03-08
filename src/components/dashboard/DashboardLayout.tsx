@@ -2,26 +2,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { SPVDataProvider, useSPVData } from "@/contexts/SPVDataContext";
 
-export default function DashboardLayout() {
+function DashboardInner() {
   const { user, loading } = useAuth();
-  const [profileName, setProfileName] = useState<string>("");
-
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("full_name, company_name")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setProfileName(data.full_name || data.company_name || user.email || "");
-        }
-      });
-  }, [user]);
+  const { profile } = useSPVData();
+  const profileName = profile?.full_name || profile?.company_name || user?.email || "";
 
   if (loading) {
     return (
