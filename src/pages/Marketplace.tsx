@@ -93,12 +93,12 @@ const Marketplace = () => {
 
       {/* Header */}
       <div className="px-6 md:px-10 lg:px-16 pt-12 pb-8 max-w-[1200px] mx-auto">
-        <span className="text-[11px] tracking-[4px] font-semibold text-primary font-display mb-3 block uppercase">Marketplace</span>
+        <span className="text-[11px] tracking-[4px] font-semibold text-primary font-display mb-3 block uppercase">Earn</span>
         <h1 className="font-display text-[clamp(28px,4vw,42px)] font-extrabold tracking-[-1.5px] leading-[1.05] text-foreground mb-3">
-          Active SPV Opportunities
+          Active SPVs
         </h1>
         <p className="text-[15px] text-muted-foreground font-light max-w-[520px] leading-relaxed">
-          Browse verified infrastructure SPVs generating real yield from Africa's essential services. Connect your wallet to invest.
+          Browse verified infrastructure SPVs generating real yield from real assets. Connect your wallet to invest.
         </p>
       </div>
 
@@ -178,7 +178,7 @@ const Marketplace = () => {
                     className="w-full py-3 rounded-xl bg-secondary text-foreground text-[13px] font-semibold border border-border hover:border-primary/40 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     <Wallet className="w-3.5 h-3.5" />
-                    {connectingWallet ? "Connecting..." : "Connect Wallet to Invest"}
+                    {connectingWallet ? "Connecting..." : "Connect Wallet"}
                   </button>
                 )}
               </div>
