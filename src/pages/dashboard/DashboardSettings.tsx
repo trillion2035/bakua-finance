@@ -56,16 +56,9 @@ export default function DashboardSettings() {
 
   const handleDeleteAccount = async () => {
     if (deleteText !== "DELETE") return;
-    setDeleting(true);
-    const { error } = await supabase.functions.invoke("delete-account");
-    setDeleting(false);
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete account. Please contact support.", variant: "destructive" });
-    } else {
-      await signOut();
-      navigate("/");
-      toast({ title: "Account deleted", description: "Your account has been permanently deleted." });
-    }
+    toast({ title: "Coming soon", description: "Account deletion is not yet available. Please contact support." });
+    setShowDeleteConfirm(false);
+    setDeleteText("");
   };
 
   return (
