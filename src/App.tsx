@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import DashboardPlaceholder from "./pages/dashboard/DashboardPlaceholder";
+import DashboardDocuments from "./pages/dashboard/DashboardDocuments";
 
 const queryClient = new QueryClient();
 
