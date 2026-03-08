@@ -4,7 +4,18 @@ import { cn } from "@/lib/utils";
 import { useOwnerSpvs, useSpvMilestones, useInvestorSegments } from "@/hooks/useSpvData";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function DashboardCapital() {
+function formatCapitalTarget(raw: string): string {
+  if (!raw) return "—";
+  const match = raw.match(/^([^\d]*)([\d,.\s]+)(.*)$/);
+  if (!match) return raw;
+  const prefix = match[1].trim();
+  const numStr = match[2].replace(/[,\s]/g, "");
+  const suffix = match[3].trim();
+  const num = Number(numStr);
+  if (isNaN(num)) return raw;
+  return [prefix, new Intl.NumberFormat("en-US").format(num), suffix].filter(Boolean).join(" ");
+}
+
   const { data: spvs, isLoading } = useOwnerSpvs();
   const { user } = useAuth();
   const spv = spvs?.[0];
