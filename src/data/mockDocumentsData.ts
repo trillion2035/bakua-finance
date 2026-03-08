@@ -9,32 +9,36 @@ export type ProcessStage =
   | "document_submission"
   | "asset_standardization"
   | "spv_deployment"
-  | "listing_funding"
-  | "capital_deployment";
+  | "listing"
+  | "funding"
+  | "capital_disbursement";
 
 export const stageLabels: Record<ProcessStage, string> = {
   document_submission: "Document Submission",
   asset_standardization: "Asset Standardization",
   spv_deployment: "SPV Deployment",
-  listing_funding: "Listing & Funding",
-  capital_deployment: "Capital Deployment",
+  listing: "Listing",
+  funding: "Funding",
+  capital_disbursement: "Capital Disbursement",
 };
 
 export const stageIcons: Record<ProcessStage, string> = {
   document_submission: "📄",
   asset_standardization: "⚙️",
   spv_deployment: "🏛️",
-  listing_funding: "🚀",
-  capital_deployment: "💰",
+  listing: "🚀",
+  funding: "💵",
+  capital_disbursement: "💰",
 };
 
-/** Maps process step id (1-5) to stage key */
+/** Maps process step id (1-6) to stage key */
 export const stepIdToStage: Record<number, ProcessStage> = {
   1: "document_submission",
   2: "asset_standardization",
   3: "spv_deployment",
-  4: "listing_funding",
-  5: "capital_deployment",
+  4: "listing",
+  5: "funding",
+  6: "capital_disbursement",
 };
 
 export interface ProjectDocument {
