@@ -5,7 +5,6 @@ import {
   mockContractAddresses,
 } from "@/data/mockSPVData";
 import { mockSPV } from "@/data/mockDashboardData";
-import { Progress } from "@/components/ui/progress";
 import {
   Building2,
   ExternalLink,
@@ -21,40 +20,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-
-function ScoreBar({ label, score, weight }: { label: string; score: number; weight: string }) {
-  const color =
-    score >= 90 ? "bg-emerald-500" : score >= 80 ? "bg-green-500" : score >= 70 ? "bg-amber-500" : "bg-red-500";
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs text-muted-foreground w-[160px] shrink-0 truncate">{label}</span>
-      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-        <div className={cn("h-full rounded-full transition-all", color)} style={{ width: `${score}%` }} />
-      </div>
-      <span className="text-xs font-bold text-foreground w-8 text-right">{score}</span>
-      <span className="text-[10px] text-muted-foreground w-10 text-right">{weight}</span>
-    </div>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-      className="text-muted-foreground hover:text-foreground transition-colors"
-    >
-      {copied ? <span className="text-[10px] text-emerald-600">Copied</span> : <Copy className="h-3.5 w-3.5" />}
-    </button>
-  );
-}
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ScoreBar } from "@/components/dashboard/spv/ScoreBar";
+import { CopyButton } from "@/components/dashboard/spv/CopyButton";
+import { SPVEntityInfo } from "@/components/dashboard/spv/SPVEntityInfo";
+import { SPVAssetScore } from "@/components/dashboard/spv/SPVAssetScore";
+import { SPVContracts } from "@/components/dashboard/spv/SPVContracts";
+import { SPVLegalDocs } from "@/components/dashboard/spv/SPVLegalDocs";
 
 export default function DashboardSPV() {
-  const [showAllDocs, setShowAllDocs] = useState(false);
-  const visibleDocs = showAllDocs ? mockLegalDocs : mockLegalDocs.slice(0, 4);
+  const [openSPV, setOpenSPV] = useState<string | null>(mockSPV.id);
 
   return (
-    <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
+    <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
@@ -65,155 +47,37 @@ export default function DashboardSPV() {
         </p>
       </div>
 
-      {/* SPV-01 Card */}
-      <div className="border border-border rounded-lg p-4 bg-card">
-        <div className="flex items-center gap-3 mb-1">
-          <Building2 className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-bold text-foreground">{mockSPV.id} · {mockSPV.name}</h2>
-          <Badge variant="outline" className="ml-auto text-xs">
-            <Shield className="h-3 w-3 mr-1" /> {mockSPV.status}
-          </Badge>
-        </div>
-      </div>
-
-      {/* SPV Entity + Score side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Entity Info */}
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-              Entity Information
-            </h2>
-          </div>
-          <div className="space-y-3 text-sm">
-            {[
-              ["Legal Name", mockSPVEntity.fullName],
-              ["Registration No.", mockSPVEntity.registrationNo],
-              ["Jurisdiction", mockSPVEntity.jurisdiction],
-              ["Company Type", mockSPVEntity.companyType],
-              ["Registered Office", mockSPVEntity.registeredOffice],
-              ["Incorporation Date", mockSPVEntity.incorporationDate],
-              ["Capital Social", mockSPVEntity.capitalSocial],
-              ["Shareholder", mockSPVEntity.shareholder],
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between gap-4">
-                <span className="text-muted-foreground shrink-0">{label}</span>
-                <span className="text-foreground font-medium text-right">{value}</span>
-              </div>
-            ))}
-          </div>
-          <div className="pt-3 border-t border-border">
-            <Badge variant="outline" className="text-xs">
+      {/* SPV-01 Accordion */}
+      <Collapsible
+        open={openSPV === mockSPV.id}
+        onOpenChange={(open) => setOpenSPV(open ? mockSPV.id : null)}
+      >
+        <CollapsibleTrigger asChild>
+          <button className="w-full border border-border rounded-lg p-4 bg-card flex items-center gap-3 hover:bg-secondary/50 transition-colors text-left">
+            <Building2 className="h-5 w-5 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-base font-bold text-foreground">{mockSPV.id} · {mockSPV.name}</span>
+            </div>
+            <Badge variant="outline" className="text-xs shrink-0">
               <Shield className="h-3 w-3 mr-1" /> {mockSPV.status}
             </Badge>
-          </div>
-        </div>
+            <ChevronDown className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform shrink-0",
+              openSPV === mockSPV.id && "rotate-180"
+            )} />
+          </button>
+        </CollapsibleTrigger>
 
-        {/* Asset Score */}
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-              Asset Score™
-            </h2>
-            <div className="text-right">
-              <div className="text-3xl font-extrabold text-primary">{mockSPV.creditScore}</div>
-              <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Standard Grade</span>
-            </div>
+        <CollapsibleContent className="space-y-6 mt-4">
+          {/* Entity + Score */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SPVEntityInfo />
+            <SPVAssetScore />
           </div>
-          <div className="space-y-2.5">
-            {mockScoreDimensions.map((dim) => (
-              <ScoreBar key={dim.name} label={dim.name} score={dim.score} weight={dim.weight} />
-            ))}
-          </div>
-          <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
-            Generated by Bakua AI Engine v2.1 · Ref: HS-MHCC-2025-001
-          </p>
-        </div>
-      </div>
-
-      {/* Smart Contract Addresses */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <ExternalLink className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-            Smart Contracts — {mockSPVEntity.network}
-          </h2>
-        </div>
-        <div className="space-y-3">
-          {mockContractAddresses.map((c) => (
-            <div key={c.name} className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0">
-              <div className="min-w-0">
-                <span className="text-sm font-medium text-foreground block">{c.name}</span>
-                <span className="text-xs text-muted-foreground">{c.deployedDate}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <code className="text-xs text-muted-foreground font-mono hidden sm:block">
-                  {c.address.slice(0, 6)}...{c.address.slice(-4)}
-                </code>
-                <CopyButton text={c.address} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="text-[11px] text-muted-foreground mt-3">
-          Audited by {mockSPVEntity.auditor}
-        </p>
-      </div>
-
-      {/* Legal Documents */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileCheck className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-            Legal Documents ({mockLegalDocs.length})
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold">#</th>
-                <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold">Document</th>
-                <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold hidden md:table-cell">Purpose</th>
-                <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold hidden lg:table-cell">Parties</th>
-                <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold">Signed</th>
-                <th className="text-right py-2 text-xs text-muted-foreground font-semibold">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleDocs.map((doc) => (
-                <tr key={doc.id} className="border-b border-border last:border-0">
-                  <td className="py-2.5 pr-3 text-muted-foreground">{doc.id}</td>
-                  <td className="py-2.5 pr-3 font-medium text-foreground">{doc.name}</td>
-                  <td className="py-2.5 pr-3 text-muted-foreground text-xs hidden md:table-cell max-w-[280px]">{doc.purpose}</td>
-                  <td className="py-2.5 pr-3 text-muted-foreground text-xs hidden lg:table-cell">{doc.parties}</td>
-                  <td className="py-2.5 pr-3">
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-                      ✓ {doc.signedDate}
-                    </span>
-                  </td>
-                  <td className="py-2.5 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View document">
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Download document">
-                        <Download className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {mockLegalDocs.length > 4 && (
-          <Button variant="ghost" size="sm" className="mt-2 gap-1 text-xs" onClick={() => setShowAllDocs(!showAllDocs)}>
-            {showAllDocs ? <><ChevronUp className="h-3 w-3" /> Show less</> : <><ChevronDown className="h-3 w-3" /> Show all {mockLegalDocs.length} documents</>}
-          </Button>
-        )}
-      </div>
+          <SPVContracts />
+          <SPVLegalDocs />
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
