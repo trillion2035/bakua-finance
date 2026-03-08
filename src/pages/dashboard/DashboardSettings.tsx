@@ -24,13 +24,14 @@ export default function DashboardSettings() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [notifications, setNotifications] = useState({
-    milestoneAlerts: true,
-    sensorAlerts: true,
-    investorMessages: true,
-    weeklyReport: true,
-    ndviUpdates: false,
-    marketingEmails: false,
+  const assetType = user?.user_metadata?.asset_type || "";
+
+  const notificationItems = getNotificationItems(assetType);
+
+  const [notifications, setNotifications] = useState<Record<string, boolean>>(() => {
+    const defaults: Record<string, boolean> = {};
+    notificationItems.forEach((item) => { defaults[item.key] = item.defaultOn; });
+    return defaults;
   });
 
   const handleSave = async () => {
