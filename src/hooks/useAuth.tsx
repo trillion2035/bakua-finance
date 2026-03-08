@@ -40,8 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from("profiles")
       .select("*")
       .eq("user_id", userId)
-      .single();
-    setProfile(data);
+      .maybeSingle();
+    if (data) setProfile(data as Profile);
   }
 
   useEffect(() => {
