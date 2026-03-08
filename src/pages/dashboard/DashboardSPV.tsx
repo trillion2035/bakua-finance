@@ -13,6 +13,8 @@ import {
   Shield,
   Copy,
   ChevronDown,
+  Eye,
+  Download,
   ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -164,7 +166,8 @@ export default function DashboardSPV() {
                 <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold">Document</th>
                 <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold hidden md:table-cell">Purpose</th>
                 <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold hidden lg:table-cell">Parties</th>
-                <th className="text-left py-2 text-xs text-muted-foreground font-semibold">Signed</th>
+                <th className="text-left py-2 pr-3 text-xs text-muted-foreground font-semibold">Signed</th>
+                <th className="text-right py-2 text-xs text-muted-foreground font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -174,10 +177,20 @@ export default function DashboardSPV() {
                   <td className="py-2.5 pr-3 font-medium text-foreground">{doc.name}</td>
                   <td className="py-2.5 pr-3 text-muted-foreground text-xs hidden md:table-cell max-w-[280px]">{doc.purpose}</td>
                   <td className="py-2.5 pr-3 text-muted-foreground text-xs hidden lg:table-cell">{doc.parties}</td>
-                  <td className="py-2.5">
+                  <td className="py-2.5 pr-3">
                     <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
                       ✓ {doc.signedDate}
                     </span>
+                  </td>
+                  <td className="py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="View document">
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Download document">
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
