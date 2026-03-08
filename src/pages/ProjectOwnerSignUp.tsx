@@ -4,6 +4,7 @@ import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { saveUserProfile } from "@/data/userContext";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const countries = [
   "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
