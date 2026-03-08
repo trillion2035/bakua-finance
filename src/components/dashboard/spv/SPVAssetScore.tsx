@@ -1,22 +1,27 @@
-import { mockScoreDimensions } from "@/data/mockSPVData";
-import { mockSPV } from "@/data/mockDashboardData";
+import { useSPVData } from "@/contexts/SPVDataContext";
 import { ScoreBar } from "./ScoreBar";
 
 export function SPVAssetScore() {
+  const { spv, scoreDimensions } = useSPVData();
+  if (!spv) return null;
+
+  // Calculate weighted average score
+  const avgScore = scoreDimensions.length > 0
+    ? Math.round(scoreDimensions.reduce((s, d) => s + d.score, 0) / scoreDimensions.length)
+    : 0;
+
   return (
     <div className="bg-card border border-border rounded-lg p-6 space-y-4">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
-          Asset Score™
-        </h2>
+        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">Asset Score™</h2>
         <div className="text-right">
-          <div className="text-3xl font-extrabold text-primary">{mockSPV.creditScore}</div>
+          <div className="text-3xl font-extrabold text-primary">AS-{avgScore}</div>
           <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Standard Grade</span>
         </div>
       </div>
       <div className="space-y-2.5">
-        {mockScoreDimensions.map((dim) => (
-          <ScoreBar key={dim.name} label={dim.name} score={dim.score} weight={dim.weight} />
+        {scoreDimensions.map((dim) => (
+          <ScoreBar key={dim.id} label={dim.name} score={dim.score} weight={dim.weight || ""} />
         ))}
       </div>
       <p className="text-[11px] text-muted-foreground pt-2 border-t border-border">
