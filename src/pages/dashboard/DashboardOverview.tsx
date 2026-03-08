@@ -1,11 +1,20 @@
 import { KPICards } from "@/components/dashboard/KPICards";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
-import { mockCompany } from "@/data/mockDashboardData";
+import { DocumentNotifications } from "@/components/dashboard/documents/DocumentNotifications";
+import { mockCompany, mockSPV } from "@/data/mockDashboardData";
+import { stepIdToStage } from "@/data/mockDocumentsData";
 
 export default function DashboardOverview() {
+  const stages = mockSPV.processSteps.map((step) => ({
+    stage: stepIdToStage[step.id],
+    stepId: step.id,
+    status: step.status,
+  }));
+
   return (
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-8">
-      {/* Page header */}
+      <DocumentNotifications stages={stages} />
+
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
           Welcome back, {mockCompany.contact}
@@ -15,10 +24,7 @@ export default function DashboardOverview() {
         </p>
       </div>
 
-      {/* KPI summary cards */}
       <KPICards />
-
-      {/* Process pipeline */}
       <ProcessPipeline />
     </div>
   );
