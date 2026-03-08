@@ -35,7 +35,7 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardNewOverview />} />
             <Route path="documents" element={<DashboardDocuments />} />
-            <Route path="spv" element={<DashboardSPV />} />
+            <Route path="spvs" element={<DashboardSPV />} />
             <Route path="capital" element={<DashboardCapital />} />
             <Route path="performance" element={<DashboardPerformance />} />
             <Route path="oracle" element={<DashboardOracle />} />

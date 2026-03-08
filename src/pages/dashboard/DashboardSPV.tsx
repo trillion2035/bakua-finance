@@ -58,11 +58,22 @@ export default function DashboardSPV() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-          SPV Details
+          SPVs
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {mockSPV.id} · {mockSPV.name}
+          Manage and monitor your Special Purpose Vehicles
         </p>
+      </div>
+
+      {/* SPV-01 Card */}
+      <div className="border border-border rounded-lg p-4 bg-card">
+        <div className="flex items-center gap-3 mb-1">
+          <Building2 className="h-5 w-5 text-primary" />
+          <h2 className="text-base font-bold text-foreground">{mockSPV.id} · {mockSPV.name}</h2>
+          <Badge variant="outline" className="ml-auto text-xs">
+            <Shield className="h-3 w-3 mr-1" /> {mockSPV.status}
+          </Badge>
+        </div>
       </div>
 
       {/* SPV Entity + Score side by side */}
