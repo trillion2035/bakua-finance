@@ -9,23 +9,32 @@ import {
   CircleCheck,
   AlertTriangle,
   Wifi,
+  ArrowDownLeft,
+  ShieldCheck,
+  Zap,
+  Landmark,
+  Smartphone,
+  ExternalLink,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from "recharts";
+import { Area, AreaChart, Line, LineChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Progress } from "@/components/ui/progress";
 import {
   mockSensors,
   mockNDVI,
   performanceSummary,
 } from "@/data/mockPerformanceData";
+import { mockOracleEvents, type OracleEvent } from "@/data/mockOracleData";
+
+// ── Sensor helpers ──────────────────────────────────────────────
 
 const sensorIcons: Record<string, React.ElementType> = {
   "Soil Moisture": Droplets,
@@ -50,6 +59,57 @@ const statusBadgeVariant: Record<string, "default" | "secondary" | "destructive"
 const ndviConfig: ChartConfig = {
   value: { label: "NDVI", color: "hsl(var(--primary))" },
 };
+
+// ── Oracle event helpers ────────────────────────────────────────
+
+const eventTypeIcons: Record<string, React.ElementType> = {
+  payment_received: ArrowDownLeft,
+  payment_confirmed: CircleCheck,
+  milestone_verified: Satellite,
+  sensor_alert: AlertTriangle,
+  threshold_breach: AlertTriangle,
+  disbursement_triggered: Zap,
+  compliance_check: ShieldCheck,
+};
+
+const eventTypeColors: Record<string, string> = {
+  payment_received: "text-green-400",
+  payment_confirmed: "text-green-400",
+  milestone_verified: "text-primary",
+  sensor_alert: "text-yellow-400",
+  threshold_breach: "text-red-400",
+  disbursement_triggered: "text-primary",
+  compliance_check: "text-muted-foreground",
+};
+
+function getPaymentChannelBadge(event: OracleEvent) {
+  if (!event.paymentChannel) return null;
+  const ch = event.paymentChannel;
+  if (ch.type === "corporate") {
+    return (
+      <Badge variant="outline" className="text-[10px] gap-1">
+        <Landmark className="h-3 w-3" />
+        {ch.method === "bank_transfer" ? "Bank Transfer" : ch.method === "wire" ? "Wire" : "Check"}
+      </Badge>
+    );
+  }
+  if (ch.type === "retail") {
+    return (
+      <Badge variant="outline" className="text-[10px] gap-1">
+        <Smartphone className="h-3 w-3" />
+        {ch.provider || "Mobile Money"}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="outline" className="text-[10px] gap-1">
+      <Zap className="h-3 w-3" />
+      {ch.method === "escrow_release" ? "Escrow" : "Smart Contract"}
+    </Badge>
+  );
+}
+
+// ── Sub-components ──────────────────────────────────────────────
 
 function SummaryKPI({ label, value, subtext, icon: Icon }: { label: string; value: string; subtext?: string; icon: React.ElementType }) {
   return (
@@ -87,28 +147,110 @@ function SensorGauge({ current, min, max, unit }: { current: number; min: number
   );
 }
 
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+function OracleEventCard({ event }: { event: OracleEvent }) {
+  const EIcon = eventTypeIcons[event.type] || Activity;
+  const colorClass = eventTypeColors[event.type] || "text-muted-foreground";
+
+  return (
+    <div className="flex gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors">
+      <div className={`mt-0.5 rounded-lg bg-secondary p-2 shrink-0 ${colorClass}`}>
+        <EIcon className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-sm font-medium text-foreground leading-tight">{event.title}</p>
+          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+            {formatDate(event.timestamp)} · {formatTime(event.timestamp)}
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">{event.description}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          {event.amount && (
+            <span className="text-xs font-bold text-foreground">
+              {event.amount.toLocaleString()} {event.currency}
+            </span>
+          )}
+          {getPaymentChannelBadge(event)}
+          <Badge
+            variant={event.status === "confirmed" ? "default" : event.status === "pending" ? "secondary" : "destructive"}
+            className="text-[10px]"
+          >
+            {event.status === "confirmed" && <CircleCheck className="h-3 w-3 mr-1" />}
+            {event.status}
+          </Badge>
+          {event.txHash && (
+            <span className="text-[10px] text-muted-foreground font-mono flex items-center gap-1">
+              <ExternalLink className="h-3 w-3" />
+              {event.txHash}
+            </span>
+          )}
+        </div>
+        {event.source && (
+          <p className="text-[10px] text-muted-foreground">Source: {event.source}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────
+
 export default function DashboardOracle() {
+  const totalPayments = mockOracleEvents
+    .filter((e) => e.type === "payment_received" || e.type === "payment_confirmed")
+    .length;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-xl font-bold text-foreground">Oracle</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Live IoT telemetry &amp; satellite data powering on-chain oracle triggers for SPV-01
+          Live IoT telemetry, satellite data &amp; on-chain trigger events for SPV-01
         </p>
       </div>
 
       {/* Summary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryKPI icon={Wifi} label="Active Sensors" value={`${performanceSummary.activeSensors}/${performanceSummary.totalSensors}`} subtext="All online" />
         <SummaryKPI icon={Satellite} label="NDVI (Canopy)" value={performanceSummary.ndviCurrent.toFixed(2)} subtext={`Threshold: ≥ ${performanceSummary.ndviThreshold}`} />
         <SummaryKPI icon={Activity} label="Oracle Status" value="Active" subtext="Chainlink adapter connected" />
+        <SummaryKPI icon={ArrowDownLeft} label="Payment Events" value={`${totalPayments}`} subtext="This period" />
       </div>
 
-      <Tabs defaultValue="sensors" className="space-y-4">
+      <Tabs defaultValue="events" className="space-y-4">
         <TabsList className="bg-secondary">
+          <TabsTrigger value="events" className="text-xs">Oracle Events</TabsTrigger>
           <TabsTrigger value="sensors" className="text-xs">IoT Sensors</TabsTrigger>
           <TabsTrigger value="ndvi" className="text-xs">NDVI &amp; Canopy</TabsTrigger>
         </TabsList>
+
+        {/* Oracle Events Tab */}
+        <TabsContent value="events" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Trigger Event Log</CardTitle>
+              <CardDescription className="text-xs">
+                On-chain oracle events including payments, milestone verifications, sensor alerts, and disbursements.
+                Payment channels are dynamically detected — corporate (bank/wire), retail (MoMo/card), or platform (escrow/smart contract).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {mockOracleEvents.map((event) => (
+                <OracleEventCard key={event.id} event={event} />
+              ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* IoT Sensors Tab */}
         <TabsContent value="sensors" className="space-y-4">
