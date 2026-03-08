@@ -18,6 +18,20 @@ function formatCurrency(amount: number | string | null, currency?: string | null
   return currency ? `${currency} ${formatted}` : formatted;
 }
 
+function formatCapitalTarget(raw: string): string {
+  if (!raw) return "—";
+  // Extract currency prefix and numeric part, e.g. "FCFA 47000000" or "$2000000"
+  const match = raw.match(/^([^\d]*)([\d,.\s]+)(.*)$/);
+  if (!match) return raw;
+  const prefix = match[1].trim();
+  const numStr = match[2].replace(/[,\s]/g, "");
+  const suffix = match[3].trim();
+  const num = Number(numStr);
+  if (isNaN(num)) return raw;
+  const formatted = new Intl.NumberFormat("en-US").format(num);
+  return [prefix, formatted, suffix].filter(Boolean).join(" ");
+}
+
 function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any }) {
   const kpis = spv
     ? [
