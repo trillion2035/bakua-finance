@@ -2,7 +2,7 @@ import { Clock, Landmark, Brain, Cpu } from "lucide-react";
 
 const reasons = [
   { icon: Clock, title: "60-Day Capital Access", desc: "Traditional project finance takes 18–36 months. Our standardized origination compresses this to 60 days." },
-  { icon: Landmark, title: "No Bank Required", desc: "Access global stablecoin liquidity directly. No correspondent banking, no SWIFT delays, no gatekeepers." },
+  { icon: Landmark, title: "Global Capital", desc: "Access global stablecoin liquidity directly. No correspondent banking, no SWIFT delays, no gatekeepers." },
   { icon: Brain, title: "AI-Powered Origination", desc: "Our AI converts informal project data — local contracts, surveys, verbal agreements — into investor-grade documentation." },
   { icon: Cpu, title: "Automated Cash Flows", desc: "Smart contracts handle collection and distribution. Investors receive repayments on time, every time." },
 ];
@@ -10,7 +10,7 @@ const reasons = [
 const metrics = [
   { value: "$15T", label: "Global infrastructure gap by 2040" },
   { value: "$340B+", label: "On-chain stablecoin liquidity seeking yield" },
-  { value: "12–22%", label: "Typical infrastructure yield on Bakua" },
+  { value: "12–21%", label: "Typical investor yield on Bakua" },
 ];
 
 const WhyBakua = () => (

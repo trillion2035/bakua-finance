@@ -10,12 +10,6 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
 
       <div className="relative z-10 max-w-[1100px] mx-auto">
         <div className="flex flex-col items-center text-center">
-          {/* Live badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-card/50 backdrop-blur-sm mb-8 animate-fade-up">
-            <div className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-dot" />
-            <span className="text-[11px] font-medium text-muted-foreground tracking-wide">$9.9M deployed · 100% on-time repayment</span>
-          </div>
-
           {/* Headline */}
           <h1 className="font-display text-[clamp(42px,6.5vw,80px)] font-extrabold leading-[0.95] tracking-[-3px] text-foreground mb-7 animate-fade-up" style={{ animationDelay: "0.08s" }}>
             Infrastructure Capital,{" "}
@@ -46,10 +40,10 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 animate-fade-up" style={{ animationDelay: "0.4s" }}>
             {[
-              { num: "$9.9M", label: "Capital deployed" },
+              { num: "$147K", label: "Capital deployed" },
               { num: "16.1%", label: "Average yield" },
-              { num: "10+", label: "Active SPVs" },
-              { num: "8+", label: "African markets" },
+              { num: "3", label: "Active SPVs" },
+              { num: "100%", label: "On-time repayments" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="font-display text-[26px] font-extrabold text-foreground tracking-tight">

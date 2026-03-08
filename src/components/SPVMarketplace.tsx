@@ -4,9 +4,6 @@ const SPV_DATA = [
   { id: "SPV-01", name: "Nairobi Solar Power Plant", sector: "energy", country: "Kenya", capital: "$1.2M", irr: "16.4%", term: "7 yrs", status: "Active", funded: 78, minInvest: "$5,000" },
   { id: "SPV-02", name: "Accra Smart Irrigation", sector: "agri", country: "Ghana", capital: "$480K", irr: "18.2%", term: "5 yrs", status: "Active", funded: 91, minInvest: "$2,500" },
   { id: "SPV-03", name: "Lagos Residential Complex", sector: "realty", country: "Nigeria", capital: "$2.1M", irr: "13.8%", term: "10 yrs", status: "Active", funded: 55, minInvest: "$10,000" },
-  { id: "SPV-05", name: "EkoAtlantic EV Fleet", sector: "mobility", country: "Nigeria", capital: "$750K", irr: "17.1%", term: "6 yrs", status: "Active", funded: 67, minInvest: "$3,000" },
-  { id: "SPV-06", name: "Abidjan Boutique Hotel", sector: "hotel", country: "Côte d'Ivoire", capital: "$1.8M", irr: "15.3%", term: "8 yrs", status: "Funding", funded: 38, minInvest: "$7,500" },
-  { id: "SPV-10", name: "Lusaka Water Utility", sector: "water", country: "Zambia", capital: "$1.1M", irr: "13.2%", term: "12 yrs", status: "Active", funded: 82, minInvest: "$5,000" },
 ];
 
 const tabs = [
@@ -44,6 +41,11 @@ const SPVMarketplace = () => {
           ))}
         </div>
 
+        {filtered.length === 0 ? (
+          <div className="flex items-center justify-center py-20 rounded-2xl border border-border bg-card/50">
+            <p className="text-muted-foreground text-[15px] font-medium">Coming soon</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((spv) => (
             <div key={spv.id} className="rounded-2xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:-translate-y-1 transition-all duration-200 cursor-pointer group">
@@ -86,6 +88,7 @@ const SPVMarketplace = () => {
             </div>
           ))}
         </div>
+        )}
       </div>
     </section>
   );

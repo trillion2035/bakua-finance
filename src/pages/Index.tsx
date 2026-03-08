@@ -8,7 +8,7 @@ import ProcessTimeline from "@/components/ProcessTimeline";
 import SPVMarketplace from "@/components/SPVMarketplace";
 import InvestorsSection from "@/components/InvestorsSection";
 import OnboardCTA from "@/components/OnboardCTA";
-import SocialProof from "@/components/SocialProof";
+
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ const Index = () => {
     <div className="bg-background text-foreground overflow-x-hidden">
       <Navbar onOpenModal={openModal} onScrollTo={scrollTo} />
       <Hero onOpenModal={openModal} onScrollTo={scrollTo} />
-      <SocialProof />
+      
       <HowItWorks />
       <WhyBakua />
       <AssetClasses />
