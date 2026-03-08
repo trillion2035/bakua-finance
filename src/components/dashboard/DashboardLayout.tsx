@@ -1,9 +1,40 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "./DashboardSidebar";
-import { Outlet } from "react-router-dom";
-import { mockCompany } from "@/data/mockDashboardData";
+import { Outlet, Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function DashboardLayout() {
+  const { user, loading } = useAuth();
+  const [profileName, setProfileName] = useState<string>("");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("full_name, company_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setProfileName(data.full_name || data.company_name || user.email || "");
+        }
+      });
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="light-page min-h-screen flex items-center justify-center bg-background">
+        <div className="text-muted-foreground text-sm">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/signin" replace />;
+  }
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full light-page">
@@ -21,7 +52,7 @@ export default function DashboardLayout() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green" />
                 <span className="text-xs text-muted-foreground hidden sm:inline">
-                  {mockCompany.contact}
+                  {profileName || user.email}
                 </span>
               </div>
             </div>

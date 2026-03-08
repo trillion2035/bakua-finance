@@ -1,27 +1,17 @@
 import {
-  LayoutDashboard,
-  FileText,
-  Building2,
-  Wallet,
-  BarChart3,
-  Radio,
-  MessageSquare,
-  Settings,
+  LayoutDashboard, FileText, Building2, Wallet,
+  BarChart3, Radio, MessageSquare, Settings, LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  useSidebar,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
+  SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
-import { mockCompany } from "@/data/mockDashboardData";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const menuItems = [
   { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
@@ -38,24 +28,45 @@ export function DashboardSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [companyName, setCompanyName] = useState("Dashboard");
+  const [shortName, setShortName] = useState("DB");
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("full_name, company_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.company_name) {
+          setCompanyName(data.company_name);
+          setShortName(data.company_name.slice(0, 4).toUpperCase());
+        } else if (data?.full_name) {
+          setCompanyName(data.full_name);
+          setShortName(data.full_name.slice(0, 2).toUpperCase());
+        }
+      });
+  }, [user]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/signin");
+  };
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-border px-4 py-5">
         {!collapsed ? (
           <div>
-            <div className="text-sm font-bold text-foreground tracking-tight">
-              {mockCompany.shortName}
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
-              {mockCompany.name}
-            </div>
+            <div className="text-sm font-bold text-foreground tracking-tight">{shortName}</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{companyName}</div>
           </div>
         ) : (
           <div className="flex items-center justify-center">
-            <span className="text-xs font-bold text-primary">
-              {mockCompany.shortName.slice(0, 2)}
-            </span>
+            <span className="text-xs font-bold text-primary">{shortName.slice(0, 2)}</span>
           </div>
         )}
       </SidebarHeader>
@@ -72,11 +83,7 @@ export function DashboardSidebar() {
 
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.title}
-                    >
+                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
                       <NavLink
                         to={item.url}
                         end={item.url === "/dashboard"}
@@ -94,6 +101,17 @@ export function DashboardSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-border p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Sign Out" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 shrink-0" />
+              {!collapsed && <span className="text-sm">Sign Out</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }
