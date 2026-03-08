@@ -17,11 +17,26 @@ const ProjectOwnerSignIn = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.password,
       });
       if (error) throw error;
+
+      // Ensure profile is complete (handles email-confirmed signups where complete_signup wasn't called)
+      if (data.user) {
+        const meta = data.user.user_metadata || {};
+        const fullName = meta.full_name || "";
+        const company = meta.company || "";
+        if (fullName) {
+          await supabase.rpc("complete_signup", {
+            _full_name: fullName,
+            _company_name: company,
+            _role: "project_owner",
+          });
+        }
+      }
+
       toast.success("Signed in successfully!");
       navigate("/dashboard");
     } catch (err: any) {
