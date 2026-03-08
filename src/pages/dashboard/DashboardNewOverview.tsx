@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerSpvs } from "@/hooks/useSpvData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
+import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
 function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any }) {
