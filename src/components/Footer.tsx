@@ -60,7 +60,7 @@ const Footer = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => vo
             {isDark ? "Light Mode" : "Dark Mode"}
           </button>
         </div>
-        <div className="text-[11px] text-muted-foreground/30 text-center mt-6 leading-relaxed max-w-[600px] mx-auto">
+        <div className="text-[11px] text-muted-foreground/30 mt-4 leading-relaxed max-w-[500px]">
           Investment products involve risk. Past performance does not guarantee future results. Bakua Finance is not a licensed broker-dealer.
         </div>
       </div>
