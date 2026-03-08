@@ -37,7 +37,7 @@ function formatCapitalTarget(raw: string): string {
         { label: "Disbursed", value: `${disbursedCount}/${totalMilestones}`, sub: spv.total_disbursed ? `${spv.total_disbursed.toLocaleString()} ${spv.currency}` : "—", icon: ArrowRight, color: "text-amber-600" },
       ]
     : [
-        { label: "Total Capital Target", value: capitalTarget || "—", sub: "As submitted", icon: DollarSign, color: "text-primary" },
+        { label: "Total Capital Target", value: formatCapitalTarget(capitalTarget), sub: "As submitted", icon: DollarSign, color: "text-primary" },
         { label: "Funded", value: "—", sub: "Awaiting SPV setup", icon: TrendingUp, color: "text-muted-foreground" },
         { label: "Total Investors", value: "0", sub: "No investors yet", icon: Users, color: "text-muted-foreground" },
         { label: "Disbursed", value: "—", sub: "Awaiting funding", icon: ArrowRight, color: "text-muted-foreground" },
