@@ -165,7 +165,7 @@ const ProjectOwnerSignUp = () => {
         if (rpcError) console.error("complete_signup error:", rpcError);
 
         // 3. Seed demo SPV data
-        await seedDemoData(authData.user.id);
+        // Demo data seeding removed — new accounts start clean
 
         toast.success("Business account created!");
         navigate("/dashboard");
