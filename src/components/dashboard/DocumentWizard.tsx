@@ -304,6 +304,7 @@ interface DocumentWizardProps {
 export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
   const categories = getDocumentCategories(sector);
   // Steps: 0 = project description, 1..N = categories
+  const totalSteps = 1 + categories.length;
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
 
