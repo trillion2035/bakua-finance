@@ -66,7 +66,7 @@ const Marketplace = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="light-page min-h-screen bg-background text-foreground">
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border px-6 md:px-10 lg:px-16 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center">
