@@ -768,6 +768,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_signup: {
+        Args: {
+          _company_name?: string
+          _full_name: string
+          _role?: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
