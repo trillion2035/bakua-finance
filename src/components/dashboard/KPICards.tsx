@@ -25,7 +25,7 @@ export function KPICards() {
               </span>
               <Icon className={`h-4 w-4 ${accentColors[i]}`} />
             </div>
-            <div className={`font-display text-2xl font-extrabold tracking-tight ${accentColors[i]}`}>
+            <div className={`text-2xl font-extrabold tracking-tight ${accentColors[i]}`}>
               {kpi.value}
             </div>
             {kpi.subtext && (

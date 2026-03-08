@@ -120,7 +120,7 @@ function SummaryKPI({ label, value, subtext, icon: Icon }: { label: string; valu
         </div>
         <div className="space-y-0.5">
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg font-bold font-display text-foreground">{value}</p>
+          <p className="text-lg font-bold text-foreground">{value}</p>
           {subtext && <p className="text-[11px] text-muted-foreground">{subtext}</p>}
         </div>
       </CardContent>
@@ -213,7 +213,7 @@ export default function DashboardOracle() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-xl font-bold text-foreground">Oracle</h1>
+        <h1 className="text-xl font-bold text-foreground">Oracle</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Live IoT telemetry, satellite data &amp; on-chain trigger events for SPV-01
         </p>
@@ -280,7 +280,7 @@ export default function DashboardOracle() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-baseline gap-1">
-                      <span className={`text-2xl font-bold font-display ${statusColor[sensor.status]}`}>
+                      <span className={`text-2xl font-bold ${statusColor[sensor.status]}`}>
                         {sensor.current}
                       </span>
                       <span className="text-xs text-muted-foreground">{sensor.unit}</span>

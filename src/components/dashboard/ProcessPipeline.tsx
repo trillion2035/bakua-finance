@@ -55,7 +55,7 @@ function StepCard({ step, isLast }: { step: ProcessStep; isLast: boolean }) {
         >
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-display text-sm font-bold text-foreground">
+              <span className="text-sm font-bold text-foreground">
                 {step.title}
               </span>
               <span className={cn("text-[10px] font-semibold tracking-wider uppercase", statusColor(step.status))}>
@@ -103,7 +103,7 @@ export function ProcessPipeline() {
     <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-display text-base font-bold text-foreground tracking-tight">
+          <h3 className="text-base font-bold text-foreground tracking-tight">
             Process Status
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">

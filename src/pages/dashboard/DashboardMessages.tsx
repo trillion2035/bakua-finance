@@ -47,7 +47,7 @@ export default function DashboardMessages() {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to inbox
           </Button>
-          <h1 className="font-display text-xl font-bold text-foreground">
+          <h1 className="text-xl font-bold text-foreground">
             {selected.subject}
           </h1>
           <div className="flex items-center gap-3 mt-2">
@@ -80,7 +80,7 @@ export default function DashboardMessages() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-xl font-bold text-foreground">Messages</h1>
+          <h1 className="text-xl font-bold text-foreground">Messages</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {unreadCount > 0
               ? `${unreadCount} unread message${unreadCount > 1 ? "s" : ""}`
