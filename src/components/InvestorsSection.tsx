@@ -56,7 +56,7 @@ const InvestorsSection = () => (
               ))}
             </div>
             <button className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all">
-              Connect Wallet & Explore SPVs
+              Earn Now
             </button>
             <p className="text-[11px] text-muted-foreground/60 text-center mt-4 leading-relaxed">
               Investments are subject to the terms of each individual SPV smart contract.
