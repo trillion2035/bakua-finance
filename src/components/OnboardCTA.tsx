@@ -1,6 +1,9 @@
 import { Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void; onScrollTo: (id: string) => void }) => (
+const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void; onScrollTo: (id: string) => void }) => {
+  const navigate = useNavigate();
+  return (
   <section id="onboard" className="py-28 px-6 md:px-10 lg:px-16">
     <div className="max-w-[1100px] mx-auto">
       <span className="text-[11px] tracking-[4px] font-semibold text-primary font-display mb-4 block uppercase">Get Started</span>
@@ -60,15 +63,16 @@ const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) =
           ))}
         </div>
         <button
-onClick={() => onScrollTo("investors")}
+          onClick={() => navigate("/marketplace")}
           className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-primary-foreground text-primary text-[13px] font-semibold hover:-translate-y-0.5 transition-all"
         >
-          Learn More →
+          Earn Now →
         </button>
       </div>
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default OnboardCTA;
