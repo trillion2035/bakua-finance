@@ -16,7 +16,7 @@ function formatCapitalTarget(raw: string): string {
   return [prefix, new Intl.NumberFormat("en-US").format(num), suffix].filter(Boolean).join(" ");
 }
 
-  const { data: spvs, isLoading } = useOwnerSpvs();
+  export default function DashboardCapital() {
   const { user } = useAuth();
   const spv = spvs?.[0];
   const { data: milestones } = useSpvMilestones(spv?.id);
