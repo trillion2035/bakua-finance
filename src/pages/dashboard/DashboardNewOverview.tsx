@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerSpvs } from "@/hooks/useSpvData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
+import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
 function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any }) {
@@ -125,14 +126,7 @@ export default function DashboardNewOverview() {
       </div>
 
       <EmptyKPICards capitalTarget={capitalTarget} spv={spv} />
-      <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />
-      {spv && (
-        <div className="bg-card border border-border rounded-lg p-6">
-          <h3 className="text-base font-bold text-foreground tracking-tight mb-2">Active SPV</h3>
-          <p className="text-sm text-muted-foreground">{spv.spv_code} · {spv.name}</p>
-          <p className="text-xs text-muted-foreground mt-1">Status: {spv.status} · {spv.total_investors} investors · {spv.disbursed_percent}% disbursed</p>
-        </div>
-      )}
+      {spv ? <ProcessPipeline /> : <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />}
     </div>
   );
 }
