@@ -1,6 +1,9 @@
 import { Check } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void; onScrollTo: (id: string) => void }) => (
+const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void; onScrollTo: (id: string) => void }) => {
+  const navigate = useNavigate();
+  return (
   <section id="onboard" className="py-28 px-6 md:px-10 lg:px-16">
     <div className="max-w-[1100px] mx-auto">
       <span className="text-[11px] tracking-[4px] font-semibold text-primary font-display mb-4 block uppercase">Get Started</span>
