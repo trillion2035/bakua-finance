@@ -13,6 +13,56 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
+interface NotifItem { key: string; label: string; desc: string; defaultOn: boolean }
+
+function getNotificationItems(assetType: string): NotifItem[] {
+  const common: NotifItem[] = [
+    { key: "milestoneAlerts", label: "Milestone Disbursement Alerts", desc: "Get notified when oracle triggers are met and funds are released", defaultOn: true },
+    { key: "investorMessages", label: "Investor Messages", desc: "Notifications for new messages from investors", defaultOn: true },
+    { key: "weeklyReport", label: "Weekly Performance Report", desc: "Automated summary of key metrics", defaultOn: true },
+    { key: "marketingEmails", label: "Marketing & Updates", desc: "Platform news and events", defaultOn: false },
+  ];
+
+  const lower = assetType.toLowerCase();
+
+  if (lower.includes("energy") || lower.includes("solar")) {
+    return [
+      ...common.slice(0, 1),
+      { key: "sensorAlerts", label: "Energy Sensor Alerts", desc: "Alerts when panel output, irradiance, or battery levels breach thresholds", defaultOn: true },
+      ...common.slice(1, 3),
+      { key: "irradianceUpdates", label: "Irradiance & Output Updates", desc: "Notifications when new solar irradiance or generation data is processed", defaultOn: false },
+      common[3],
+    ];
+  }
+
+  if (lower.includes("agri") || lower.includes("coffee") || lower.includes("farm")) {
+    return [
+      ...common.slice(0, 1),
+      { key: "sensorAlerts", label: "IoT Sensor Alerts", desc: "Alerts when soil moisture, rainfall, or temperature breach thresholds", defaultOn: true },
+      ...common.slice(1, 3),
+      { key: "ndviUpdates", label: "NDVI Satellite Updates", desc: "Notifications when new satellite canopy data is processed", defaultOn: false },
+      common[3],
+    ];
+  }
+
+  if (lower.includes("real estate") || lower.includes("property")) {
+    return [
+      ...common.slice(0, 1),
+      { key: "sensorAlerts", label: "Property Sensor Alerts", desc: "Alerts for occupancy, utility metering, or environmental sensors", defaultOn: true },
+      ...common.slice(1, 3),
+      { key: "valuationUpdates", label: "Valuation Updates", desc: "Notifications when property appraisals or rent roll data is updated", defaultOn: false },
+      common[3],
+    ];
+  }
+
+  // Generic fallback
+  return [
+    ...common.slice(0, 1),
+    { key: "sensorAlerts", label: "IoT Sensor Alerts", desc: "Alerts when sensor readings breach thresholds", defaultOn: true },
+    ...common.slice(1),
+  ];
+}
+
 export default function DashboardSettings() {
   const { toast } = useToast();
   const { user, profile, signOut, refreshProfile } = useAuth();
