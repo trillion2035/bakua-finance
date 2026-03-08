@@ -173,6 +173,39 @@ export default function DashboardSettings() {
                   <LogOut className="h-3.5 w-3.5" /> Log Out
                 </Button>
               </div>
+              <Separator />
+              <div className="py-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-destructive">Delete Account</p>
+                    <p className="text-xs text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                  </div>
+                  {!showDeleteConfirm && (
+                    <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)}>
+                      <Trash2 className="h-3.5 w-3.5" /> Delete Account
+                    </Button>
+                  )}
+                </div>
+                {showDeleteConfirm && (
+                  <div className="mt-3 p-3 bg-destructive/5 border border-destructive/20 rounded-lg space-y-3">
+                    <p className="text-xs text-muted-foreground">Type <span className="font-mono font-bold text-foreground">DELETE</span> to confirm account deletion.</p>
+                    <Input
+                      value={deleteText}
+                      onChange={(e) => setDeleteText(e.target.value)}
+                      placeholder="Type DELETE"
+                      className="text-sm max-w-[200px]"
+                    />
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="destructive" disabled={deleteText !== "DELETE" || deleting} onClick={handleDeleteAccount}>
+                        {deleting ? "Deleting..." : "Permanently Delete"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { setShowDeleteConfirm(false); setDeleteText(""); }}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
