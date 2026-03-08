@@ -8,28 +8,20 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
       </div>
 
       <div className="relative z-10 max-w-[1200px] mx-auto">
-        <div className="max-w-[720px]">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/[0.06] text-xs font-medium text-primary tracking-wide mb-7 animate-fade-up">
-            <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse-dot" />
-            ON-CHAIN INFRASTRUCTURE FINANCE
-          </div>
-
+        <div className="flex flex-col items-center text-center">
           {/* Headline */}
-          <h1 className="font-display text-[clamp(44px,6vw,76px)] font-extrabold leading-[1.02] tracking-[-2px] text-foreground mb-6 animate-fade-up" style={{ animationDelay: "0.1s" }}>
-            Infrastructure Capital
-            <br />
-            for Emerging Markets,{" "}
+          <h1 className="font-display text-[clamp(44px,6vw,76px)] font-extrabold leading-[1.02] tracking-[-2px] text-foreground mb-6 animate-fade-up">
+            Infrastructure Capital,{" "}
             <span className="text-primary">On-Chain.</span>
           </h1>
 
           {/* Subtext */}
-          <p className="text-lg leading-relaxed text-muted-foreground font-light max-w-[520px] mb-11 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+          <p className="text-lg leading-relaxed text-muted-foreground font-light max-w-[520px] mb-11 animate-fade-up" style={{ animationDelay: "0.1s" }}>
             Bakua Finance turns infrastructure projects into bankable, on-chain investment vehicles. We standardize, verify, and fund real assets — energy, agriculture, real estate, mobility, and more — connecting project owners across emerging markets with global DeFi capital.
           </p>
 
           {/* CTAs */}
-          <div className="flex gap-3.5 flex-wrap mb-16 animate-fade-up" style={{ animationDelay: "0.3s" }}>
+          <div className="flex gap-3.5 flex-wrap justify-center mb-16 animate-fade-up" style={{ animationDelay: "0.2s" }}>
             <button
               onClick={() => onOpenModal("register")}
               className="px-8 py-4 rounded-xl text-[15px] font-semibold bg-foreground text-background border-2 border-foreground hover:bg-primary hover:border-primary hover:-translate-y-0.5 hover:shadow-[0_8px_24px_hsl(var(--primary)/0.3)] transition-all duration-250 inline-flex items-center gap-2"
