@@ -10,12 +10,13 @@ import Marketplace from "./pages/Marketplace";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
-import DashboardPlaceholder from "./pages/dashboard/DashboardPlaceholder";
 import DashboardDocuments from "./pages/dashboard/DashboardDocuments";
 import DashboardSPV from "./pages/dashboard/DashboardSPV";
 import DashboardCapital from "./pages/dashboard/DashboardCapital";
 import DashboardPerformance from "./pages/dashboard/DashboardPerformance";
 import DashboardOracle from "./pages/dashboard/DashboardOracle";
+import DashboardMessages from "./pages/dashboard/DashboardMessages";
+import DashboardSettings from "./pages/dashboard/DashboardSettings";
 
 const queryClient = new QueryClient();
 
@@ -37,8 +38,8 @@ const App = () => (
             <Route path="capital" element={<DashboardCapital />} />
             <Route path="performance" element={<DashboardPerformance />} />
             <Route path="oracle" element={<DashboardOracle />} />
-            <Route path="messages" element={<DashboardPlaceholder />} />
-            <Route path="settings" element={<DashboardPlaceholder />} />
+            <Route path="messages" element={<DashboardMessages />} />
+            <Route path="settings" element={<DashboardSettings />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
