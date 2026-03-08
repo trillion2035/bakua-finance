@@ -1,9 +1,11 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { Outlet } from "react-router-dom";
-import { mockCompany } from "@/data/mockDashboardData";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardLayout() {
+  const { profile } = useAuth();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full light-page">
@@ -21,7 +23,7 @@ export default function DashboardLayout() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green" />
                 <span className="text-xs text-muted-foreground hidden sm:inline">
-                  {mockCompany.contact}
+                  {profile?.full_name || "Loading..."}
                 </span>
               </div>
             </div>
