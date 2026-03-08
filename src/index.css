@@ -98,6 +98,10 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Space Grotesk', sans-serif;
   }
+  .light-page h1, .light-page h2, .light-page h3,
+  .light-page h4, .light-page h5, .light-page h6 {
+    font-family: 'DM Sans', sans-serif;
+  }
 }
 
 @layer utilities {
