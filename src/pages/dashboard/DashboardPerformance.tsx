@@ -17,9 +17,9 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   mockHarvestData,
-  mockFinancials,
   performanceSummary,
 } from "@/data/mockPerformanceData";
+import { mockMonthlyFinancials } from "@/data/mockOracleData";
 
 const harvestConfig: ChartConfig = {
   cherryIntake: { label: "Cherry (kg)", color: "hsl(var(--primary))" },
@@ -61,7 +61,7 @@ export default function DashboardPerformance() {
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <SummaryKPI icon={Leaf} label="Cherry Intake" value={performanceSummary.totalCherryIntake} subtext={`${performanceSummary.cherryPercent}% of ${performanceSummary.cherryTarget} target`} />
-        <SummaryKPI icon={DollarSign} label="Cumulative Revenue" value={performanceSummary.cumulativeRevenue} subtext="Q4 2024 + Q1 2025" />
+        <SummaryKPI icon={DollarSign} label="Cumulative Revenue" value={performanceSummary.cumulativeRevenue} subtext="Nov 2024 – Mar 2025" />
         <SummaryKPI icon={TrendingUp} label="Projected IRR" value={performanceSummary.projectedIRR} subtext="vs 19.2% target" />
         <SummaryKPI icon={Activity} label="Next Repayment" value={performanceSummary.nextRepaymentAmount} subtext={performanceSummary.nextRepayment} />
       </div>
@@ -157,18 +157,21 @@ export default function DashboardPerformance() {
           </Card>
         </TabsContent>
 
-        {/* Financial Tab */}
+        {/* Financial Tab — now monthly with collections */}
         <TabsContent value="financial" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Revenue vs Operating Costs</CardTitle>
+              <CardTitle className="text-sm">Monthly Revenue vs Operating Costs</CardTitle>
+              <CardDescription className="text-xs">
+                Revenue includes all confirmed payments. Collection rate shows % of invoiced revenue received.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={revenueConfig} className="h-56 w-full aspect-auto">
-                <BarChart data={mockFinancials} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <BarChart data={mockMonthlyFinancials} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" />
-                  <XAxis dataKey="quarter" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000000).toFixed(1)}M`} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="operatingCost" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} />
@@ -179,27 +182,33 @@ export default function DashboardPerformance() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Quarterly Detail</CardTitle>
+              <CardTitle className="text-sm">Monthly Detail</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-xs">Quarter</TableHead>
+                    <TableHead className="text-xs">Month</TableHead>
                     <TableHead className="text-xs text-right">Revenue (FCFA)</TableHead>
+                    <TableHead className="text-xs text-right">Collections</TableHead>
+                    <TableHead className="text-xs text-right">Coll. Rate</TableHead>
+                    <TableHead className="text-xs text-right">Txns</TableHead>
                     <TableHead className="text-xs text-right">Costs (FCFA)</TableHead>
                     <TableHead className="text-xs text-right">Net Margin</TableHead>
-                    <TableHead className="text-xs text-right">Loan Repayment</TableHead>
+                    <TableHead className="text-xs text-right">Repayment</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockFinancials.map((row) => (
-                    <TableRow key={row.quarter}>
-                      <TableCell className="text-xs font-medium">{row.quarter}</TableCell>
+                  {mockMonthlyFinancials.map((row) => (
+                    <TableRow key={row.month}>
+                      <TableCell className="text-xs font-medium">{row.month}</TableCell>
                       <TableCell className="text-xs text-right">{row.revenue.toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-right">{row.collections.toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-right">{row.collectionRate}%</TableCell>
+                      <TableCell className="text-xs text-right">{row.txCount}</TableCell>
                       <TableCell className="text-xs text-right">{row.operatingCost.toLocaleString()}</TableCell>
                       <TableCell className="text-xs text-right">{row.netMargin}%</TableCell>
-                      <TableCell className="text-xs text-right">{row.loanRepayment.toLocaleString()}</TableCell>
+                      <TableCell className="text-xs text-right">{row.loanRepayment > 0 ? row.loanRepayment.toLocaleString() : "—"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
