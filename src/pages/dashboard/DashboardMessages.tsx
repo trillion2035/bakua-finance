@@ -47,7 +47,7 @@ export default function DashboardMessages() {
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back to inbox
           </Button>
-          <h1 className="font-display text-xl font-bold text-foreground">
+          <h1 className="text-xl font-bold text-foreground">
             {selected.subject}
           </h1>
           <div className="flex items-center gap-3 mt-2">
