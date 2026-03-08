@@ -55,10 +55,7 @@ export default function DashboardSettings() {
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteText !== "DELETE") return;
-    toast({ title: "Coming soon", description: "Account deletion is not yet available. Please contact support." });
-    setShowDeleteConfirm(false);
-    setDeleteText("");
+    // Not yet functional
   };
 
   return (
