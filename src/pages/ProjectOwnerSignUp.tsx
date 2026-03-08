@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import bakuaLogo from "@/assets/bakua-logo.png";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { saveUserProfile } from "@/data/userContext";
 
 const countries = [
   "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria",
