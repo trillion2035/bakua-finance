@@ -8,7 +8,7 @@ import ProcessTimeline from "@/components/ProcessTimeline";
 import SPVMarketplace from "@/components/SPVMarketplace";
 import InvestorsSection from "@/components/InvestorsSection";
 import OnboardCTA from "@/components/OnboardCTA";
-import SocialProof from "@/components/SocialProof";
+
 import Footer from "@/components/Footer";
 import { toast } from "sonner";
 
