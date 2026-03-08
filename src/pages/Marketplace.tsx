@@ -178,7 +178,7 @@ const Marketplace = () => {
                     className="w-full py-3 rounded-xl bg-secondary text-foreground text-[13px] font-semibold border border-border hover:border-primary/40 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     <Wallet className="w-3.5 h-3.5" />
-                    {connectingWallet ? "Connecting..." : "Connect Wallet to Invest"}
+                    {connectingWallet ? "Connecting..." : "Connect Wallet"}
                   </button>
                 )}
               </div>
