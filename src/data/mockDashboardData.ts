@@ -94,7 +94,7 @@ export const mockSPV: SPVSummary = {
 export const mockKPIs: KPIData[] = [
   { label: "Total Capital Target", value: "47M FCFA", subtext: "~$78,300 USD" },
   { label: "Funded", value: "100%", subtext: "Fully funded" },
-  { label: "Credit Score", value: "HS-88", subtext: "Standard Grade" },
+  { label: "Asset Score™", value: "AS-88", subtext: "Standard Grade" },
   { label: "IRR Target", value: "19.2%", subtext: "36-month term" },
 ];
 
