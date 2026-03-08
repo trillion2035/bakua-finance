@@ -72,6 +72,14 @@
     --ring: 220 76% 52%;
     --green: 160 84% 39%;
     --surface: 220 14% 96%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 220 76% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 220 76% 52%;
     color: hsl(222 47% 11%);
     background-color: hsl(0 0% 100%);
   }
