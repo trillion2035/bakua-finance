@@ -251,7 +251,11 @@ const ProjectOwnerSignUp = () => {
             </div>
             <div>
               <label className="text-[12px] font-medium text-muted-foreground mb-1.5 block">Country</label>
-              <select required value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} className={selectClasses}>
+              <select required value={form.country} onChange={(e) => {
+                const country = e.target.value;
+                const { symbol } = getCurrencyForCountry(country);
+                setForm({ ...form, country, capitalTarget: symbol });
+              }} className={selectClasses}>
                 <option value="">Select your country</option>
                 {countries.map((c) => (<option key={c} value={c}>{c}</option>))}
               </select>
