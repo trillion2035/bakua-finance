@@ -211,44 +211,43 @@ export default function DashboardDocuments() {
         </div>
       </div>
 
-      {/* Source tabs + Category filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-          <TabsList>
-            <TabsTrigger value="all">All Documents</TabsTrigger>
-            <TabsTrigger value="business">Submitted by You</TabsTrigger>
-            <TabsTrigger value="platform">Platform-Generated</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Source tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <TabsList>
+          <TabsTrigger value="all">All Documents</TabsTrigger>
+          <TabsTrigger value="business">Submitted by You</TabsTrigger>
+          <TabsTrigger value="platform">Generated</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+      {/* Category filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+        <button
+          onClick={() => setFilterCategory("all")}
+          className={cn(
+            "text-xs px-2.5 py-1 rounded-full border transition-colors",
+            filterCategory === "all"
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-background text-muted-foreground border-border hover:border-primary/40"
+          )}
+        >
+          All
+        </button>
+        {categories.filter((c) => c !== "platform").map((cat) => (
           <button
-            onClick={() => setFilterCategory("all")}
+            key={cat}
+            onClick={() => setFilterCategory(cat)}
             className={cn(
               "text-xs px-2.5 py-1 rounded-full border transition-colors",
-              filterCategory === "all"
+              filterCategory === cat
                 ? "bg-primary text-primary-foreground border-primary"
                 : "bg-background text-muted-foreground border-border hover:border-primary/40"
             )}
           >
-            All
+            {categoryLabels[cat]}
           </button>
-          {categories.filter((c) => c !== "platform").map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setFilterCategory(cat)}
-              className={cn(
-                "text-xs px-2.5 py-1 rounded-full border transition-colors",
-                filterCategory === cat
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border hover:border-primary/40"
-              )}
-            >
-              {categoryLabels[cat]}
-            </button>
-          ))}
-        </div>
+        ))}
       </div>
 
       {/* Document list grouped by category */}
