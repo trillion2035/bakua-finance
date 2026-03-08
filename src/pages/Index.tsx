@@ -13,17 +13,18 @@ import Footer from "@/components/Footer";
 import { toast } from "sonner";
 
 const Index = () => {
+  const navigate = useNavigate();
   const scrollTo = useCallback((id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   const openModal = useCallback((type: string) => {
     if (type === "register") {
-      toast.info("Account registration coming soon. Contact us at hello@bakua.finance");
+      navigate("/signup");
     } else {
-      toast.info("Sign in coming soon. Contact us at hello@bakua.finance");
+      navigate("/signin");
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="bg-background text-foreground overflow-x-hidden">

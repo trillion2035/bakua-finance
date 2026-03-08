@@ -72,6 +72,7 @@ const OnboardCTA = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) =
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default OnboardCTA;
