@@ -8,6 +8,7 @@ import ProjectOwnerSignUp from "./pages/ProjectOwnerSignUp";
 import ProjectOwnerSignIn from "./pages/ProjectOwnerSignIn";
 import Marketplace from "./pages/Marketplace";
 import InvestorDashboard from "./pages/InvestorDashboard";
+import InvestorSPVDetail from "./pages/InvestorSPVDetail";
 import NotFound from "./pages/NotFound";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/signin" element={<ProjectOwnerSignIn />} />
           <Route path="/earn" element={<Marketplace />} />
           <Route path="/investor" element={<InvestorDashboard />} />
+          <Route path="/investor/spv/:id" element={<InvestorSPVDetail />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardNewOverview />} />
             <Route path="documents" element={<DashboardDocuments />} />
