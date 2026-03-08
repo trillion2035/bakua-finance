@@ -33,7 +33,7 @@ const App = () => (
           <Route path="/signin" element={<ProjectOwnerSignIn />} />
           <Route path="/earn" element={<Marketplace />} />
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<DashboardOverview />} />
+            <Route index element={<DashboardNewOverview />} />
             <Route path="documents" element={<DashboardDocuments />} />
             <Route path="spv" element={<DashboardSPV />} />
             <Route path="capital" element={<DashboardCapital />} />
@@ -43,7 +43,7 @@ const App = () => (
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
           <Route path="/dashboard2" element={<DashboardLayout />}>
-            <Route index element={<DashboardNewOverview />} />
+            <Route index element={<DashboardOverview />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
