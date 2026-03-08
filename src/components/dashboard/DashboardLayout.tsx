@@ -6,7 +6,7 @@ import { mockCompany } from "@/data/mockDashboardData";
 export default function DashboardLayout() {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full light-page">
         <DashboardSidebar />
 
         <div className="flex-1 flex flex-col min-w-0">
