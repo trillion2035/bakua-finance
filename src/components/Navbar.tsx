@@ -1,14 +1,24 @@
 import { useState, useEffect } from "react";
 import bakuaLogoWhite from "@/assets/bakua-logo-white.png";
+import bakuaLogoDark from "@/assets/bakua-logo.png";
 
 const Navbar = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void; onScrollTo: (id: string) => void }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isLight, setIsLight] = useState(() => document.documentElement.classList.contains("light-page"));
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsLight(document.documentElement.classList.contains("light-page"));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
   }, []);
 
   const links = [
@@ -20,7 +30,7 @@ const Navbar = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => vo
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 px-6 md:px-10 lg:px-16 py-4 flex items-center justify-between transition-all duration-300 ${scrolled ? "bg-background/95 backdrop-blur-xl border-b border-border" : "bg-transparent"}`}>
       <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="flex items-center">
-        <img src={bakuaLogoWhite} alt="Bakua Finance" className="h-7 md:h-8" />
+        <img src={isLight ? bakuaLogoDark : bakuaLogoWhite} alt="Bakua Finance" className="h-7 md:h-8" />
       </a>
 
       <div className="hidden lg:flex items-center gap-8">
