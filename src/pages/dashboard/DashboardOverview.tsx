@@ -1,6 +1,6 @@
 import { KPICards } from "@/components/dashboard/KPICards";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
-import { mockCompany, mockSPV } from "@/data/mockDashboardData";
+import { mockCompany } from "@/data/mockDashboardData";
 
 export default function DashboardOverview() {
   return (
