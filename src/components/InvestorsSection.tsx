@@ -71,4 +71,6 @@ const InvestorsSection = () => {
   </section>
 );
 
+};
+
 export default InvestorsSection;
