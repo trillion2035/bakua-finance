@@ -113,7 +113,7 @@ export function useUserAnalysisReports() {
         .order("created_at", { ascending: false });
       
       if (error) throw error;
-      return data as AnalysisReport[];
+      return data as unknown as AnalysisReport[];
     },
     enabled: !!user,
   });
