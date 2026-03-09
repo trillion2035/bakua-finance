@@ -8,7 +8,9 @@ const benefits = [
   { icon: Lock, title: "Smart Contract Protections", desc: "Automated waterfalls, reserve accounts, and liquidation triggers built into every SPV." },
 ];
 
-const InvestorsSection = () => (
+const InvestorsSection = () => {
+  const navigate = useNavigate();
+  return (
   <section id="investors" className="py-28 px-6 md:px-10 lg:px-16">
     <div className="max-w-[1100px] mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
