@@ -232,7 +232,7 @@ function DeployResultCard({ result, onVerify, verifying, verified }: { result: a
 }
 
 /* ── Network Deploy Card (per-network preflight + deploy) ── */
-function NetworkDeployCard({ label, network, result, preflightResult, preflightLoading, onPreflightCheck, onPreflightFix, onDeploy, deploying, deployingAny }: {
+function NetworkDeployCard({ label, network, result, preflightResult, preflightLoading, onPreflightCheck, onPreflightFix, onDeploy, deploying, deployingAny, onVerify, verifying, verified }: {
   label: string;
   network: "testnet" | "mainnet";
   result: any;
@@ -243,10 +243,13 @@ function NetworkDeployCard({ label, network, result, preflightResult, preflightL
   onDeploy: () => void;
   deploying: boolean;
   deployingAny: boolean;
+  onVerify?: () => void;
+  verifying?: boolean;
+  verified?: boolean;
 }) {
   // Already deployed
   if (result) {
-    return <DeployResultCard result={result} />;
+    return <DeployResultCard result={result} onVerify={onVerify} verifying={verifying} verified={verified} />;
   }
 
   return (
