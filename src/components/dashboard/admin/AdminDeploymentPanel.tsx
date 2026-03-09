@@ -384,6 +384,7 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const { data: signatures } = useTermSheetSignatures(submission.id);
   const approveDeployment = useApproveDeployment();
   const completeStage = useCompleteStage();
+  const launchSCDev = useLaunchSCDevelopment();
 
   const isDeploymentApproved = !!(submission as any).deployment_approved;
   const isDeploymentComplete = useIsDeploymentComplete(stages);
