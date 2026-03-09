@@ -177,7 +177,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 /* ── Deploy Result Card ── */
-function DeployResultCard({ result }: { result: any }) {
+function DeployResultCard({ result, onVerify, verifying, verified }: { result: any; onVerify?: () => void; verifying?: boolean; verified?: boolean }) {
   return (
     <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
       <div className="flex items-center gap-2">
@@ -196,7 +196,7 @@ function DeployResultCard({ result }: { result: any }) {
           </div>
         )}
       </div>
-      <div className="flex gap-2 pt-1">
+      <div className="flex gap-2 pt-1 flex-wrap">
         {result.explorer_url && (
           <a href={result.explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
             <ExternalLink className="h-3 w-3" /> View Contract
@@ -208,6 +208,25 @@ function DeployResultCard({ result }: { result: any }) {
           </a>
         )}
       </div>
+      {/* Verify & Publish */}
+      {onVerify && (
+        <div className="pt-2 border-t border-emerald-200">
+          {verified ? (
+            <div className="flex items-center gap-2 text-xs text-emerald-700">
+              <CheckCircle className="h-3.5 w-3.5" />
+              <span className="font-medium">Source Code Verified & Published</span>
+              <a href={`${result.explorer_url}#code`} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 ml-1">
+                <ExternalLink className="h-3 w-3 inline" /> View
+              </a>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" onClick={onVerify} disabled={verifying} className="gap-2 text-xs">
+              {verifying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
+              {verifying ? "Verifying..." : "Verify & Publish Source Code"}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
