@@ -586,7 +586,15 @@ Include realistic parameter values based on the project data.`;
         });
       }
 
-      const devPlanPrompt = `You are a senior Solidity/blockchain engineer. Based on the following Smart Contract Technical Specification document, create a detailed development plan with concrete implementation steps.
+      const devPlanPrompt = `You are a senior Solidity/blockchain engineer and technical architect. You have been given a Smart Contract Technical Specification document. Your job is to:
+
+1. CRITICALLY EVALUATE the specification:
+   - Check for logical inconsistencies, missing edge cases, security gaps, or unrealistic requirements
+   - Identify any ambiguous or under-specified areas
+   - Note any best-practice violations or anti-patterns
+   - If you find issues, incorporate corrections into your plan rather than blindly following the spec
+
+2. CREATE A DETAILED DEVELOPMENT PLAN with concrete, executable implementation steps
 
 SMART CONTRACT SPECIFICATION:
 ${specContent.substring(0, 15000)}
@@ -597,6 +605,8 @@ PROJECT CONTEXT:
 - Industry: ${ctx.industry}
 - Network: Base (Ethereum L2)
 - Facility Amount: ${ctx.facilityAmount}
+
+IMPORTANT: Each step should be a discrete, independently executable unit of work that produces a tangible output (code, configuration, test results, documentation, or deployment artifacts). The final step should be comprehensive testing and Base mainnet launch.
 
 Generate a structured development plan in JSON format using tool calling.`;
 
