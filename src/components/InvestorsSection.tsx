@@ -58,7 +58,7 @@ const InvestorsSection = () => {
                 </div>
               ))}
             </div>
-            <button className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all">
+            <button onClick={() => navigate("/earn")} className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all">
               Earn Now
             </button>
             <p className="text-[11px] text-muted-foreground/60 text-center mt-4 leading-relaxed">
