@@ -216,7 +216,7 @@ serve(async (req) => {
 PREVIOUS ATTEMPT FAILED with these errors:
 ${previousErrors}
 
-FIX all compilation errors. The contract must compile with solc ^0.8.20.
+FIX all compilation errors. The contract must compile with solc 0.8.28. Use EXACTLY: pragma solidity 0.8.28;
 
 DEVELOPMENT WORK:
 ${allStepCode.substring(0, 20000)}
