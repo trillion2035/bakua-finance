@@ -719,6 +719,7 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const executeStep = useExecuteStep();
   const deployContract = useDeployContract();
   const preflightCheck = usePreflightCheck();
+  const verifyContract = useVerifyContract();
   const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
   const [testnetResult, setTestnetResult] = useState<any>(null);
   const [mainnetResult, setMainnetResult] = useState<any>(null);
