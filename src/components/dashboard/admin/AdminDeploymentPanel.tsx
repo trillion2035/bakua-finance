@@ -810,7 +810,20 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     );
   };
 
-  const isDeploymentApproved = !!(submission as any).deployment_approved;
+  const handleVerifyContract = (network: "testnet" | "mainnet", contractAddress: string) => {
+    setVerifyingNetwork(network);
+    verifyContract.mutate(
+      { submissionId: submission.id, network, contractAddress },
+      {
+        onSuccess: () => {
+          setVerifiedNetworks(prev => new Set([...prev, network]));
+          setVerifyingNetwork(null);
+        },
+        onError: () => setVerifyingNetwork(null),
+      }
+    );
+  };
+
   const isDeploymentComplete = useIsDeploymentComplete(stages);
   const isListingComplete = useIsListingComplete(listingStages);
   const hasSignatures = signatures && signatures.length > 0;
