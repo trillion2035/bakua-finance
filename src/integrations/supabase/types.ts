@@ -99,6 +99,9 @@ export type Database = {
       }
       document_submissions: {
         Row: {
+          deployment_approved: boolean | null
+          deployment_approved_at: string | null
+          deployment_approved_by: string | null
           id: string
           kyc_signatories: Json | null
           project_description: string | null
@@ -112,6 +115,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          deployment_approved?: boolean | null
+          deployment_approved_at?: string | null
+          deployment_approved_by?: string | null
           id?: string
           kyc_signatories?: Json | null
           project_description?: string | null
@@ -125,6 +131,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          deployment_approved?: boolean | null
+          deployment_approved_at?: string | null
+          deployment_approved_by?: string | null
           id?: string
           kyc_signatories?: Json | null
           project_description?: string | null
@@ -143,6 +152,65 @@ export type Database = {
             columns: ["spv_id"]
             isOneToOne: false
             referencedRelation: "spvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_documents: {
+        Row: {
+          content: string | null
+          created_at: string
+          document_name: string
+          document_type: string
+          file_url: string | null
+          id: string
+          signature_data: string | null
+          signed_at: string | null
+          signed_by: string | null
+          stage_key: string
+          status: string
+          submission_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          document_name: string
+          document_type: string
+          file_url?: string | null
+          id?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          stage_key: string
+          status?: string
+          submission_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          document_name?: string
+          document_type?: string
+          file_url?: string | null
+          id?: string
+          signature_data?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          stage_key?: string
+          status?: string
+          submission_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "document_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -587,6 +655,62 @@ export type Database = {
             columns: ["spv_id"]
             isOneToOne: false
             referencedRelation: "spvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spv_deployment_stages: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          id: string
+          stage_key: string
+          stage_label: string
+          stage_order: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["deployment_stage_status"]
+          submission_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          stage_key: string
+          stage_label: string
+          stage_order: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["deployment_stage_status"]
+          submission_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          stage_key?: string
+          stage_label?: string
+          stage_order?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["deployment_stage_status"]
+          submission_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spv_deployment_stages_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "document_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -1066,6 +1190,7 @@ export type Database = {
         | "trade_finance"
         | "infrastructure"
         | "renewable_energy"
+      deployment_stage_status: "pending" | "in_progress" | "completed"
       investment_status: "active" | "distributing" | "matured"
       milestone_status: "pending" | "disbursed"
       oracle_event_status: "confirmed" | "pending" | "failed"
@@ -1221,6 +1346,7 @@ export const Constants = {
         "infrastructure",
         "renewable_energy",
       ],
+      deployment_stage_status: ["pending", "in_progress", "completed"],
       investment_status: ["active", "distributing", "matured"],
       milestone_status: ["pending", "disbursed"],
       oracle_event_status: ["confirmed", "pending", "failed"],
