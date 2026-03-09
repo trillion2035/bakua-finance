@@ -49,6 +49,7 @@ const AppRoutes = () => (
         <Route path="oracle" element={<DashboardOracle />} />
         <Route path="messages" element={<DashboardMessages />} />
         <Route path="settings" element={<DashboardSettings />} />
+        <Route path="admin" element={<DashboardAdmin />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
