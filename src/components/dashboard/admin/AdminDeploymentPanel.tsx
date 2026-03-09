@@ -744,6 +744,20 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     );
   };
 
+  const handleMainnetPreflightCheck = () => {
+    preflightCheck.mutate(
+      { submissionId: submission.id, network: "mainnet", mode: "check" },
+      { onSuccess: (data) => setMainnetPreflightResult(data) }
+    );
+  };
+
+  const handleMainnetPreflightFix = () => {
+    preflightCheck.mutate(
+      { submissionId: submission.id, network: "mainnet", mode: "fix" },
+      { onSuccess: (data) => setMainnetPreflightResult(data) }
+    );
+  };
+
   const isDeploymentApproved = !!(submission as any).deployment_approved;
   const isDeploymentComplete = useIsDeploymentComplete(stages);
   const isListingComplete = useIsListingComplete(listingStages);
