@@ -144,26 +144,33 @@ export function useAllSubmissionsWithAnalysis() {
   return useQuery({
     queryKey: ["all-submissions-analysis"],
     queryFn: async () => {
+      // Fetch submissions
       const { data: submissions, error } = await supabase
         .from("document_submissions")
-        .select(`
-          *,
-          profiles:user_id (full_name, company_name)
-        `)
+        .select("*")
         .order("submitted_at", { ascending: false });
       
       if (error) throw error;
+      if (!submissions || submissions.length === 0) return [];
+
+      // Fetch profiles for these users
+      const userIds = [...new Set(submissions.map(s => s.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, company_name")
+        .in("user_id", userIds);
 
       // Fetch analysis reports for these submissions
-      const submissionIds = submissions?.map(s => s.id) || [];
+      const submissionIds = submissions.map(s => s.id);
       const { data: reports } = await supabase
         .from("asset_analysis_reports")
         .select("*")
         .in("submission_id", submissionIds);
 
       // Merge data
-      return submissions?.map(sub => ({
+      return submissions.map(sub => ({
         ...sub,
+        profiles: profiles?.find(p => p.user_id === sub.user_id) || null,
         analysis_report: reports?.find(r => r.submission_id === sub.id) || null,
       }));
     },
