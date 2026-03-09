@@ -241,27 +241,47 @@ Output the complete Solidity source code only.`;
     // Deploy the contract
     const factory = new ethers.ContractFactory(abi, bytecode, wallet);
 
-    // Determine constructor params - try SPV name and admin address
+    // Dynamically build constructor arguments based on ABI
+    const constructorAbi = abi.find((item: any) => item.type === "constructor");
+    const constructorArgs: any[] = [];
+
+    if (constructorAbi && constructorAbi.inputs) {
+      const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+      
+      for (const input of constructorAbi.inputs) {
+        const name = (input.name || "").toLowerCase();
+        const type = input.type;
+
+        if (type === "string") {
+          constructorArgs.push(spvName);
+        } else if (type === "address") {
+          if (name.includes("usdc") || name.includes("token") || name.includes("erc20")) {
+            constructorArgs.push(USDC_BASE_SEPOLIA);
+          } else if (name.includes("borrower")) {
+            constructorArgs.push(deployerAddress); // placeholder
+          } else if (name.includes("manager")) {
+            constructorArgs.push(deployerAddress);
+          } else {
+            constructorArgs.push(deployerAddress); // admin or unknown address
+          }
+        } else if (type.startsWith("uint")) {
+          constructorArgs.push(0);
+        } else if (type === "bool") {
+          constructorArgs.push(true);
+        } else {
+          constructorArgs.push(ethers.ZeroAddress);
+        }
+      }
+    }
+
+    console.log(`Constructor args (${constructorArgs.length}):`, JSON.stringify(constructorArgs));
+
     let deployTx: any;
     try {
-      // Try deploying with (string name, address admin) constructor
-      const constructorAbi = abi.find((item: any) => item.type === "constructor");
-      if (constructorAbi && constructorAbi.inputs?.length >= 2) {
-        deployTx = await factory.deploy(spvName, deployerAddress);
-      } else if (constructorAbi && constructorAbi.inputs?.length === 1) {
-        // Single param - likely admin address or name
-        const paramType = constructorAbi.inputs[0].type;
-        deployTx = paramType === "address" ? await factory.deploy(deployerAddress) : await factory.deploy(spvName);
-      } else {
-        deployTx = await factory.deploy();
-      }
+      deployTx = await factory.deploy(...constructorArgs);
     } catch (deployError: any) {
-      console.error("Deploy with params failed, trying no-args:", deployError.message);
-      try {
-        deployTx = await factory.deploy();
-      } catch (e2: any) {
-        throw new Error(`Deployment failed: ${e2.message}`);
-      }
+      console.error("Deploy failed:", deployError.message);
+      throw new Error(`Deployment failed: ${deployError.message}`);
     }
 
     console.log(`Transaction sent: ${deployTx.deploymentTransaction()?.hash}`);
