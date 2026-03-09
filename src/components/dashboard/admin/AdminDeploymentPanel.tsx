@@ -490,6 +490,17 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const approveDeployment = useApproveDeployment();
   const completeStage = useCompleteStage();
   const launchSCDev = useLaunchSCDevelopment();
+  const executeStep = useExecuteStep();
+  const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
+
+  const handleExecuteStep = (phaseNumber: number, stepNumber: number) => {
+    const ref = `${phaseNumber}.${stepNumber}`;
+    setExecutingStepRef(ref);
+    executeStep.mutate(
+      { submissionId: submission.id, phaseNumber, stepNumber },
+      { onSettled: () => setExecutingStepRef(null) }
+    );
+  };
 
   const isDeploymentApproved = !!(submission as any).deployment_approved;
   const isDeploymentComplete = useIsDeploymentComplete(stages);
