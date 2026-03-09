@@ -558,6 +558,16 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     );
   };
 
+  const handleDeployContract = (network: "testnet" | "mainnet") => {
+    deployContract.mutate(
+      { submissionId: submission.id, network },
+      { onSuccess: (data) => setDeployResult(data) }
+    );
+  };
+      { onSettled: () => setExecutingStepRef(null) }
+    );
+  };
+
   const isDeploymentApproved = !!(submission as any).deployment_approved;
   const isDeploymentComplete = useIsDeploymentComplete(stages);
   const isListingComplete = useIsListingComplete(listingStages);
