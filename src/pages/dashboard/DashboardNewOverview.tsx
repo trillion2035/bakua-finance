@@ -1,13 +1,14 @@
 import { useState } from "react";
 import {
-  ArrowRight, Clock, Check, Loader2, FileUp,
+  ArrowRight, Clock, Check, Loader2, FileUp, Eye,
   DollarSign, TrendingUp, Shield, Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useOwnerSpvs } from "@/hooks/useSpvData";
+import { useOwnerSpvs, useDocumentSubmission, useUserUploadedDocuments } from "@/hooks/useSpvData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
+import { useNavigate } from "react-router-dom";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
 function formatCurrency(amount: number | string | null, currency?: string | null): string {
@@ -20,7 +21,6 @@ function formatCurrency(amount: number | string | null, currency?: string | null
 
 function formatCapitalTarget(raw: string): string {
   if (!raw) return "—";
-  // Extract currency prefix and numeric part, e.g. "FCFA 47000000" or "$2000000"
   const match = raw.match(/^([^\d]*)([\d,.\s]+)(.*)$/);
   if (!match) return raw;
   const prefix = match[1].trim();
@@ -63,15 +63,6 @@ function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any
   );
 }
 
-const processSteps: { id: number; title: string; description: string; status: ProcessStepStatus; dateRange: string; actionable: boolean }[] = [
-  { id: 1, title: "Document Submission", description: "Register and upload all required project documents for review.", status: "pending", dateRange: "Not started", actionable: true },
-  { id: 2, title: "Asset Standardization", description: "AI engine processes documents, generates Asset Score™ and financial model.", status: "pending", dateRange: "Awaiting documents", actionable: false },
-  { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "pending", dateRange: "Awaiting standardization", actionable: false },
-  { id: 4, title: "Listing", description: "Smart contract deployed, audited, and SPV listed on the investor marketplace.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
-  { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
-  { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
-];
-
 function StatusIcon({ status, isFirst }: { status: ProcessStepStatus; isFirst?: boolean }) {
   if (status === "completed")
     return <div className="w-8 h-8 rounded-full bg-green/20 flex items-center justify-center shrink-0"><Check className="w-4 h-4 text-green" /></div>;
@@ -82,31 +73,124 @@ function StatusIcon({ status, isFirst }: { status: ProcessStepStatus; isFirst?: 
   return <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0"><Clock className="w-4 h-4 text-muted-foreground" /></div>;
 }
 
-function EmptyProcessPipeline({ onStartUpload }: { onStartUpload: () => void }) {
+interface ProcessStep {
+  id: number;
+  title: string;
+  description: string;
+  status: ProcessStepStatus;
+  dateRange: string;
+  actionable: boolean;
+}
+
+function getProcessSteps(hasSubmission: boolean, submissionDate?: string): ProcessStep[] {
+  if (hasSubmission) {
+    const formattedDate = submissionDate 
+      ? new Date(submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "Recently";
+    return [
+      { id: 1, title: "Document Submission", description: "Your documents have been submitted and are currently being processed by our team.", status: "completed", dateRange: `Submitted ${formattedDate}`, actionable: false },
+      { id: 2, title: "Asset Standardization", description: "AI engine processes documents, generates Asset Score™ and financial model.", status: "in_progress", dateRange: "Processing documents", actionable: false },
+      { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "pending", dateRange: "Awaiting standardization", actionable: false },
+      { id: 4, title: "Listing", description: "Smart contract deployed, audited, and SPV listed on the investor marketplace.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
+      { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
+      { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
+    ];
+  }
+  
+  return [
+    { id: 1, title: "Document Submission", description: "Register and upload all required project documents for review.", status: "pending", dateRange: "Not started", actionable: true },
+    { id: 2, title: "Asset Standardization", description: "AI engine processes documents, generates Asset Score™ and financial model.", status: "pending", dateRange: "Awaiting documents", actionable: false },
+    { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "pending", dateRange: "Awaiting standardization", actionable: false },
+    { id: 4, title: "Listing", description: "Smart contract deployed, audited, and SPV listed on the investor marketplace.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
+    { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
+    { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
+  ];
+}
+
+function EmptyProcessPipeline({ 
+  onStartUpload, 
+  hasSubmission, 
+  submissionDate,
+  uploadedDocsCount,
+}: { 
+  onStartUpload: () => void; 
+  hasSubmission: boolean;
+  submissionDate?: string;
+  uploadedDocsCount: number;
+}) {
+  const navigate = useNavigate();
+  const processSteps = getProcessSteps(hasSubmission, submissionDate);
+  const completedCount = processSteps.filter(s => s.status === "completed").length;
+
   return (
     <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-base font-bold text-foreground tracking-tight">Process Status</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">0 of {processSteps.length} complete</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{completedCount} of {processSteps.length} complete</p>
         </div>
+        {hasSubmission && (
+          <div className="flex gap-1 mt-1.5">
+            {processSteps.map((s) => (
+              <div
+                key={s.id}
+                className={`h-1.5 w-8 rounded-full ${
+                  s.status === "completed" ? "bg-green" :
+                  s.status === "in_progress" ? "bg-gold" : "bg-secondary"
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <div className="space-y-0">
         {processSteps.map((step, i) => (
           <div key={step.id} className="relative flex gap-4">
             {i < processSteps.length - 1 && <div className="absolute left-4 top-10 w-px bg-border" style={{ bottom: "-8px" }} />}
-            <StatusIcon status={step.status} isFirst={step.id === 1} />
+            <StatusIcon 
+              status={step.status} 
+              isFirst={!hasSubmission && step.id === 1} 
+            />
             <div className="flex-1 min-w-0 pb-6">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-bold text-foreground">{step.title}</span>
-                {step.id === 1 ? (
+                {step.status === "completed" ? (
+                  <span className="text-[10px] font-semibold tracking-wider uppercase text-green">Completed</span>
+                ) : step.status === "in_progress" ? (
+                  <span className="text-[10px] font-semibold tracking-wider uppercase text-gold">In Progress</span>
+                ) : !hasSubmission && step.id === 1 ? (
                   <span className="text-[10px] font-semibold tracking-wider uppercase text-primary">Start Here</span>
                 ) : (
                   <span className="text-[10px] font-semibold tracking-wider uppercase text-muted-foreground">Pending</span>
                 )}
               </div>
               <span className="text-xs text-muted-foreground">{step.dateRange}</span>
-              {step.actionable && (
+              
+              {/* Show expanded content for completed submission or actionable step */}
+              {step.status === "completed" && step.id === 1 && (
+                <div className="mt-3 bg-green/5 border border-green/20 rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <div className="flex items-center gap-3 text-xs text-green">
+                    <Check className="h-3.5 w-3.5" />
+                    <span>{uploadedDocsCount} document{uploadedDocsCount !== 1 ? "s" : ""} submitted</span>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate("/dashboard/documents")}>
+                    <Eye className="h-3.5 w-3.5" /> View Documents
+                  </Button>
+                </div>
+              )}
+              
+              {step.status === "in_progress" && step.id === 2 && (
+                <div className="mt-3 bg-gold/5 border border-gold/20 rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <div className="flex items-center gap-2 text-xs text-gold">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Documents are currently being processed
+                  </div>
+                </div>
+              )}
+              
+              {step.actionable && !hasSubmission && (
                 <div className="mt-3 bg-secondary/50 border border-border rounded-lg p-4 space-y-3">
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
                   <Button size="sm" className="gap-2" onClick={onStartUpload}>
@@ -126,11 +210,16 @@ export default function DashboardNewOverview() {
   const [showWizard, setShowWizard] = useState(false);
   const { profile, user } = useAuth();
   const { data: spvs } = useOwnerSpvs();
+  const { data: submission } = useDocumentSubmission();
+  const { data: uploadedDocs } = useUserUploadedDocuments();
 
   const spv = spvs?.[0];
   const firstName = profile?.full_name?.split(" ")[0] || "there";
   const companyName = profile?.company_name || "";
   const capitalTarget = user?.user_metadata?.capital_target || "";
+  
+  const hasSubmission = !!submission;
+  const uploadedDocsCount = uploadedDocs?.length || 0;
 
   if (showWizard) {
     return <DocumentWizard sector={user?.user_metadata?.asset_type || "default"} onBack={() => setShowWizard(false)} />;
@@ -148,7 +237,16 @@ export default function DashboardNewOverview() {
       </div>
 
       <EmptyKPICards capitalTarget={capitalTarget} spv={spv} />
-      {spv ? <ProcessPipeline /> : <EmptyProcessPipeline onStartUpload={() => setShowWizard(true)} />}
+      {spv ? (
+        <ProcessPipeline />
+      ) : (
+        <EmptyProcessPipeline 
+          onStartUpload={() => setShowWizard(true)} 
+          hasSubmission={hasSubmission}
+          submissionDate={submission?.submitted_at}
+          uploadedDocsCount={uploadedDocsCount}
+        />
+      )}
     </div>
   );
 }
