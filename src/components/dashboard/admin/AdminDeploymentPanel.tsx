@@ -173,7 +173,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 /* ── Stage Row ── */
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -186,6 +186,8 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   onUploadDoc?: (stageKey: string) => void;
   submission: any;
   showDocActions?: boolean;
+  onLaunchAgent?: () => void;
+  agentLoading?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingCert, setUploadingCert] = useState(false);
