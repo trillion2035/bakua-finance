@@ -7,12 +7,13 @@ import { cn } from "@/lib/utils";
 
 // Stage configuration matching the process pipeline
 const STAGE_CONFIG = [
-  { key: "project", step: 1, label: "Document Submission", icon: "📋" },
-  { key: "legal", step: 2, label: "Asset Standardization", icon: "⚖️" },
-  { key: "financial", step: 3, label: "SPV Creation", icon: "💰" },
-  { key: "contracts", step: 4, label: "Capital Raise", icon: "📝" },
-  { key: "sector", step: 5, label: "Capital Deployment", icon: "🌱" },
-  { key: "identity", step: 6, label: "Operations & Reporting", icon: "🪪" },
+  { key: "submission", label: "Document Submission", icon: "📋" },
+  { key: "standardization", label: "Asset Standardization", icon: "⚖️" },
+  { key: "spv", label: "SPV Creation", icon: "🏛️" },
+  { key: "listing", label: "Listing", icon: "📋" },
+  { key: "funding", label: "Funding", icon: "💰" },
+  { key: "disbursement", label: "Capital Disbursement", icon: "💸" },
+  { key: "operations", label: "Operations & Reporting", icon: "📊" },
 ];
 
 function UploadDropZone() {
