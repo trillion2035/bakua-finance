@@ -18,6 +18,64 @@ export function useOwnerSpvs() {
   });
 }
 
+export function useDocumentSubmission() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["document-submission", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("document_submissions")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("submitted_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+}
+
+export function useUserUploadedDocuments() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["user-uploaded-docs", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from("project-documents")
+        .list(user!.id, { sortBy: { column: "created_at", order: "desc" } });
+      if (error) throw error;
+      
+      // Recursively list all files in subfolders
+      const allFiles: { name: string; category: string; path: string; created_at: string }[] = [];
+      
+      for (const item of data || []) {
+        if (!item.id) {
+          // It's a folder, list its contents
+          const { data: folderData } = await supabase.storage
+            .from("project-documents")
+            .list(`${user!.id}/${item.name}`);
+          
+          for (const file of folderData || []) {
+            if (file.id) {
+              allFiles.push({
+                name: file.name,
+                category: item.name,
+                path: `${user!.id}/${item.name}/${file.name}`,
+                created_at: file.created_at || new Date().toISOString(),
+              });
+            }
+          }
+        }
+      }
+      
+      return allFiles;
+    },
+    enabled: !!user,
+  });
+}
+
 export function useSpvDetail(spvId: string | undefined) {
   return useQuery({
     queryKey: ["spv-detail", spvId],
