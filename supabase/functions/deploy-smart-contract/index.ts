@@ -277,9 +277,13 @@ Output the complete Solidity source code only.`;
 
     console.log(`Constructor args (${constructorArgs.length}):`, JSON.stringify(constructorArgs));
 
+    // Get fresh nonce to avoid "already known" errors from previous attempts
+    const nonce = await provider.getTransactionCount(deployerAddress, "pending");
+    console.log(`Using nonce: ${nonce}`);
+
     let deployTx: any;
     try {
-      deployTx = await factory.deploy(...constructorArgs);
+      deployTx = await factory.deploy(...constructorArgs, { nonce });
     } catch (deployError: any) {
       console.error("Deploy failed:", deployError.message);
       throw new Error(`Deployment failed: ${deployError.message}`);
