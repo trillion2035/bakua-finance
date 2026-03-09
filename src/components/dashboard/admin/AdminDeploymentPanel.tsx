@@ -23,6 +23,7 @@ import {
   useExecuteStep,
   usePreflightCheck,
   useDeployContract,
+  useVerifyContract,
   type DeploymentStage,
   type GeneratedDocument,
 } from "@/hooks/useDeploymentData";
