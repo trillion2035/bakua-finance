@@ -565,7 +565,12 @@ export default function DashboardDocuments() {
                   status={stageStatus}
                   defaultOpen={!isDeploymentComplete}
                   docCount={deployDocs.length}
-                  statusSummary={`${deployDocs.length} document${deployDocs.length !== 1 ? "s" : ""} · ${isDeploymentComplete ? "All stages completed" : "In progress"}`}
+                  const signedCount = deployDocs.filter(d => d.status === "signed").length;
+                  const facilityDocs = deployDocs.filter(d => d.stage_key === "facility_doc_creation");
+                  const facilitySignedCount = facilityDocs.filter(d => d.status === "signed").length;
+                  const statusText = isDeploymentComplete 
+                    ? `All stages completed${facilityDocs.length > 0 ? ` · ${facilitySignedCount}/${facilityDocs.length} signed` : ""}` 
+                    : "In progress";
                 >
                   {deployDocs.map((doc) => (
                     <GeneratedDocItem
