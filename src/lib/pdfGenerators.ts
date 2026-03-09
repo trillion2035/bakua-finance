@@ -307,10 +307,10 @@ export function generateProjectDossierPDF(report: AnalysisReport, submission: an
         yPos = 30;
       }
       
-      const priorityColor = rec.priority === "HIGH" ? DANGER_COLOR :
-                           rec.priority === "MEDIUM" ? [234, 179, 8] : GRAY_COLOR;
+      const priorityColor: [number, number, number] = rec.priority === "HIGH" ? DANGER_COLOR :
+                           rec.priority === "MEDIUM" ? WARNING_COLOR : GRAY_COLOR;
       
-      doc.setFillColor(...priorityColor);
+      doc.setFillColor(priorityColor[0], priorityColor[1], priorityColor[2]);
       doc.roundedRect(20, yPos - 3, 18, 5, 1, 1, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(7);
