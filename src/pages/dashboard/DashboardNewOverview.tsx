@@ -438,6 +438,8 @@ export default function DashboardNewOverview() {
   const latestReport = analysisReports?.find(r => r.analysis_status === "completed") || null;
   const { data: termSheet } = useTermSheet(latestReport?.id);
   const { data: existingSignature } = useExistingSignature(submission?.id);
+  const { data: deploymentStages } = useDeploymentStages(submission?.id);
+  const { data: generatedDocs } = useGeneratedDocuments(submission?.id);
 
   if (showWizard) {
     return <DocumentWizard sector={user?.user_metadata?.asset_type || "default"} onBack={() => setShowWizard(false)} />;
