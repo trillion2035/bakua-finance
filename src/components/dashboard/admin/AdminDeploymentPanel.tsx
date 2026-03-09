@@ -784,7 +784,10 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         onUploadDoc={(key) => { setUploadStageKey(key); uploadFileRef.current?.click(); }}
                         submission={submission} showDocActions={true}
                         onLaunchAgent={stage.stage_key === "sc_development" ? () => launchSCDev.mutate({ submissionId: submission.id }) : undefined}
-                        agentLoading={stage.stage_key === "sc_development" ? launchSCDev.isPending : false} />
+                        agentLoading={stage.stage_key === "sc_development" ? launchSCDev.isPending : false}
+                        onRegeneratePlan={stage.stage_key === "sc_development" ? () => launchSCDev.mutate({ submissionId: submission.id }) : undefined}
+                        onExecuteStep={stage.stage_key === "sc_development" ? handleExecuteStep : undefined}
+                        executingStep={stage.stage_key === "sc_development" ? executingStepRef : null} />
                     );
                   })}
 
