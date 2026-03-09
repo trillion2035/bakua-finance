@@ -7,3 +7,5 @@ project_id = "pyngcobhnvzerpiuxwaa"
     verify_jwt = false
   [functions.delete-account]
     verify_jwt = false
+  [functions.generate-spv-documents]
+    verify_jwt = false
