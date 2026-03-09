@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown, Lock, Shield, FileSpreadsheet, PenTool } from "lucide-react";
 import { useOwnerSpvs, useSpvDocuments, useUserUploadedDocuments, useDocumentSubmission } from "@/hooks/useSpvData";
-import { useGeneratedDocuments, useIsDeploymentComplete, useDeploymentStages } from "@/hooks/useDeploymentData";
+import { useGeneratedDocuments, useIsDeploymentComplete, useDeploymentStages, useListingStages, useIsListingComplete } from "@/hooks/useDeploymentData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -224,7 +224,7 @@ function StageSection({ stage, status, defaultOpen = false, children, docCount, 
   );
 }
 
-// AI-generated document item for the Asset Standardization section
+// AI-generated document item
 interface GeneratedDocItemProps {
   icon: React.ReactNode;
   title: string;
@@ -232,9 +232,10 @@ interface GeneratedDocItemProps {
   onView: () => void;
   onDownload: () => void;
   actions?: React.ReactNode;
+  signedStatus?: string | null;
 }
 
-function GeneratedDocItem({ icon, title, subtitle, onView, onDownload, actions }: GeneratedDocItemProps) {
+function GeneratedDocItem({ icon, title, subtitle, onView, onDownload, actions, signedStatus }: GeneratedDocItemProps) {
   return (
     <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -245,6 +246,11 @@ function GeneratedDocItem({ icon, title, subtitle, onView, onDownload, actions }
         <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
+        {signedStatus === "signed" && (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 px-2">
+            <Check className="h-3.5 w-3.5" /> Signed
+          </span>
+        )}
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onView} title="View">
           <Eye className="h-4 w-4 text-muted-foreground" />
         </Button>
@@ -267,8 +273,11 @@ export default function DashboardDocuments() {
   const { data: analysisReports } = useUserAnalysisReports();
   const { data: deploymentGeneratedDocs } = useGeneratedDocuments(submission?.id);
   const { data: deploymentStages } = useDeploymentStages(submission?.id);
+  const { data: listingStages } = useListingStages(submission?.id);
   const isDeploymentComplete = useIsDeploymentComplete(deploymentStages);
   const isDeploymentApproved = !!(submission as any)?.deployment_approved;
+  const isListingStarted = (listingStages && listingStages.length > 0) || false;
+  const isListingComplete = useIsListingComplete(listingStages);
   const [showSignModal, setShowSignModal] = useState(false);
 
   const isReleased = !!(submission as any)?.released_to_client;
@@ -346,6 +355,38 @@ export default function DashboardDocuments() {
     } catch { toast.error("Failed to generate PDF"); }
   };
 
+  // Handlers for generated documents (deployment + listing)
+  const handleViewGenDoc = (doc: any) => {
+    if (doc.file_url) {
+      supabase.storage
+        .from("project-documents")
+        .createSignedUrl(doc.file_url, 3600)
+        .then(({ data }) => {
+          if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+        });
+    } else if (doc.content) {
+      const blob = new Blob([doc.content], { type: "text/plain" });
+      window.open(URL.createObjectURL(blob), "_blank");
+    }
+  };
+
+  const handleDownloadGenDoc = (doc: any) => {
+    if (doc.file_url) {
+      supabase.storage.from("project-documents").download(doc.file_url).then(({ data }) => {
+        if (data) {
+          const url = URL.createObjectURL(data);
+          const a = document.createElement("a"); a.href = url; a.download = doc.document_name; a.click();
+          URL.revokeObjectURL(url);
+        }
+      });
+    } else if (doc.content) {
+      const blob = new Blob([doc.content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${doc.document_name}.txt`; a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Loading...</div>;
   }
@@ -385,9 +426,13 @@ export default function DashboardDocuments() {
     const hasAnalysis = isReleased && latestReport;
     const analysisDocCount = hasAnalysis ? (termSheet ? 3 : 2) : 0;
 
-    // Count statuses
     const verifiedCount = submissionCompleted ? totalDocs : 0;
     const pendingCount = submissionCompleted ? 0 : totalDocs;
+
+    // Count deployment docs
+    const deployDocCount = deploymentGeneratedDocs?.filter(d => ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"].includes(d.stage_key)).length || 0;
+    // Count listing docs
+    const listingDocCount = deploymentGeneratedDocs?.filter(d => ["sc_specifications", "sc_development", "sc_deployment", "sc_auditing", "sc_deployment_record", "ipfs_anchoring"].includes(d.stage_key)).length || 0;
 
     return (
       <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
@@ -395,10 +440,9 @@ export default function DashboardDocuments() {
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {totalDocs + analysisDocCount} document{(totalDocs + analysisDocCount) !== 1 ? "s" : ""} across {STAGE_CONFIG.length} stages
+              {totalDocs + analysisDocCount + deployDocCount + listingDocCount} document{(totalDocs + analysisDocCount + deployDocCount + listingDocCount) !== 1 ? "s" : ""} across {STAGE_CONFIG.length} stages
             </p>
             
-            {/* Status summary */}
             <div className="flex items-center gap-4 mt-4">
               <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600">
                 <Check className="h-4 w-4" /> {verifiedCount + analysisDocCount} Verified
@@ -484,16 +528,13 @@ export default function DashboardDocuments() {
                       subtitle={`Ref: ${termSheet.reference_code} · Valid until ${new Date(termSheet.valid_until).toLocaleDateString()}`}
                       onView={handleViewTermSheet}
                       onDownload={handleDownloadTermSheet}
+                      signedStatus={existingSignature ? "signed" : null}
                       actions={
-                        existingSignature ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 px-2">
-                            <Check className="h-3.5 w-3.5" /> Signed
-                          </span>
-                        ) : (
+                        !existingSignature ? (
                           <Button size="sm" className="gap-1.5 h-8" onClick={() => setShowSignModal(true)}>
                             <PenTool className="h-3.5 w-3.5" /> Sign
                           </Button>
-                        )
+                        ) : undefined
                       }
                     />
                   )}
@@ -501,7 +542,7 @@ export default function DashboardDocuments() {
               );
             }
             
-            // SPV Deployment stage - show generated docs if deployment is in progress or complete
+            // SPV Deployment stage
             if (stage.key === "spv") {
               if (!isDeploymentApproved) {
                 return (
@@ -514,8 +555,8 @@ export default function DashboardDocuments() {
                 );
               }
 
-              const deployDocCount = deploymentGeneratedDocs?.length || 0;
               const stageStatus: StageStatus = isDeploymentComplete ? "completed" : "processing";
+              const deployDocs = deploymentGeneratedDocs?.filter(d => ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"].includes(d.stage_key)) || [];
 
               return (
                 <StageSection
@@ -523,60 +564,58 @@ export default function DashboardDocuments() {
                   stage={stage}
                   status={stageStatus}
                   defaultOpen={!isDeploymentComplete}
-                  docCount={deployDocCount}
-                  statusSummary={`${deployDocCount} document${deployDocCount !== 1 ? "s" : ""} · ${isDeploymentComplete ? "All stages completed" : "In progress"}`}
+                  docCount={deployDocs.length}
+                  statusSummary={`${deployDocs.length} document${deployDocs.length !== 1 ? "s" : ""} · ${isDeploymentComplete ? "All stages completed" : "In progress"}`}
                 >
-                  {deploymentGeneratedDocs?.map((doc) => (
+                  {deployDocs.map((doc) => (
                     <GeneratedDocItem
                       key={doc.id}
                       icon={<FileText className="h-5 w-5 text-primary" />}
                       title={doc.document_name}
                       subtitle={`${doc.document_type} · ${doc.status}`}
-                      onView={() => {
-                        if (doc.file_url) {
-                          supabase.storage
-                            .from("project-documents")
-                            .createSignedUrl(doc.file_url, 3600)
-                            .then(({ data }) => {
-                              if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-                            });
-                        } else if (doc.content) {
-                          const blob = new Blob([doc.content], { type: "text/plain" });
-                          window.open(URL.createObjectURL(blob), "_blank");
-                        }
-                      }}
-                      onDownload={() => {
-                        if (doc.file_url) {
-                          supabase.storage
-                            .from("project-documents")
-                            .download(doc.file_url)
-                            .then(({ data }) => {
-                              if (data) {
-                                const url = URL.createObjectURL(data);
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = doc.document_name;
-                                a.click();
-                                URL.revokeObjectURL(url);
-                              }
-                            });
-                        } else if (doc.content) {
-                          const blob = new Blob([doc.content], { type: "text/plain" });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = `${doc.document_name}.txt`;
-                          a.click();
-                          URL.revokeObjectURL(url);
-                        }
-                      }}
-                      actions={
-                        doc.status === "signed" ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 px-2">
-                            <Check className="h-3.5 w-3.5" /> Signed
-                          </span>
-                        ) : undefined
-                      }
+                      onView={() => handleViewGenDoc(doc)}
+                      onDownload={() => handleDownloadGenDoc(doc)}
+                      signedStatus={doc.status === "signed" ? "signed" : null}
+                    />
+                  ))}
+                </StageSection>
+              );
+            }
+
+            // Listing stage
+            if (stage.key === "listing") {
+              if (!isListingStarted) {
+                return (
+                  <StageSection
+                    key={stage.key}
+                    stage={stage}
+                    status="locked"
+                    docCount={0}
+                  />
+                );
+              }
+
+              const listDocs = deploymentGeneratedDocs?.filter(d => ["sc_specifications", "sc_development", "sc_deployment", "sc_auditing", "sc_deployment_record", "ipfs_anchoring"].includes(d.stage_key)) || [];
+              const listStatus: StageStatus = isListingComplete ? "completed" : "processing";
+
+              return (
+                <StageSection
+                  key={stage.key}
+                  stage={stage}
+                  status={listStatus}
+                  defaultOpen={!isListingComplete}
+                  docCount={listDocs.length}
+                  statusSummary={`${listDocs.length} document${listDocs.length !== 1 ? "s" : ""} · ${isListingComplete ? "All stages completed" : "In progress"}`}
+                >
+                  {listDocs.map((doc) => (
+                    <GeneratedDocItem
+                      key={doc.id}
+                      icon={<FileText className="h-5 w-5 text-primary" />}
+                      title={doc.document_name}
+                      subtitle={`${doc.document_type} · ${doc.status}`}
+                      onView={() => handleViewGenDoc(doc)}
+                      onDownload={() => handleDownloadGenDoc(doc)}
+                      signedStatus={doc.status === "signed" ? "signed" : null}
                     />
                   ))}
                 </StageSection>

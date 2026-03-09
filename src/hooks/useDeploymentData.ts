@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export interface DeploymentStage {
@@ -36,6 +35,11 @@ export interface GeneratedDocument {
   updated_at: string;
 }
 
+// Deployment stage keys
+const DEPLOYMENT_STAGE_KEYS = ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"];
+// Listing stage keys
+const LISTING_STAGE_KEYS = ["sc_specifications", "sc_development", "sc_deployment", "sc_auditing"];
+
 export function useDeploymentStages(submissionId: string | undefined) {
   return useQuery({
     queryKey: ["deployment-stages", submissionId],
@@ -44,6 +48,24 @@ export function useDeploymentStages(submissionId: string | undefined) {
         .from("spv_deployment_stages" as any)
         .select("*")
         .eq("submission_id", submissionId!)
+        .in("stage_key", DEPLOYMENT_STAGE_KEYS)
+        .order("stage_order", { ascending: true });
+      if (error) throw error;
+      return (data as any[]) as DeploymentStage[];
+    },
+    enabled: !!submissionId,
+  });
+}
+
+export function useListingStages(submissionId: string | undefined) {
+  return useQuery({
+    queryKey: ["listing-stages", submissionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("spv_deployment_stages" as any)
+        .select("*")
+        .eq("submission_id", submissionId!)
+        .in("stage_key", LISTING_STAGE_KEYS)
         .order("stage_order", { ascending: true });
       if (error) throw error;
       return (data as any[]) as DeploymentStage[];
@@ -127,7 +149,7 @@ export function useCompleteStage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ stageId, submissionId, currentStageKey }: { stageId: string; submissionId: string; currentStageKey: string }) => {
+    mutationFn: async ({ stageId, submissionId, currentStageKey, userId }: { stageId: string; submissionId: string; currentStageKey: string; userId?: string }) => {
       const { error } = await supabase
         .from("spv_deployment_stages" as any)
         .update({
@@ -137,10 +159,13 @@ export function useCompleteStage() {
         .eq("id", stageId);
       if (error) throw error;
 
-      const stageOrder = ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"];
-      const currentIdx = stageOrder.indexOf(currentStageKey);
-      if (currentIdx < stageOrder.length - 1) {
-        const nextKey = stageOrder[currentIdx + 1];
+      // Handle deployment stage transitions
+      const deploymentOrder = ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"];
+      const deployIdx = deploymentOrder.indexOf(currentStageKey);
+      
+      if (deployIdx >= 0 && deployIdx < deploymentOrder.length - 1) {
+        // Advance to next deployment stage
+        const nextKey = deploymentOrder[deployIdx + 1];
         const { error: nextErr } = await supabase
           .from("spv_deployment_stages" as any)
           .update({
@@ -158,11 +183,66 @@ export function useCompleteStage() {
         }
       }
 
+      // When legal_close completes → insert listing stages and trigger SC spec generation
+      if (currentStageKey === "legal_close") {
+        const listingStages = [
+          { stage_order: 1, stage_key: "sc_specifications", stage_label: "Smart Contract Specifications", description: "AI agent generates the smart contract specification document based on all project and legal data." },
+          { stage_order: 2, stage_key: "sc_development", stage_label: "Smart Contract Development", description: "Smart contract is developed based on the approved specification document." },
+          { stage_order: 3, stage_key: "sc_deployment", stage_label: "Smart Contract Deployment", description: "Smart contract is deployed to the blockchain network." },
+          { stage_order: 4, stage_key: "sc_auditing", stage_label: "Smart Contract Auditing", description: "Independent audit of the smart contract, followed by any required modifications." },
+        ];
+
+        // Get user_id from submission
+        const effectiveUserId = userId || (await supabase.from("document_submissions").select("user_id").eq("id", submissionId).single()).data?.user_id;
+
+        const { error: listErr } = await supabase
+          .from("spv_deployment_stages" as any)
+          .insert(listingStages.map(s => ({
+            ...s,
+            submission_id: submissionId,
+            user_id: effectiveUserId,
+            status: s.stage_key === "sc_specifications" ? "in_progress" : "pending",
+            started_at: s.stage_key === "sc_specifications" ? new Date().toISOString() : null,
+          })));
+        if (listErr) throw listErr;
+
+        // Trigger AI to generate SC specifications
+        await supabase.functions.invoke("generate-spv-documents", {
+          body: { submission_id: submissionId, stage_key: "sc_specifications" },
+        });
+      }
+
+      // Handle listing stage transitions
+      const listingOrder = ["sc_specifications", "sc_development", "sc_deployment", "sc_auditing"];
+      const listIdx = listingOrder.indexOf(currentStageKey);
+      
+      if (listIdx >= 0 && listIdx < listingOrder.length - 1) {
+        const nextKey = listingOrder[listIdx + 1];
+        const { error: nextErr } = await supabase
+          .from("spv_deployment_stages" as any)
+          .update({
+            status: "in_progress",
+            started_at: new Date().toISOString(),
+          } as any)
+          .eq("submission_id", submissionId)
+          .eq("stage_key", nextKey);
+        if (nextErr) throw nextErr;
+      }
+
+      // When sc_auditing completes → generate final documents (Deployment Record + IPFS Certificate)
+      if (currentStageKey === "sc_auditing") {
+        await supabase.functions.invoke("generate-spv-documents", {
+          body: { submission_id: submissionId, stage_key: "sc_auditing_complete" },
+        });
+      }
+
       return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deployment-stages"] });
+      queryClient.invalidateQueries({ queryKey: ["listing-stages"] });
       queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["all-submissions-analysis"] });
       toast.success("Stage completed and next stage started.");
     },
     onError: (error) => {
@@ -208,7 +288,7 @@ export function useSignGeneratedDocument() {
   });
 }
 
-// Upload incorporation certificate (stores as a generated_document)
+// Upload incorporation certificate
 export function useUploadIncorporationCert() {
   const queryClient = useQueryClient();
 
@@ -218,18 +298,12 @@ export function useUploadIncorporationCert() {
       userId: string;
       file: File;
     }) => {
-      // Upload file to storage
       const filePath = `${userId}/${submissionId}/incorporation-certificate-${Date.now()}.${file.name.split('.').pop()}`;
       const { error: uploadErr } = await supabase.storage
         .from("project-documents")
         .upload(filePath, file);
       if (uploadErr) throw uploadErr;
 
-      const { data: urlData } = supabase.storage
-        .from("project-documents")
-        .getPublicUrl(filePath);
-
-      // Insert as generated document
       const { error: insertErr } = await supabase
         .from("generated_documents" as any)
         .insert({
@@ -275,6 +349,12 @@ export function useTermSheetSignatures(submissionId: string | undefined) {
 
 // Check if all deployment stages are completed
 export function useIsDeploymentComplete(stages: DeploymentStage[] | undefined) {
+  if (!stages || stages.length === 0) return false;
+  return stages.every(s => s.status === "completed");
+}
+
+// Check if all listing stages are completed
+export function useIsListingComplete(stages: DeploymentStage[] | undefined) {
   if (!stages || stages.length === 0) return false;
   return stages.every(s => s.status === "completed");
 }

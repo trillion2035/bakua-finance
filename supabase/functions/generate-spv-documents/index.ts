@@ -482,6 +482,172 @@ Use OHADA Uniform Act on Commercial Companies framework. Format with clear artic
       });
     }
 
+    // ── Smart Contract Specifications: Generate SC spec document ──
+    if (stage_key === "sc_specifications") {
+      const scSpecPrompt = `Generate a comprehensive Smart Contract Specification Document for the following SPV project:
+
+PROJECT DETAILS:
+- SPV Name: ${ctx.spvName}
+- Borrower: ${ctx.companyName}
+- Industry: ${ctx.industry}
+- Facility Amount: ${ctx.facilityAmount}
+- Tenor: ${ctx.tenorMonths} months
+- Target IRR: ${ctx.targetIrr}
+- Project Description: ${ctx.projectDescription}
+- Asset Score: ${ctx.grade} (${ctx.totalScore}/100)
+
+This smart contract will be deployed on Base Network (Ethereum L2) and will manage the SPV's lifecycle including:
+
+Generate the specification document (~10 pages) with these sections:
+
+1. EXECUTIVE SUMMARY — Purpose, scope, and overview of the smart contract system
+2. SYSTEM ARCHITECTURE — On-chain vs off-chain components, contract hierarchy, interaction diagram
+3. TOKEN DESIGN — SPV token mechanics: ERC-20 or ERC-1155, token supply = facility amount / minimum investment, transferability rules, KYC gate
+4. SMART CONTRACT MODULES:
+   4.1 SPVVault — Manages USDC deposits, enforces hard cap, tracks investor allocations
+   4.2 MilestoneDisbursement — Oracle-verified milestone releases, multi-sig approval, DSRA management
+   4.3 RepaymentWaterfall — Automated payment waterfall: Bakua fee → oracle costs → investor principal/yield → DSRA → borrower residual
+   4.4 OracleIntegration — Industry-specific oracle data feeds (${ctx.industry}: ${ctx.industry === 'agriculture' ? 'NDVI, soil moisture, harvest yields, weather' : ctx.industry === 'real_estate' ? 'occupancy rates, rental income, property valuation' : ctx.industry === 'infrastructure' ? 'construction milestones, usage metrics' : ctx.industry === 'renewable_energy' ? 'power output, grid connection, irradiance' : 'shipment tracking, inventory levels, payment verification'})
+   4.5 GovernanceModule — Investor voting on key decisions, quorum requirements
+   4.6 ComplianceGate — KYC/AML verification, investor accreditation check
+5. STATE MACHINE — Contract lifecycle states: Funding → Active → Disbursing → Repaying → Matured/Closed. State transition rules and events.
+6. ACCESS CONTROL — Role-based permissions: Admin, Borrower, Investor, Oracle, Auditor
+7. EVENT EMISSIONS — All events for off-chain indexing and dashboard real-time updates
+8. SECURITY REQUIREMENTS — Reentrancy protection, overflow checks, pause mechanism, upgrade pattern (UUPS proxy), time locks
+9. GAS OPTIMIZATION — Batch operations, storage packing, calldata optimization
+10. TESTING REQUIREMENTS — Unit test scenarios, integration test flows, fuzzing targets
+11. DEPLOYMENT PLAN — Testnet deployment, audit scope, mainnet deployment steps
+12. APPENDIX — ABI specifications, interface definitions, error codes
+
+Adapt all oracle feeds, KPIs, and monitoring to the ${ctx.industry} industry.
+Include realistic parameter values based on the project data.`;
+
+      const result = await generateDocument(LOVABLE_API_KEY, SYSTEM_PROMPT, scSpecPrompt);
+      if (result.error) {
+        const status = result.error.includes("Rate limit") ? 429 : result.error.includes("Payment") ? 402 : 500;
+        return new Response(JSON.stringify({ error: result.error }), {
+          status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await supabase.from("generated_documents").insert({
+        submission_id,
+        user_id: submission.user_id,
+        stage_key: "sc_specifications",
+        document_name: "Smart Contract Specification Document",
+        document_type: "sc_specifications",
+        content: result.content,
+        status: "draft",
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── SC Auditing Complete: Generate Deployment Record + IPFS Anchoring Certificate ──
+    if (stage_key === "sc_auditing_complete") {
+      const results: any[] = [];
+
+      // 1. Smart Contract Deployment Record
+      const deployRecordPrompt = `Generate a Smart Contract Deployment Record document for:
+
+SPV: ${ctx.spvName}
+Borrower: ${ctx.companyName}
+Industry: ${ctx.industry}
+Facility Amount: ${ctx.facilityAmount}
+Network: Base (Ethereum L2)
+
+Generate a formal deployment record (~4 pages) including:
+
+1. DEPLOYMENT SUMMARY — Date, network, deployer address, gas used, transaction hashes
+2. DEPLOYED CONTRACTS — Table with: Contract Name, Address, Implementation Hash, Proxy Address, Version
+   Include: SPVVault, MilestoneDisbursement, RepaymentWaterfall, OracleIntegration, GovernanceModule, ComplianceGate
+3. INITIALIZATION PARAMETERS — All constructor/initialize parameters used for each contract
+4. VERIFICATION STATUS — Source code verification on block explorer, matching bytecode confirmation
+5. ACCESS CONTROL CONFIGURATION — Roles assigned: Admin, Oracle, Pauser addresses
+6. AUDIT COMPLIANCE — Audit firm, audit report reference, findings addressed, no critical/high issues remaining
+7. POST-DEPLOYMENT CHECKS — All functional tests passed, integration verified, monitoring configured
+8. SIGNATURES — Deployer, Admin, Auditor sign-off
+
+Use realistic placeholder contract addresses (0x...) and transaction hashes.`;
+
+      const deployResult = await generateDocument(LOVABLE_API_KEY, SYSTEM_PROMPT, deployRecordPrompt);
+      if (!deployResult.error) {
+        await supabase.from("generated_documents").insert({
+          submission_id,
+          user_id: submission.user_id,
+          stage_key: "sc_deployment_record",
+          document_name: "Smart Contract Deployment Record",
+          document_type: "sc_deployment_record",
+          content: deployResult.content,
+          status: "verified",
+        });
+        results.push({ document: "Smart Contract Deployment Record", success: true });
+      } else {
+        results.push({ document: "Smart Contract Deployment Record", success: false, error: deployResult.error });
+      }
+
+      // 2. IPFS Anchoring Certificate
+      const ipfsCertPrompt = `Generate an IPFS Anchoring Certificate for:
+
+SPV: ${ctx.spvName}
+Borrower: ${ctx.companyName}
+Industry: ${ctx.industry}
+Network: Base (Ethereum L2)
+
+This certificate confirms that all legal and operational documents have been uploaded to IPFS (InterPlanetary File System) and their content hashes have been recorded on the blockchain.
+
+Generate a formal certificate (~3 pages) including:
+
+1. CERTIFICATE HEADER — IPFS Anchoring Certificate, date, reference number, CONFIDENTIAL marking
+2. CERTIFICATION STATEMENT — "This certifies that the following documents pertaining to [SPV Name] have been permanently anchored to IPFS and their content hashes recorded on Base Network (Ethereum L2)."
+3. ANCHORED DOCUMENTS TABLE — Table with columns: Document Name, IPFS CID (Content Identifier), On-Chain Tx Hash, Anchor Date, File Hash (SHA-256)
+   Include all project documents:
+   - Articles of Association
+   - Facility Agreement
+   - Off-Take Assignment Notice
+   - Land Charge Agreement
+   - Blocked Account Agreement
+   - Chattel Security Agreement
+   - Personal Guarantee Agreements
+   - Insurance Assignment Agreement
+   - Bakua Service Agreement
+   - Term Sheet
+   - Asset Score Report
+   - Project Dossier
+   - Smart Contract Specification
+   - Smart Contract Audit Report
+   - Smart Contract Deployment Record
+4. BLOCKCHAIN REFERENCE — Smart contract address storing IPFS CIDs, function signature used, block number range
+5. VERIFICATION INSTRUCTIONS — How to independently verify: (a) retrieve CID from blockchain, (b) fetch document from IPFS gateway, (c) compute SHA-256, (d) compare with on-chain hash
+6. IMMUTABILITY GUARANTEE — Statement that documents cannot be altered without changing CID, any modification would be immediately detectable
+7. LEGAL STANDING — This anchoring provides tamper-proof evidence of document existence and content at the time of certification
+8. SIGNATURES — Bakua Finance authorized signatory, SPV administrator
+
+Use realistic placeholder IPFS CIDs (Qm... or bafy...) and transaction hashes.`;
+
+      const ipfsResult = await generateDocument(LOVABLE_API_KEY, SYSTEM_PROMPT, ipfsCertPrompt);
+      if (!ipfsResult.error) {
+        await supabase.from("generated_documents").insert({
+          submission_id,
+          user_id: submission.user_id,
+          stage_key: "ipfs_anchoring",
+          document_name: "IPFS Anchoring Certificate",
+          document_type: "ipfs_anchoring_certificate",
+          content: ipfsResult.content,
+          status: "verified",
+        });
+        results.push({ document: "IPFS Anchoring Certificate", success: true });
+      } else {
+        results.push({ document: "IPFS Anchoring Certificate", success: false, error: ipfsResult.error });
+      }
+
+      return new Response(JSON.stringify({ success: true, results }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: `Unknown stage_key: ${stage_key}` }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

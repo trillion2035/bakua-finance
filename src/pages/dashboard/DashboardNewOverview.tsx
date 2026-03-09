@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerSpvs, useDocumentSubmission, useUserUploadedDocuments } from "@/hooks/useSpvData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
-import { useDeploymentStages, useGeneratedDocuments, useIsDeploymentComplete } from "@/hooks/useDeploymentData";
+import { useDeploymentStages, useGeneratedDocuments, useIsDeploymentComplete, useListingStages, useIsListingComplete } from "@/hooks/useDeploymentData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import { SignTermSheetModal } from "@/components/dashboard/documents/SignTermSheetModal";
@@ -91,7 +91,13 @@ interface ProcessStep {
   actionable: boolean;
 }
 
-function getProcessSteps(hasSubmission: boolean, isReleased: boolean, isSigned: boolean, isDeploymentApproved: boolean, isDeploymentComplete: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
+function getProcessSteps(
+  hasSubmission: boolean, isReleased: boolean, isSigned: boolean,
+  isDeploymentApproved: boolean, isDeploymentComplete: boolean,
+  isListingStarted: boolean, isListingComplete: boolean,
+  submissionDate?: string, releasedDate?: string
+): ProcessStep[] {
+  // SPV Deployment status
   const spvDeploymentStatus: ProcessStepStatus = isDeploymentComplete ? "completed" : isDeploymentApproved ? "in_progress" : isSigned ? "in_progress" : isReleased ? "in_progress" : "pending";
   const spvDeploymentDesc = isDeploymentComplete
     ? "SPV incorporation and legal close completed. All documents finalized."
@@ -102,13 +108,22 @@ function getProcessSteps(hasSubmission: boolean, isReleased: boolean, isSigned: 
     : "Sign the term sheet to begin the SPV incorporation and legal close process.";
   const spvDeploymentDate = isDeploymentComplete
     ? "Completed"
-    : isDeploymentApproved
-    ? "In progress"
-    : isSigned
-    ? "Awaiting admin approval"
-    : isReleased
-    ? "Awaiting term sheet signing"
-    : "Awaiting standardization";
+    : isDeploymentApproved ? "In progress"
+    : isSigned ? "Awaiting admin approval"
+    : isReleased ? "Awaiting term sheet signing" : "Awaiting standardization";
+
+  // Listing status
+  const listingStatus: ProcessStepStatus = isListingComplete ? "completed" : isListingStarted ? "in_progress" : "pending";
+  const listingDesc = isListingComplete
+    ? "Smart contract deployed, audited, and all certificates generated."
+    : isListingStarted
+    ? "Smart contract specification, development, deployment, and auditing in progress."
+    : "Smart contract development, deployment, and auditing for marketplace listing.";
+  const listingDate = isListingComplete ? "Completed" : isListingStarted ? "In progress" : "Awaiting deployment";
+
+  // Funding status
+  const fundingStatus: ProcessStepStatus = isListingComplete ? "in_progress" : "pending";
+  const fundingDate = isListingComplete ? "Now open" : "Awaiting listing";
 
   if (hasSubmission && isReleased) {
     const formattedDate = submissionDate 
@@ -121,8 +136,8 @@ function getProcessSteps(hasSubmission: boolean, isReleased: boolean, isSigned: 
       { id: 1, title: "Document Submission", description: "Your documents have been submitted and processed.", status: "completed", dateRange: `Submitted ${formattedDate}`, actionable: false },
       { id: 2, title: "Asset Standardization", description: "AI analysis complete. Your Asset Score™ and project documents are ready.", status: "completed", dateRange: `Completed ${formattedRelease}`, actionable: false },
       { id: 3, title: "SPV Deployment", description: spvDeploymentDesc, status: spvDeploymentStatus, dateRange: spvDeploymentDate, actionable: false },
-      { id: 4, title: "Listing", description: "SPV listed on the investor marketplace for funding.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
-      { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
+      { id: 4, title: "Listing", description: listingDesc, status: listingStatus, dateRange: listingDate, actionable: false },
+      { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: fundingStatus, dateRange: fundingDate, actionable: false },
       { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
     ];
   }
@@ -182,7 +197,6 @@ function AssetStandardizationSummary({ report, termSheet, onSignTermSheet, isSig
 
   return (
     <div className="space-y-3">
-      {/* Score summary */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-muted/50 rounded-lg p-3 text-center">
           <p className="text-xs text-muted-foreground">Score</p>
@@ -198,7 +212,6 @@ function AssetStandardizationSummary({ report, termSheet, onSignTermSheet, isSig
         </div>
       </div>
 
-      {/* Action buttons */}
       <div className="flex items-center gap-2 flex-wrap">
         <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate("/dashboard/documents")}>
           <Eye className="h-3.5 w-3.5" /> View Documents
@@ -218,6 +231,59 @@ function AssetStandardizationSummary({ report, termSheet, onSignTermSheet, isSig
   );
 }
 
+function SubStageList({ stages, generatedDocs }: { stages: any[]; generatedDocs: any[] | undefined }) {
+  return (
+    <div className="space-y-2 pt-1">
+      {stages.map((stage: any) => {
+        const stageDocs = generatedDocs?.filter((d: any) => d.stage_key === stage.stage_key || (stage.stage_key === "sc_auditing" && (d.stage_key === "sc_deployment_record" || d.stage_key === "ipfs_anchoring"))) || [];
+        return (
+          <div key={stage.id} className="flex items-start gap-3">
+            {stage.status === "completed" ? (
+              <div className="w-5 h-5 rounded-full bg-green/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-3 h-3 text-green" />
+              </div>
+            ) : stage.status === "in_progress" ? (
+              <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Loader2 className="w-3 h-3 text-gold animate-spin" />
+              </div>
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
+                <Clock className="w-3 h-3 text-muted-foreground" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-foreground">{stage.stage_label}</span>
+                <span className={cn(
+                  "text-[10px] font-semibold uppercase tracking-wider",
+                  stage.status === "completed" ? "text-green" :
+                  stage.status === "in_progress" ? "text-gold" : "text-muted-foreground"
+                )}>
+                  {stage.status === "completed" ? "Done" : stage.status === "in_progress" ? "In Progress" : "Pending"}
+                </span>
+              </div>
+              {stageDocs.length > 0 && (
+                <div className="mt-1 space-y-0.5">
+                  {stageDocs.map((doc: any) => (
+                    <div key={doc.id} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <FileText className="h-2.5 w-2.5" />
+                      <span>{doc.document_name}</span>
+                      <span className={cn(
+                        "text-[9px] px-1 py-0.5 rounded",
+                        doc.status === "signed" ? "bg-emerald-100 text-emerald-700" : "bg-secondary"
+                      )}>{doc.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function EmptyProcessPipeline({ 
   onStartUpload, 
   hasSubmission, 
@@ -233,6 +299,7 @@ function EmptyProcessPipeline({
   isSigned,
   deploymentStages,
   generatedDocs,
+  listingStages,
 }: { 
   onStartUpload: () => void; 
   hasSubmission: boolean;
@@ -248,11 +315,14 @@ function EmptyProcessPipeline({
   isSigned: boolean;
   deploymentStages: any[] | undefined;
   generatedDocs: any[] | undefined;
+  listingStages: any[] | undefined;
 }) {
   const navigate = useNavigate();
   const isDeploymentApproved = !!(submission as any)?.deployment_approved;
   const isDeploymentComplete = useIsDeploymentComplete(deploymentStages);
-  const processSteps = getProcessSteps(hasSubmission, isReleased, isSigned, isDeploymentApproved, isDeploymentComplete, submissionDate, releasedDate);
+  const isListingStarted = (listingStages && listingStages.length > 0) || false;
+  const isListingComplete = useIsListingComplete(listingStages);
+  const processSteps = getProcessSteps(hasSubmission, isReleased, isSigned, isDeploymentApproved, isDeploymentComplete, isListingStarted, isListingComplete, submissionDate, releasedDate);
   const completedCount = processSteps.filter(s => s.status === "completed").length;
 
   return (
@@ -313,7 +383,7 @@ function EmptyProcessPipeline({
                 </div>
               )}
               
-              {/* Asset Standardization completed - show score + View Documents + Sign Term Sheet */}
+              {/* Asset Standardization completed */}
               {step.status === "completed" && step.id === 2 && isReleased && analysisReport && (
                 <div className="mt-3 bg-green/5 border border-green/20 rounded-lg p-4">
                   <AssetStandardizationSummary 
@@ -343,7 +413,7 @@ function EmptyProcessPipeline({
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
                   <div className="flex items-center gap-3 text-xs text-green">
                     <Check className="h-3.5 w-3.5" />
-                    <span>{generatedDocs?.length || 0} document{(generatedDocs?.length || 0) !== 1 ? "s" : ""} created</span>
+                    <span>{generatedDocs?.filter(d => ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"].includes(d.stage_key)).length || 0} documents created</span>
                   </div>
                   <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate("/dashboard/documents")}>
                     <Eye className="h-3.5 w-3.5" /> View Documents
@@ -357,51 +427,7 @@ function EmptyProcessPipeline({
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
                   
                   {deploymentStages && deploymentStages.length > 0 ? (
-                    <div className="space-y-2 pt-1">
-                      {deploymentStages.map((stage: any) => {
-                        const stageDocs = generatedDocs?.filter((d: any) => d.stage_key === stage.stage_key) || [];
-                        return (
-                          <div key={stage.id} className="flex items-start gap-3">
-                            {stage.status === "completed" ? (
-                              <div className="w-5 h-5 rounded-full bg-green/20 flex items-center justify-center shrink-0 mt-0.5">
-                                <Check className="w-3 h-3 text-green" />
-                              </div>
-                            ) : stage.status === "in_progress" ? (
-                              <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center shrink-0 mt-0.5">
-                                <Loader2 className="w-3 h-3 text-gold animate-spin" />
-                              </div>
-                            ) : (
-                              <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
-                                <Clock className="w-3 h-3 text-muted-foreground" />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-foreground">{stage.stage_label}</span>
-                                <span className={cn(
-                                  "text-[10px] font-semibold uppercase tracking-wider",
-                                  stage.status === "completed" ? "text-green" :
-                                  stage.status === "in_progress" ? "text-gold" : "text-muted-foreground"
-                                )}>
-                                  {stage.status === "completed" ? "Done" : stage.status === "in_progress" ? "In Progress" : "Pending"}
-                                </span>
-                              </div>
-                              {stageDocs.length > 0 && (
-                                <div className="mt-1 space-y-0.5">
-                                  {stageDocs.map((doc: any) => (
-                                    <div key={doc.id} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                      <FileText className="h-2.5 w-2.5" />
-                                      <span>{doc.document_name}</span>
-                                      <span className="text-[9px] px-1 py-0.5 rounded bg-secondary">{doc.status}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <SubStageList stages={deploymentStages} generatedDocs={generatedDocs} />
                   ) : !isDeploymentApproved ? (
                     <div className="flex items-center gap-2 text-xs text-gold">
                       <Loader2 className="h-3 w-3 animate-spin" />
@@ -411,6 +437,35 @@ function EmptyProcessPipeline({
                     <div className="flex items-center gap-2 text-xs text-gold">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Setting up deployment stages...
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Listing completed */}
+              {step.status === "completed" && step.id === 4 && (
+                <div className="mt-3 bg-green/5 border border-green/20 rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <div className="flex items-center gap-3 text-xs text-green">
+                    <Check className="h-3.5 w-3.5" />
+                    <span>Smart contract deployed and audited</span>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate("/dashboard/documents")}>
+                    <Eye className="h-3.5 w-3.5" /> View Documents
+                  </Button>
+                </div>
+              )}
+
+              {/* Listing in progress - show sub-stages */}
+              {step.status === "in_progress" && step.id === 4 && (
+                <div className="mt-3 bg-gold/5 border border-gold/20 rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  {listingStages && listingStages.length > 0 ? (
+                    <SubStageList stages={listingStages} generatedDocs={generatedDocs} />
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-gold">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Setting up listing stages...
                     </div>
                   )}
                 </div>
@@ -459,6 +514,7 @@ export default function DashboardNewOverview() {
   const { data: existingSignature } = useExistingSignature(submission?.id);
   const { data: deploymentStages } = useDeploymentStages(submission?.id);
   const { data: generatedDocs } = useGeneratedDocuments(submission?.id);
+  const { data: listingStages } = useListingStages(submission?.id);
 
   if (showWizard) {
     return <DocumentWizard sector={user?.user_metadata?.asset_type || "default"} onBack={() => setShowWizard(false)} />;
@@ -494,6 +550,7 @@ export default function DashboardNewOverview() {
           isSigned={!!existingSignature}
           deploymentStages={deploymentStages}
           generatedDocs={generatedDocs}
+          listingStages={listingStages}
         />
       )}
 
