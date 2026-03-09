@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 const STAGE_CONFIG = [
   { key: "submission", label: "Document Submission", icon: "📋" },
   { key: "standardization", label: "Asset Standardization", icon: "⚖️" },
-  { key: "spv", label: "SPV Creation", icon: "🏛️" },
+  { key: "spv", label: "SPV Deployment", icon: "🏛️" },
   { key: "listing", label: "Listing", icon: "📋" },
   { key: "funding", label: "Funding", icon: "💰" },
   { key: "disbursement", label: "Capital Disbursement", icon: "💸" },
