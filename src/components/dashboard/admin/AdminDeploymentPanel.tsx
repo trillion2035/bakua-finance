@@ -440,7 +440,8 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
       {stage.stage_key === "sc_deployment" && stage.status === "in_progress" && onDeployContract && (
         <div className="space-y-3 pt-1">
           <div className="space-y-3">
-            {!preflightResult && (
+            {/* Show preflight section only if no deployments exist yet */}
+            {!testnetResult && !mainnetResult && !preflightResult && (
               <Button size="sm" variant="outline" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-2">
                 {preflightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
                 {preflightLoading ? "Running Pre-flight Checks..." : "Run Pre-flight Check"}
@@ -452,14 +453,12 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
                 <span>Checking secrets, wallet balance, code completeness, and compilation...</span>
               </div>
             )}
-            {preflightResult && (
-              <div className={cn("rounded-lg border p-3 space-y-2", preflightResult.ready ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200")}>
+            {preflightResult && !preflightResult.ready && (
+              <div className="rounded-lg border p-3 space-y-2 bg-red-50 border-red-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {preflightResult.ready ? <CheckCircle className="h-4 w-4 text-emerald-600" /> : <AlertTriangle className="h-4 w-4 text-red-600" />}
-                    <span className={cn("text-sm font-bold", preflightResult.ready ? "text-emerald-700" : "text-red-700")}>
-                      {preflightResult.ready ? "All Checks Passed" : "Issues Found"}
-                    </span>
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <span className="text-sm font-bold text-red-700">Issues Found</span>
                   </div>
                   <Button size="sm" variant="ghost" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-1.5 text-xs h-7">
                     {preflightLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
@@ -494,18 +493,34 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
                 )}
               </div>
             )}
-            {preflightResult?.ready && (
+            {preflightResult?.ready && !testnetResult && !mainnetResult && (
+              <div className="rounded-lg border p-3 space-y-2 bg-emerald-50 border-emerald-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-bold text-emerald-700">All Checks Passed</span>
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-1.5 text-xs h-7">
+                    {preflightLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Re-check
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">{preflightResult.summary}</p>
+              </div>
+            )}
+            {/* Deploy buttons: show when preflight passed OR when a deployment already exists */}
+            {(preflightResult?.ready || testnetResult || mainnetResult) && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <Button size="sm" onClick={() => onDeployContract("testnet")}
                     disabled={deployingContract || !!testnetResult} className="gap-2">
                     {deployingNetwork === "testnet" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                    {deployingNetwork === "testnet" ? "Deploying..." : testnetResult ? "Deployed ✓" : "Deploy to Testnet (Base Sepolia)"}
+                    {deployingNetwork === "testnet" ? "Deploying..." : testnetResult ? "Base Sepolia ✓" : "Deploy to Testnet (Base Sepolia)"}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => onDeployContract("mainnet")}
                     disabled={deployingContract || !!mainnetResult} className="gap-2">
                     {deployingNetwork === "mainnet" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                    {deployingNetwork === "mainnet" ? "Deploying..." : mainnetResult ? "Deployed ✓" : "Deploy to Mainnet (Base)"}
+                    {deployingNetwork === "mainnet" ? "Deploying..." : mainnetResult ? "Base Mainnet ✓" : "Deploy to Mainnet (Base)"}
                   </Button>
                 </div>
                 {deployingNetwork && (
@@ -517,6 +532,7 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
               </div>
             )}
           </div>
+          {/* Show deployment results */}
           {[testnetResult, mainnetResult].filter(Boolean).map((result: any, idx: number) => (
             <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
