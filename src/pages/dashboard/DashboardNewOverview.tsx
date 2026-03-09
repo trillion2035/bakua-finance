@@ -473,6 +473,8 @@ export default function DashboardNewOverview() {
           profileName={profileName}
           onSignTermSheet={() => setShowSignModal(true)}
           isSigned={!!existingSignature}
+          deploymentStages={deploymentStages}
+          generatedDocs={generatedDocs}
         />
       )}
 
