@@ -533,7 +533,7 @@ export default function DashboardNewOverview() {
         </p>
       </div>
 
-      <EmptyKPICards capitalTarget={capitalTarget} spv={spv} analysisReport={latestReport} />
+      <EmptyKPICards capitalTarget={capitalTarget} spv={spv} analysisReport={latestReport} termSheet={termSheet} />
       {spv ? (
         <ProcessPipeline />
       ) : (
