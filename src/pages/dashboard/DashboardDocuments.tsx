@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown, Lock, Shield, FileSpreadsheet, PenTool } from "lucide-react";
 import { useOwnerSpvs, useSpvDocuments, useUserUploadedDocuments, useDocumentSubmission } from "@/hooks/useSpvData";
+import { useGeneratedDocuments, useIsDeploymentComplete, useDeploymentStages } from "@/hooks/useDeploymentData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
