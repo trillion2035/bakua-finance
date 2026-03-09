@@ -39,21 +39,23 @@ function formatCapitalTarget(raw: string): string {
   return [prefix, formatted, suffix].filter(Boolean).join(" ");
 }
 
-function EmptyKPICards({ capitalTarget, spv, analysisReport }: { capitalTarget: string; spv: any; analysisReport: any }) {
+function EmptyKPICards({ capitalTarget, spv, analysisReport, termSheet }: { capitalTarget: string; spv: any; analysisReport: any; termSheet: any }) {
   const hasScore = analysisReport?.analysis_status === "completed";
+  const irrTarget = termSheet?.target_irr || spv?.target_irr || null;
+  const tenorMonths = termSheet?.tenor_months || 36;
 
   const kpis = spv
     ? [
         { label: "Total Capital Target", value: spv.target_amount ? formatCurrency(spv.target_amount, spv.currency) : "—", subtext: spv.target_amount_usd || "Not set", icon: DollarSign },
         { label: "Funded", value: spv.funded_percent ? `${spv.funded_percent}%` : "—", subtext: spv.funded_percent === 100 ? "Fully funded" : "In progress", icon: TrendingUp },
         { label: "Asset Score™", value: hasScore ? analysisReport.grade : "—", subtext: hasScore ? analysisReport.grade_label : "Pending analysis", icon: Shield },
-        { label: "IRR Target", value: spv.target_irr || "—", subtext: "36-month term", icon: Percent },
+        { label: "IRR Target", value: irrTarget || "—", subtext: `${tenorMonths}-month term`, icon: Percent },
       ]
     : [
         { label: "Total Capital Target", value: formatCapitalTarget(capitalTarget), subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
         { label: "Funded", value: "—", subtext: "Awaiting documents", icon: TrendingUp },
         { label: "Asset Score™", value: hasScore ? analysisReport.grade : "—", subtext: hasScore ? analysisReport.grade_label : "Pending analysis", icon: Shield },
-        { label: "IRR Target", value: "—", subtext: "Pending model", icon: Percent },
+        { label: "IRR Target", value: irrTarget || "—", subtext: irrTarget ? `${tenorMonths}-month term` : "Pending model", icon: Percent },
       ];
 
   return (
