@@ -455,6 +455,31 @@ export function useTermSheetSignatures(submissionId: string | undefined) {
   });
 }
 
+// Verify & publish contract source code on Basescan
+export function useVerifyContract() {
+  return useMutation({
+    mutationFn: async ({ submissionId, network, contractAddress }: { submissionId: string; network: "testnet" | "mainnet"; contractAddress: string }) => {
+      const response = await supabase.functions.invoke("verify-contract", {
+        body: { submission_id: submissionId, network, contract_address: contractAddress },
+      });
+      if (response.error) throw new Error(response.error.message || "Verification failed");
+      const data = response.data as any;
+      if (!data?.success) throw new Error(data?.error || "Verification failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success("Contract verified!", {
+        description: `${data.status} on ${data.network}`,
+      });
+    },
+    onError: (error) => {
+      toast.error("Verification failed", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    },
+  });
+}
+
 // Check if all deployment stages are completed
 export function useIsDeploymentComplete(stages: DeploymentStage[] | undefined) {
   if (!stages || stages.length === 0) return false;

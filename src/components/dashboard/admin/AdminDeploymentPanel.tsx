@@ -23,6 +23,7 @@ import {
   useExecuteStep,
   usePreflightCheck,
   useDeployContract,
+  useVerifyContract,
   type DeploymentStage,
   type GeneratedDocument,
 } from "@/hooks/useDeploymentData";
@@ -176,7 +177,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 /* ── Deploy Result Card ── */
-function DeployResultCard({ result }: { result: any }) {
+function DeployResultCard({ result, onVerify, verifying, verified }: { result: any; onVerify?: () => void; verifying?: boolean; verified?: boolean }) {
   return (
     <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
       <div className="flex items-center gap-2">
@@ -195,7 +196,7 @@ function DeployResultCard({ result }: { result: any }) {
           </div>
         )}
       </div>
-      <div className="flex gap-2 pt-1">
+      <div className="flex gap-2 pt-1 flex-wrap">
         {result.explorer_url && (
           <a href={result.explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
             <ExternalLink className="h-3 w-3" /> View Contract
@@ -207,12 +208,31 @@ function DeployResultCard({ result }: { result: any }) {
           </a>
         )}
       </div>
+      {/* Verify & Publish */}
+      {onVerify && (
+        <div className="pt-2 border-t border-emerald-200">
+          {verified ? (
+            <div className="flex items-center gap-2 text-xs text-emerald-700">
+              <CheckCircle className="h-3.5 w-3.5" />
+              <span className="font-medium">Source Code Verified & Published</span>
+              <a href={`${result.explorer_url}#code`} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80 ml-1">
+                <ExternalLink className="h-3 w-3 inline" /> View
+              </a>
+            </div>
+          ) : (
+            <Button size="sm" variant="outline" onClick={onVerify} disabled={verifying} className="gap-2 text-xs">
+              {verifying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Bot className="h-3.5 w-3.5" />}
+              {verifying ? "Verifying..." : "Verify & Publish Source Code"}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 /* ── Network Deploy Card (per-network preflight + deploy) ── */
-function NetworkDeployCard({ label, network, result, preflightResult, preflightLoading, onPreflightCheck, onPreflightFix, onDeploy, deploying, deployingAny }: {
+function NetworkDeployCard({ label, network, result, preflightResult, preflightLoading, onPreflightCheck, onPreflightFix, onDeploy, deploying, deployingAny, onVerify, verifying, verified }: {
   label: string;
   network: "testnet" | "mainnet";
   result: any;
@@ -223,10 +243,13 @@ function NetworkDeployCard({ label, network, result, preflightResult, preflightL
   onDeploy: () => void;
   deploying: boolean;
   deployingAny: boolean;
+  onVerify?: () => void;
+  verifying?: boolean;
+  verified?: boolean;
 }) {
   // Already deployed
   if (result) {
-    return <DeployResultCard result={result} />;
+    return <DeployResultCard result={result} onVerify={onVerify} verifying={verifying} verified={verified} />;
   }
 
   return (
@@ -323,7 +346,7 @@ function NetworkDeployCard({ label, network, result, preflightResult, preflightL
 }
 
 /* ── Stage Row ── */
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix, onMainnetPreflightCheck, mainnetPreflightLoading, mainnetPreflightResult, onMainnetPreflightFix }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix, onMainnetPreflightCheck, mainnetPreflightLoading, mainnetPreflightResult, onMainnetPreflightFix, onVerifyContract, verifyingNetwork, verifiedNetworks }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -354,6 +377,9 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   mainnetPreflightLoading?: boolean;
   mainnetPreflightResult?: any;
   onMainnetPreflightFix?: () => void;
+  onVerifyContract?: (network: "testnet" | "mainnet", contractAddress: string) => void;
+  verifyingNetwork?: "testnet" | "mainnet" | null;
+  verifiedNetworks?: Set<string>;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingCert, setUploadingCert] = useState(false);
@@ -587,8 +613,8 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
         );
       })()}
 
-      {/* SC Deployment: Per-network preflight + deploy cards */}
-      {stage.stage_key === "sc_deployment" && stage.status === "in_progress" && onDeployContract && (
+      {/* SC Deployment: Per-network preflight + deploy cards (visible in_progress AND completed) */}
+      {stage.stage_key === "sc_deployment" && (stage.status === "in_progress" || stage.status === "completed") && onDeployContract && (
         <div className="space-y-4 pt-1">
           {/* ── Testnet Card ── */}
           <NetworkDeployCard
@@ -602,6 +628,9 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
             onDeploy={() => onDeployContract("testnet")}
             deploying={deployingNetwork === "testnet"}
             deployingAny={!!deployingContract}
+            onVerify={testnetResult ? () => onVerifyContract?.("testnet", testnetResult.contract_address) : undefined}
+            verifying={verifyingNetwork === "testnet"}
+            verified={verifiedNetworks?.has("testnet")}
           />
           {/* ── Mainnet Card ── */}
           <NetworkDeployCard
@@ -615,15 +644,10 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
             onDeploy={() => onDeployContract("mainnet")}
             deploying={deployingNetwork === "mainnet"}
             deployingAny={!!deployingContract}
+            onVerify={mainnetResult ? () => onVerifyContract?.("mainnet", mainnetResult.contract_address) : undefined}
+            verifying={verifyingNetwork === "mainnet"}
+            verified={verifiedNetworks?.has("mainnet")}
           />
-        </div>
-      )}
-      {/* SC Deployment results shown when stage is completed */}
-      {stage.stage_key === "sc_deployment" && stage.status === "completed" && (testnetResult || mainnetResult) && (
-        <div className="space-y-2 pt-1">
-          {[testnetResult, mainnetResult].filter(Boolean).map((result: any, idx: number) => (
-            <DeployResultCard key={idx} result={result} />
-          ))}
         </div>
       )}
 
@@ -695,12 +719,15 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const executeStep = useExecuteStep();
   const deployContract = useDeployContract();
   const preflightCheck = usePreflightCheck();
+  const verifyContract = useVerifyContract();
   const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
   const [testnetResult, setTestnetResult] = useState<any>(null);
   const [mainnetResult, setMainnetResult] = useState<any>(null);
   const [preflightResult, setPreflightResult] = useState<any>(null);
   const [mainnetPreflightResult, setMainnetPreflightResult] = useState<any>(null);
   const [deployingNetwork, setDeployingNetwork] = useState<"testnet" | "mainnet" | null>(null);
+  const [verifyingNetwork, setVerifyingNetwork] = useState<"testnet" | "mainnet" | null>(null);
+  const [verifiedNetworks, setVerifiedNetworks] = useState<Set<string>>(new Set());
 
   // Load persisted deployment results from generated_documents on mount
   const deploymentRecords = generatedDocs?.filter(d => d.document_type === "sc_deployment_record" && d.status === "verified") || [];
@@ -780,6 +807,20 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     preflightCheck.mutate(
       { submissionId: submission.id, network: "mainnet", mode: "fix" },
       { onSuccess: (data) => setMainnetPreflightResult(data) }
+    );
+  };
+
+  const handleVerifyContract = (network: "testnet" | "mainnet", contractAddress: string) => {
+    setVerifyingNetwork(network);
+    verifyContract.mutate(
+      { submissionId: submission.id, network, contractAddress },
+      {
+        onSuccess: () => {
+          setVerifiedNetworks(prev => new Set([...prev, network]));
+          setVerifyingNetwork(null);
+        },
+        onError: () => setVerifyingNetwork(null),
+      }
     );
   };
 
@@ -1081,7 +1122,10 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         onMainnetPreflightCheck={stage.stage_key === "sc_deployment" ? handleMainnetPreflightCheck : undefined}
                         mainnetPreflightLoading={stage.stage_key === "sc_deployment" ? preflightCheck.isPending : false}
                         mainnetPreflightResult={stage.stage_key === "sc_deployment" ? mainnetPreflightResult : undefined}
-                        onMainnetPreflightFix={stage.stage_key === "sc_deployment" ? handleMainnetPreflightFix : undefined} />
+                        onMainnetPreflightFix={stage.stage_key === "sc_deployment" ? handleMainnetPreflightFix : undefined}
+                        onVerifyContract={stage.stage_key === "sc_deployment" ? handleVerifyContract : undefined}
+                        verifyingNetwork={stage.stage_key === "sc_deployment" ? verifyingNetwork : null}
+                        verifiedNetworks={stage.stage_key === "sc_deployment" ? verifiedNetworks : undefined} />
                     );
                   })}
 
