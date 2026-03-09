@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      asset_analysis_reports: {
+        Row: {
+          ai_model_version: string | null
+          analysis_status: Database["public"]["Enums"]["analysis_status"]
+          created_at: string
+          document_completeness_score: number | null
+          document_verification_log: Json | null
+          dossier_pdf_path: string | null
+          grade: string | null
+          grade_label: string | null
+          human_reviewer: string | null
+          id: string
+          industry: Database["public"]["Enums"]["asset_industry"]
+          project_summary: string | null
+          recommendations: Json | null
+          rejection_report_pdf_path: string | null
+          reviewed_at: string | null
+          risk_factors: Json | null
+          score_dimensions: Json | null
+          submission_id: string
+          term_sheet_pdf_path: string | null
+          total_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_model_version?: string | null
+          analysis_status?: Database["public"]["Enums"]["analysis_status"]
+          created_at?: string
+          document_completeness_score?: number | null
+          document_verification_log?: Json | null
+          dossier_pdf_path?: string | null
+          grade?: string | null
+          grade_label?: string | null
+          human_reviewer?: string | null
+          id?: string
+          industry?: Database["public"]["Enums"]["asset_industry"]
+          project_summary?: string | null
+          recommendations?: Json | null
+          rejection_report_pdf_path?: string | null
+          reviewed_at?: string | null
+          risk_factors?: Json | null
+          score_dimensions?: Json | null
+          submission_id: string
+          term_sheet_pdf_path?: string | null
+          total_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_model_version?: string | null
+          analysis_status?: Database["public"]["Enums"]["analysis_status"]
+          created_at?: string
+          document_completeness_score?: number | null
+          document_verification_log?: Json | null
+          dossier_pdf_path?: string | null
+          grade?: string | null
+          grade_label?: string | null
+          human_reviewer?: string | null
+          id?: string
+          industry?: Database["public"]["Enums"]["asset_industry"]
+          project_summary?: string | null
+          recommendations?: Json | null
+          rejection_report_pdf_path?: string | null
+          reviewed_at?: string | null
+          risk_factors?: Json | null
+          score_dimensions?: Json | null
+          submission_id?: string
+          term_sheet_pdf_path?: string | null
+          total_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_analysis_reports_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "document_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_submissions: {
         Row: {
           id: string
@@ -757,6 +840,83 @@ export type Database = {
         }
         Relationships: []
       }
+      term_sheets: {
+        Row: {
+          analysis_report_id: string
+          conditions_precedent: Json | null
+          created_at: string
+          effective_rate: string | null
+          events_of_default: Json | null
+          facility_amount_fcfa: number | null
+          facility_amount_usd: string | null
+          fees: Json | null
+          id: string
+          milestones: Json | null
+          pdf_path: string | null
+          reference_code: string
+          repayment_schedule: Json | null
+          security_package: Json | null
+          target_irr: string | null
+          tenor_months: number | null
+          transaction_name: string | null
+          updated_at: string
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          analysis_report_id: string
+          conditions_precedent?: Json | null
+          created_at?: string
+          effective_rate?: string | null
+          events_of_default?: Json | null
+          facility_amount_fcfa?: number | null
+          facility_amount_usd?: string | null
+          fees?: Json | null
+          id?: string
+          milestones?: Json | null
+          pdf_path?: string | null
+          reference_code: string
+          repayment_schedule?: Json | null
+          security_package?: Json | null
+          target_irr?: string | null
+          tenor_months?: number | null
+          transaction_name?: string | null
+          updated_at?: string
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          analysis_report_id?: string
+          conditions_precedent?: Json | null
+          created_at?: string
+          effective_rate?: string | null
+          events_of_default?: Json | null
+          facility_amount_fcfa?: number | null
+          facility_amount_usd?: string | null
+          fees?: Json | null
+          id?: string
+          milestones?: Json | null
+          pdf_path?: string | null
+          reference_code?: string
+          repayment_schedule?: Json | null
+          security_package?: Json | null
+          target_irr?: string | null
+          tenor_months?: number | null
+          transaction_name?: string | null
+          updated_at?: string
+          user_id?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "term_sheets_analysis_report_id_fkey"
+            columns: ["analysis_report_id"]
+            isOneToOne: false
+            referencedRelation: "asset_analysis_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: string
@@ -838,7 +998,14 @@ export type Database = {
       }
     }
     Enums: {
+      analysis_status: "pending" | "processing" | "completed" | "failed"
       app_role: "admin" | "project_owner" | "investor"
+      asset_industry:
+        | "agriculture"
+        | "real_estate"
+        | "trade_finance"
+        | "infrastructure"
+        | "renewable_energy"
       investment_status: "active" | "distributing" | "matured"
       milestone_status: "pending" | "disbursed"
       oracle_event_status: "confirmed" | "pending" | "failed"
@@ -985,7 +1152,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      analysis_status: ["pending", "processing", "completed", "failed"],
       app_role: ["admin", "project_owner", "investor"],
+      asset_industry: [
+        "agriculture",
+        "real_estate",
+        "trade_finance",
+        "infrastructure",
+        "renewable_energy",
+      ],
       investment_status: ["active", "distributing", "matured"],
       milestone_status: ["pending", "disbursed"],
       oracle_event_status: ["confirmed", "pending", "failed"],

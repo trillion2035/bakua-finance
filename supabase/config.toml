@@ -3,3 +3,7 @@ project_id = "pyngcobhnvzerpiuxwaa"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.analyze-documents]
+    verify_jwt = false
+  [functions.delete-account]
+    verify_jwt = false
