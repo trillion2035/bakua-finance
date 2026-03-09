@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   ArrowRight, Clock, Check, Loader2, FileUp, Eye,
   DollarSign, TrendingUp, Shield, Percent,
-  Download, FileText, FileSpreadsheet, PenTool,
+  PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,9 +10,10 @@ import { useOwnerSpvs, useDocumentSubmission, useUserUploadedDocuments } from "@
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
+import { SignTermSheetModal } from "@/components/dashboard/documents/SignTermSheetModal";
 import { useNavigate } from "react-router-dom";
-import { generateAssetScorePDF, generateProjectDossierPDF, generateTermSheetPDF } from "@/lib/pdfGenerators";
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
 function formatCurrency(amount: number | string | null, currency?: string | null): string {
@@ -130,51 +131,34 @@ function getProcessSteps(hasSubmission: boolean, isReleased: boolean, submission
   ];
 }
 
-interface AnalysisDocsSectionProps {
+function useExistingSignature(submissionId: string | undefined) {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["term-sheet-signature", submissionId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("term_sheet_signatures" as any)
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("submission_id", submissionId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!submissionId,
+  });
+}
+
+interface AssetStandardizationSummaryProps {
   report: any;
   termSheet: any;
   submission: any;
-  profileName: string;
+  onSignTermSheet: () => void;
+  isSigned: boolean;
 }
 
-function AnalysisDocsSection({ report, termSheet, submission, profileName }: AnalysisDocsSectionProps) {
-  const [signing, setSigning] = useState(false);
-
-  const handleDownloadAssetScore = () => {
-    try {
-      const pdf = generateAssetScorePDF(report, profileName);
-      pdf.save(`Asset-Score-${report.grade}.pdf`);
-      toast.success("Asset Score PDF downloaded");
-    } catch { toast.error("Failed to generate PDF"); }
-  };
-
-  const handleDownloadDossier = () => {
-    try {
-      const pdf = generateProjectDossierPDF(report, submission, profileName);
-      pdf.save(`Project-Dossier.pdf`);
-      toast.success("Project Dossier PDF downloaded");
-    } catch { toast.error("Failed to generate PDF"); }
-  };
-
-  const handleDownloadTermSheet = () => {
-    if (!termSheet) return;
-    try {
-      const pdf = generateTermSheetPDF(termSheet, report, profileName);
-      pdf.save(`Term-Sheet-${termSheet.reference_code}.pdf`);
-      toast.success("Term Sheet PDF downloaded");
-    } catch { toast.error("Failed to generate PDF"); }
-  };
-
-  const handleSignTermSheet = () => {
-    setSigning(true);
-    // Simulate signing - in production this would be a real e-signature flow
-    setTimeout(() => {
-      setSigning(false);
-      toast.success("Term Sheet signed successfully!", {
-        description: "Your signed term sheet has been recorded. SPV deployment will begin shortly.",
-      });
-    }, 2000);
-  };
+function AssetStandardizationSummary({ report, termSheet, onSignTermSheet, isSigned }: AssetStandardizationSummaryProps) {
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-3">
@@ -194,69 +178,20 @@ function AnalysisDocsSection({ report, termSheet, submission, profileName }: Ana
         </div>
       </div>
 
-      {/* Downloadable documents */}
-      <div className="space-y-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Documents</p>
-        
-        <button
-          onClick={handleDownloadAssetScore}
-          className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors text-left"
-        >
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <Shield className="h-4 w-4 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">Asset Standardization Score</p>
-            <p className="text-xs text-muted-foreground">Score breakdown, dimensions, risk analysis</p>
-          </div>
-          <Download className="h-4 w-4 text-muted-foreground shrink-0" />
-        </button>
-
-        <button
-          onClick={handleDownloadDossier}
-          className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors text-left"
-        >
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <FileText className="h-4 w-4 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground">Project Dossier</p>
-            <p className="text-xs text-muted-foreground">Executive summary, verification, recommendations</p>
-          </div>
-          <Download className="h-4 w-4 text-muted-foreground shrink-0" />
-        </button>
-
-        {termSheet && (
-          <div className="space-y-2">
-            <button
-              onClick={handleDownloadTermSheet}
-              className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors text-left"
-            >
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <FileSpreadsheet className="h-4 w-4 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground">Term Sheet</p>
-                <p className="text-xs text-muted-foreground">
-                  Ref: {termSheet.reference_code} · Valid until {new Date(termSheet.valid_until).toLocaleDateString()}
-                </p>
-              </div>
-              <Download className="h-4 w-4 text-muted-foreground shrink-0" />
-            </button>
-
-            <Button
-              onClick={handleSignTermSheet}
-              disabled={signing}
-              className="w-full gap-2"
-            >
-              {signing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <PenTool className="h-4 w-4" />
-              )}
-              Sign Term Sheet
-            </Button>
-          </div>
+      {/* Action buttons */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate("/dashboard/documents")}>
+          <Eye className="h-3.5 w-3.5" /> View Documents
+        </Button>
+        {termSheet && !isSigned && (
+          <Button size="sm" className="gap-2" onClick={onSignTermSheet}>
+            <PenTool className="h-3.5 w-3.5" /> Sign Term Sheet
+          </Button>
+        )}
+        {isSigned && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green">
+            <Check className="h-3.5 w-3.5" /> Term Sheet Signed
+          </span>
         )}
       </div>
     </div>
@@ -274,6 +209,8 @@ function EmptyProcessPipeline({
   termSheet,
   submission,
   profileName,
+  onSignTermSheet,
+  isSigned,
 }: { 
   onStartUpload: () => void; 
   hasSubmission: boolean;
@@ -285,6 +222,8 @@ function EmptyProcessPipeline({
   termSheet: any;
   submission: any;
   profileName: string;
+  onSignTermSheet: () => void;
+  isSigned: boolean;
 }) {
   const navigate = useNavigate();
   const processSteps = getProcessSteps(hasSubmission, isReleased, submissionDate, releasedDate);
@@ -348,14 +287,15 @@ function EmptyProcessPipeline({
                 </div>
               )}
               
-              {/* Asset Standardization completed - show documents */}
+              {/* Asset Standardization completed - show score + View Documents + Sign Term Sheet */}
               {step.status === "completed" && step.id === 2 && isReleased && analysisReport && (
                 <div className="mt-3 bg-green/5 border border-green/20 rounded-lg p-4">
-                  <AnalysisDocsSection 
+                  <AssetStandardizationSummary 
                     report={analysisReport} 
                     termSheet={termSheet} 
                     submission={submission}
-                    profileName={profileName}
+                    onSignTermSheet={onSignTermSheet}
+                    isSigned={isSigned}
                   />
                 </div>
               )}
@@ -401,6 +341,7 @@ function EmptyProcessPipeline({
 
 export default function DashboardNewOverview() {
   const [showWizard, setShowWizard] = useState(false);
+  const [showSignModal, setShowSignModal] = useState(false);
   const { profile, user } = useAuth();
   const { data: spvs } = useOwnerSpvs();
   const { data: submission } = useDocumentSubmission();
@@ -416,15 +357,12 @@ export default function DashboardNewOverview() {
   const hasSubmission = !!submission;
   const uploadedDocsCount = uploadedDocs?.length || 0;
   
-  // Check if results have been released to client
   const isReleased = !!(submission as any)?.released_to_client;
   const releasedDate = (submission as any)?.released_at;
   
-  // Get the latest completed analysis report
   const latestReport = analysisReports?.find(r => r.analysis_status === "completed") || null;
-  
-  // Fetch term sheet for the report
   const { data: termSheet } = useTermSheet(latestReport?.id);
+  const { data: existingSignature } = useExistingSignature(submission?.id);
 
   if (showWizard) {
     return <DocumentWizard sector={user?.user_metadata?.asset_type || "default"} onBack={() => setShowWizard(false)} />;
@@ -456,6 +394,18 @@ export default function DashboardNewOverview() {
           termSheet={termSheet}
           submission={submission}
           profileName={profileName}
+          onSignTermSheet={() => setShowSignModal(true)}
+          isSigned={!!existingSignature}
+        />
+      )}
+
+      {/* Sign Term Sheet Modal */}
+      {submission && latestReport && (
+        <SignTermSheetModal
+          open={showSignModal}
+          onOpenChange={setShowSignModal}
+          submissionId={submission.id}
+          analysisReportId={latestReport.id}
         />
       )}
     </div>
