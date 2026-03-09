@@ -630,6 +630,7 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const launchSCDev = useLaunchSCDevelopment();
   const executeStep = useExecuteStep();
   const deployContract = useDeployContract();
+  const preflightCheck = usePreflightCheck();
   const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
   const [deployResult, setDeployResult] = useState<any>(null);
 
