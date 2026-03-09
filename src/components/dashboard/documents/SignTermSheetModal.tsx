@@ -101,7 +101,7 @@ function DrawCanvas({ onSignatureChange }: { onSignatureChange: (data: string | 
       <div className="relative border border-border rounded-lg bg-background overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="w-full h-40 cursor-crosshair touch-none"
+          className="w-full h-40 cursor-crosshair touch-none bg-white"
           onMouseDown={startDraw}
           onMouseMove={draw}
           onMouseUp={endDraw}
