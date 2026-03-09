@@ -240,6 +240,42 @@ function SubmissionRow({ submission }: { submission: any }) {
             </div>
           )}
 
+          {/* PDF Download Buttons */}
+          {report?.analysis_status === "completed" && (
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+              <span className="text-xs font-medium text-muted-foreground mr-2">Download Reports:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadAssetScore}
+                className="gap-2"
+              >
+                <Download className="h-3 w-3" />
+                Asset Score
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadDossier}
+                className="gap-2"
+              >
+                <FileText className="h-3 w-3" />
+                Project Dossier
+              </Button>
+              {termSheet && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadTermSheet}
+                  className="gap-2"
+                >
+                  <FileSpreadsheet className="h-3 w-3" />
+                  Term Sheet
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex items-center gap-3 pt-2">
             {(!report || report.analysis_status === "failed" || report.analysis_status === "pending") && (
