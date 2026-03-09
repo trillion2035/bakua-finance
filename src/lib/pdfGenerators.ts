@@ -2,11 +2,12 @@ import jsPDF from "jspdf";
 import type { AnalysisReport, TermSheet } from "@/hooks/useAnalysisData";
 
 // Common PDF styling
-const PRIMARY_COLOR = [34, 139, 230] as const;
-const TEXT_COLOR = [51, 51, 51] as const;
-const GRAY_COLOR = [128, 128, 128] as const;
-const DANGER_COLOR = [239, 68, 68] as const;
-const SUCCESS_COLOR = [34, 197, 94] as const;
+const PRIMARY_COLOR: [number, number, number] = [34, 139, 230];
+const TEXT_COLOR: [number, number, number] = [51, 51, 51];
+const GRAY_COLOR: [number, number, number] = [128, 128, 128];
+const DANGER_COLOR: [number, number, number] = [239, 68, 68];
+const SUCCESS_COLOR: [number, number, number] = [34, 197, 94];
+const WARNING_COLOR: [number, number, number] = [234, 179, 8];
 
 function addHeader(doc: jsPDF, title: string, subtitle?: string) {
   doc.setFillColor(...PRIMARY_COLOR);
