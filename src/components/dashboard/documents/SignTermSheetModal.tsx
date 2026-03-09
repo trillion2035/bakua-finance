@@ -29,16 +29,24 @@ function DrawCanvas({ onSignatureChange }: { onSignatureChange: (data: string | 
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
 
-  const getCoords = (e: React.MouseEvent | React.TouchEvent) => {
+  const getCoords = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     if ("touches" in e) {
-      return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+      return { 
+        x: (e.touches[0].clientX - rect.left) * scaleX, 
+        y: (e.touches[0].clientY - rect.top) * scaleY 
+      };
     }
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  };
+    return { 
+      x: (e.clientX - rect.left) * scaleX, 
+      y: (e.clientY - rect.top) * scaleY 
+    };
+  }, []);
 
-  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
+  const startDraw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
@@ -46,30 +54,30 @@ function DrawCanvas({ onSignatureChange }: { onSignatureChange: (data: string | 
     const { x, y } = getCoords(e);
     ctx.beginPath();
     ctx.moveTo(x, y);
-  };
+  }, [getCoords]);
 
-  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+  const draw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return;
     e.preventDefault();
     const ctx = canvasRef.current?.getContext("2d");
     if (!ctx) return;
     const { x, y } = getCoords(e);
     ctx.lineTo(x, y);
-    ctx.strokeStyle = "hsl(var(--foreground))";
+    ctx.strokeStyle = "#000";
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
     ctx.stroke();
     setHasDrawn(true);
-  };
+  }, [isDrawing, getCoords]);
 
-  const endDraw = () => {
+  const endDraw = useCallback(() => {
     setIsDrawing(false);
     if (hasDrawn && canvasRef.current) {
       onSignatureChange(canvasRef.current.toDataURL("image/png"));
     }
-  };
+  }, [hasDrawn, onSignatureChange]);
 
-  const clear = () => {
+  const clear = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -77,13 +85,15 @@ function DrawCanvas({ onSignatureChange }: { onSignatureChange: (data: string | 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasDrawn(false);
     onSignatureChange(null);
-  };
+  }, [onSignatureChange]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    canvas.width = canvas.offsetWidth * 2;
+    canvas.height = canvas.offsetHeight * 2;
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.scale(2, 2);
   }, []);
 
   return (
@@ -117,7 +127,6 @@ function TypeSignature({ onSignatureChange }: { onSignatureChange: (data: string
 
   useEffect(() => {
     if (typed.trim().length > 0) {
-      // Create a canvas with the typed text as signature
       const canvas = document.createElement("canvas");
       canvas.width = 400;
       canvas.height = 100;
