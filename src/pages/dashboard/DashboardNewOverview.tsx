@@ -332,14 +332,68 @@ function EmptyProcessPipeline({
                 </div>
               )}
 
-              {/* SPV Deployment in progress */}
+              {/* SPV Deployment in progress - show sub-stages */}
               {step.status === "in_progress" && step.id === 3 && (
                 <div className="mt-3 bg-gold/5 border border-gold/20 rounded-lg p-4 space-y-3">
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
-                  <div className="flex items-center gap-2 text-xs text-gold">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Awaiting term sheet signing to begin deployment
-                  </div>
+                  
+                  {deploymentStages && deploymentStages.length > 0 ? (
+                    <div className="space-y-2 pt-1">
+                      {deploymentStages.map((stage: any) => {
+                        const stageDocs = generatedDocs?.filter((d: any) => d.stage_key === stage.stage_key) || [];
+                        return (
+                          <div key={stage.id} className="flex items-start gap-3">
+                            {stage.status === "completed" ? (
+                              <div className="w-5 h-5 rounded-full bg-green/20 flex items-center justify-center shrink-0 mt-0.5">
+                                <Check className="w-3 h-3 text-green" />
+                              </div>
+                            ) : stage.status === "in_progress" ? (
+                              <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center shrink-0 mt-0.5">
+                                <Loader2 className="w-3 h-3 text-gold animate-spin" />
+                              </div>
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
+                                <Clock className="w-3 h-3 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-foreground">{stage.stage_label}</span>
+                                <span className={cn(
+                                  "text-[10px] font-semibold uppercase tracking-wider",
+                                  stage.status === "completed" ? "text-green" :
+                                  stage.status === "in_progress" ? "text-gold" : "text-muted-foreground"
+                                )}>
+                                  {stage.status === "completed" ? "Done" : stage.status === "in_progress" ? "In Progress" : "Pending"}
+                                </span>
+                              </div>
+                              {stageDocs.length > 0 && (
+                                <div className="mt-1 space-y-0.5">
+                                  {stageDocs.map((doc: any) => (
+                                    <div key={doc.id} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                      <FileText className="h-2.5 w-2.5" />
+                                      <span>{doc.document_name}</span>
+                                      <span className="text-[9px] px-1 py-0.5 rounded bg-secondary">{doc.status}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : !isDeploymentApproved ? (
+                    <div className="flex items-center gap-2 text-xs text-gold">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {isSigned ? "Awaiting admin approval to begin deployment" : "Sign the term sheet to proceed"}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-gold">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Setting up deployment stages...
+                    </div>
+                  )}
                 </div>
               )}
               
