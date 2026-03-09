@@ -36,7 +36,6 @@ export interface GeneratedDocument {
   updated_at: string;
 }
 
-// Fetch deployment stages for a submission
 export function useDeploymentStages(submissionId: string | undefined) {
   return useQuery({
     queryKey: ["deployment-stages", submissionId],
@@ -53,7 +52,6 @@ export function useDeploymentStages(submissionId: string | undefined) {
   });
 }
 
-// Fetch generated documents for a submission
 export function useGeneratedDocuments(submissionId: string | undefined) {
   return useQuery({
     queryKey: ["generated-documents", submissionId],
@@ -70,13 +68,11 @@ export function useGeneratedDocuments(submissionId: string | undefined) {
   });
 }
 
-// Admin: Approve SPV deployment (creates stages + triggers AI doc generation)
 export function useApproveDeployment() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ submissionId, userId }: { submissionId: string; userId: string }) => {
-      // 1. Update submission as deployment approved
       const { error: updateErr } = await supabase
         .from("document_submissions")
         .update({
@@ -86,7 +82,6 @@ export function useApproveDeployment() {
         .eq("id", submissionId);
       if (updateErr) throw updateErr;
 
-      // 2. Create the 4 deployment stages
       const stages = [
         { stage_order: 1, stage_key: "spv_doc_creation", stage_label: "SPV Document Creation", description: "AI agent drafts the Articles of Association for the SPV incorporation." },
         { stage_order: 2, stage_key: "spv_incorporation", stage_label: "SPV Incorporation", description: "Legal entity is formally incorporated with the relevant authorities." },
@@ -103,13 +98,11 @@ export function useApproveDeployment() {
         })));
       if (stageErr) throw stageErr;
 
-      // 3. Trigger AI generation of Articles of Association
       const response = await supabase.functions.invoke("generate-spv-documents", {
         body: { submission_id: submissionId, stage_key: "spv_doc_creation" },
       });
       if (response.error) {
         console.error("AI doc generation error:", response.error);
-        // Don't fail the whole operation - stages are created
       }
 
       return { success: true };
@@ -130,13 +123,11 @@ export function useApproveDeployment() {
   });
 }
 
-// Admin: Advance a stage to completed
 export function useCompleteStage() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ stageId, submissionId, currentStageKey }: { stageId: string; submissionId: string; currentStageKey: string }) => {
-      // Complete the current stage
       const { error } = await supabase
         .from("spv_deployment_stages" as any)
         .update({
@@ -146,7 +137,6 @@ export function useCompleteStage() {
         .eq("id", stageId);
       if (error) throw error;
 
-      // Determine and start next stage
       const stageOrder = ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"];
       const currentIdx = stageOrder.indexOf(currentStageKey);
       if (currentIdx < stageOrder.length - 1) {
@@ -161,7 +151,6 @@ export function useCompleteStage() {
           .eq("stage_key", nextKey);
         if (nextErr) throw nextErr;
 
-        // If moving to facility_doc_creation, trigger AI generation
         if (nextKey === "facility_doc_creation") {
           await supabase.functions.invoke("generate-spv-documents", {
             body: { submission_id: submissionId, stage_key: "facility_doc_creation" },
@@ -184,7 +173,91 @@ export function useCompleteStage() {
   });
 }
 
-// Fetch term sheet signatures for a submission (admin view)
+// Sign a generated facility document
+export function useSignGeneratedDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ documentId, signerName, signatureData, signatureType }: {
+      documentId: string;
+      signerName: string;
+      signatureData: string;
+      signatureType: string;
+    }) => {
+      const { error } = await supabase
+        .from("generated_documents" as any)
+        .update({
+          status: "signed",
+          signed_at: new Date().toISOString(),
+          signed_by: signerName,
+          signature_data: signatureData,
+        } as any)
+        .eq("id", documentId);
+      if (error) throw error;
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      toast.success("Document signed successfully.");
+    },
+    onError: (error) => {
+      toast.error("Failed to sign document", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    },
+  });
+}
+
+// Upload incorporation certificate (stores as a generated_document)
+export function useUploadIncorporationCert() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ submissionId, userId, file }: {
+      submissionId: string;
+      userId: string;
+      file: File;
+    }) => {
+      // Upload file to storage
+      const filePath = `${userId}/${submissionId}/incorporation-certificate-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("project-documents")
+        .upload(filePath, file);
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage
+        .from("project-documents")
+        .getPublicUrl(filePath);
+
+      // Insert as generated document
+      const { error: insertErr } = await supabase
+        .from("generated_documents" as any)
+        .insert({
+          submission_id: submissionId,
+          user_id: userId,
+          stage_key: "spv_incorporation",
+          document_name: "SPV Incorporation Certificate",
+          document_type: "incorporation_certificate",
+          file_url: filePath,
+          status: "verified",
+        } as any);
+      if (insertErr) throw insertErr;
+
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["deployment-stages"] });
+      toast.success("Incorporation certificate uploaded.");
+    },
+    onError: (error) => {
+      toast.error("Failed to upload certificate", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    },
+  });
+}
+
 export function useTermSheetSignatures(submissionId: string | undefined) {
   return useQuery({
     queryKey: ["term-sheet-signatures-admin", submissionId],
@@ -198,4 +271,10 @@ export function useTermSheetSignatures(submissionId: string | undefined) {
     },
     enabled: !!submissionId,
   });
+}
+
+// Check if all deployment stages are completed
+export function useIsDeploymentComplete(stages: DeploymentStage[] | undefined) {
+  if (!stages || stages.length === 0) return false;
+  return stages.every(s => s.status === "completed");
 }
