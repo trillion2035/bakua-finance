@@ -302,6 +302,36 @@ export function useExecuteStep() {
   });
 }
 
+// Pre-flight deployment check
+export function usePreflightCheck() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ submissionId, network = "testnet", mode = "check" }: { submissionId: string; network?: "testnet" | "mainnet"; mode?: "check" | "fix" }) => {
+      const response = await supabase.functions.invoke("preflight-check", {
+        body: { submission_id: submissionId, network, mode },
+      });
+      if (response.error) throw new Error(response.error.message || "Pre-flight check failed");
+      const data = response.data as any;
+      if (!data?.success) throw new Error(data?.error || "Pre-flight check failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      if (data.ready) {
+        toast.success("All pre-flight checks passed!", { description: "Ready to deploy." });
+      } else {
+        toast.warning("Pre-flight issues found", { description: data.summary });
+      }
+    },
+    onError: (error) => {
+      toast.error("Pre-flight check failed", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    },
+  });
+}
+
 // Deploy smart contract to Base network
 export function useDeployContract() {
   const queryClient = useQueryClient();
