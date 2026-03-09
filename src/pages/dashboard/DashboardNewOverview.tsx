@@ -2,18 +2,20 @@ import { useState } from "react";
 import {
   ArrowRight, Clock, Check, Loader2, FileUp, Eye,
   DollarSign, TrendingUp, Shield, Percent,
-  PenTool,
+  PenTool, ChevronDown, ChevronUp, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerSpvs, useDocumentSubmission, useUserUploadedDocuments } from "@/hooks/useSpvData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
+import { useDeploymentStages, useGeneratedDocuments } from "@/hooks/useDeploymentData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import { SignTermSheetModal } from "@/components/dashboard/documents/SignTermSheetModal";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
 function formatCurrency(amount: number | string | null, currency?: string | null): string {
@@ -89,7 +91,21 @@ interface ProcessStep {
   actionable: boolean;
 }
 
-function getProcessSteps(hasSubmission: boolean, isReleased: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
+function getProcessSteps(hasSubmission: boolean, isReleased: boolean, isSigned: boolean, isDeploymentApproved: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
+  const spvDeploymentStatus: ProcessStepStatus = isDeploymentApproved ? "in_progress" : isSigned ? "in_progress" : isReleased ? "in_progress" : "pending";
+  const spvDeploymentDesc = isDeploymentApproved
+    ? "SPV incorporation and legal close in progress."
+    : isSigned
+    ? "Term sheet signed. Awaiting admin approval to begin SPV deployment."
+    : "Sign the term sheet to begin the SPV incorporation and legal close process.";
+  const spvDeploymentDate = isDeploymentApproved
+    ? "In progress"
+    : isSigned
+    ? "Awaiting admin approval"
+    : isReleased
+    ? "Awaiting term sheet signing"
+    : "Awaiting standardization";
+
   if (hasSubmission && isReleased) {
     const formattedDate = submissionDate 
       ? new Date(submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -100,8 +116,8 @@ function getProcessSteps(hasSubmission: boolean, isReleased: boolean, submission
     return [
       { id: 1, title: "Document Submission", description: "Your documents have been submitted and processed.", status: "completed", dateRange: `Submitted ${formattedDate}`, actionable: false },
       { id: 2, title: "Asset Standardization", description: "AI analysis complete. Your Asset Score™ and project documents are ready.", status: "completed", dateRange: `Completed ${formattedRelease}`, actionable: false },
-      { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "in_progress", dateRange: "Awaiting term sheet signing", actionable: false },
-      { id: 4, title: "Listing", description: "Smart contract deployed, audited, and SPV listed on the investor marketplace.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
+      { id: 3, title: "SPV Deployment", description: spvDeploymentDesc, status: spvDeploymentStatus, dateRange: spvDeploymentDate, actionable: false },
+      { id: 4, title: "Listing", description: "SPV listed on the investor marketplace for funding.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
       { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
       { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
     ];
@@ -211,6 +227,8 @@ function EmptyProcessPipeline({
   profileName,
   onSignTermSheet,
   isSigned,
+  deploymentStages,
+  generatedDocs,
 }: { 
   onStartUpload: () => void; 
   hasSubmission: boolean;
@@ -224,9 +242,12 @@ function EmptyProcessPipeline({
   profileName: string;
   onSignTermSheet: () => void;
   isSigned: boolean;
+  deploymentStages: any[] | undefined;
+  generatedDocs: any[] | undefined;
 }) {
   const navigate = useNavigate();
-  const processSteps = getProcessSteps(hasSubmission, isReleased, submissionDate, releasedDate);
+  const isDeploymentApproved = !!(submission as any)?.deployment_approved;
+  const processSteps = getProcessSteps(hasSubmission, isReleased, isSigned, isDeploymentApproved, submissionDate, releasedDate);
   const completedCount = processSteps.filter(s => s.status === "completed").length;
 
   return (
@@ -311,14 +332,68 @@ function EmptyProcessPipeline({
                 </div>
               )}
 
-              {/* SPV Deployment in progress */}
+              {/* SPV Deployment in progress - show sub-stages */}
               {step.status === "in_progress" && step.id === 3 && (
                 <div className="mt-3 bg-gold/5 border border-gold/20 rounded-lg p-4 space-y-3">
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
-                  <div className="flex items-center gap-2 text-xs text-gold">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Awaiting term sheet signing to begin deployment
-                  </div>
+                  
+                  {deploymentStages && deploymentStages.length > 0 ? (
+                    <div className="space-y-2 pt-1">
+                      {deploymentStages.map((stage: any) => {
+                        const stageDocs = generatedDocs?.filter((d: any) => d.stage_key === stage.stage_key) || [];
+                        return (
+                          <div key={stage.id} className="flex items-start gap-3">
+                            {stage.status === "completed" ? (
+                              <div className="w-5 h-5 rounded-full bg-green/20 flex items-center justify-center shrink-0 mt-0.5">
+                                <Check className="w-3 h-3 text-green" />
+                              </div>
+                            ) : stage.status === "in_progress" ? (
+                              <div className="w-5 h-5 rounded-full bg-gold/20 flex items-center justify-center shrink-0 mt-0.5">
+                                <Loader2 className="w-3 h-3 text-gold animate-spin" />
+                              </div>
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-0.5">
+                                <Clock className="w-3 h-3 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-foreground">{stage.stage_label}</span>
+                                <span className={cn(
+                                  "text-[10px] font-semibold uppercase tracking-wider",
+                                  stage.status === "completed" ? "text-green" :
+                                  stage.status === "in_progress" ? "text-gold" : "text-muted-foreground"
+                                )}>
+                                  {stage.status === "completed" ? "Done" : stage.status === "in_progress" ? "In Progress" : "Pending"}
+                                </span>
+                              </div>
+                              {stageDocs.length > 0 && (
+                                <div className="mt-1 space-y-0.5">
+                                  {stageDocs.map((doc: any) => (
+                                    <div key={doc.id} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                      <FileText className="h-2.5 w-2.5" />
+                                      <span>{doc.document_name}</span>
+                                      <span className="text-[9px] px-1 py-0.5 rounded bg-secondary">{doc.status}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : !isDeploymentApproved ? (
+                    <div className="flex items-center gap-2 text-xs text-gold">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {isSigned ? "Awaiting admin approval to begin deployment" : "Sign the term sheet to proceed"}
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs text-gold">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Setting up deployment stages...
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -363,6 +438,8 @@ export default function DashboardNewOverview() {
   const latestReport = analysisReports?.find(r => r.analysis_status === "completed") || null;
   const { data: termSheet } = useTermSheet(latestReport?.id);
   const { data: existingSignature } = useExistingSignature(submission?.id);
+  const { data: deploymentStages } = useDeploymentStages(submission?.id);
+  const { data: generatedDocs } = useGeneratedDocuments(submission?.id);
 
   if (showWizard) {
     return <DocumentWizard sector={user?.user_metadata?.asset_type || "default"} onBack={() => setShowWizard(false)} />;
@@ -396,6 +473,8 @@ export default function DashboardNewOverview() {
           profileName={profileName}
           onSignTermSheet={() => setShowSignModal(true)}
           isSigned={!!existingSignature}
+          deploymentStages={deploymentStages}
+          generatedDocs={generatedDocs}
         />
       )}
 
