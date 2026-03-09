@@ -24,11 +24,49 @@ function SubmissionRow({ submission }: { submission: any }) {
   const report = submission.analysis_report;
   const profile = submission.profiles;
 
+  // Fetch term sheet if report exists and passed
+  const { data: termSheet } = useTermSheet(report?.id);
+
   const handleRunAnalysis = () => {
     triggerAnalysis.mutate({
       submissionId: submission.id,
       industry: selectedIndustry,
     });
+  };
+
+  const profileName = profile?.company_name || profile?.full_name || "Unknown";
+
+  const handleDownloadAssetScore = () => {
+    if (!report) return;
+    try {
+      const pdf = generateAssetScorePDF(report, profileName);
+      pdf.save(`Asset-Score-${report.grade}-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success("Asset Score PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  const handleDownloadDossier = () => {
+    if (!report) return;
+    try {
+      const pdf = generateProjectDossierPDF(report, submission, profileName);
+      pdf.save(`Project-Dossier-${profileName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success("Project Dossier PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  const handleDownloadTermSheet = () => {
+    if (!report || !termSheet) return;
+    try {
+      const pdf = generateTermSheetPDF(termSheet, report, profileName);
+      pdf.save(`Term-Sheet-${termSheet.reference_code}.pdf`);
+      toast.success("Term Sheet PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to generate PDF");
+    }
   };
 
   const getStatusBadge = () => {
