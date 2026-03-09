@@ -101,7 +101,7 @@ function DrawCanvas({ onSignatureChange }: { onSignatureChange: (data: string | 
       <div className="relative border border-border rounded-lg bg-background overflow-hidden">
         <canvas
           ref={canvasRef}
-          className="w-full h-40 cursor-crosshair touch-none"
+          className="w-full h-40 cursor-crosshair touch-none bg-white"
           onMouseDown={startDraw}
           onMouseMove={draw}
           onMouseUp={endDraw}
@@ -255,9 +255,9 @@ export function SignTermSheetModal({ open, onOpenChange, submissionId, analysisR
   if (signed) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-white text-gray-900">
           <div className="flex flex-col items-center gap-4 py-6">
-            <div className="w-16 h-16 rounded-full bg-green/20 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-green" />
             </div>
             <h3 className="text-lg font-bold text-foreground">Term Sheet Signed</h3>
@@ -273,7 +273,7 @@ export function SignTermSheetModal({ open, onOpenChange, submissionId, analysisR
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-white text-gray-900 [&_*]:text-gray-900 [&_.text-muted-foreground]:!text-gray-500 [&_.text-foreground]:!text-gray-900 [&_.border-border]:!border-gray-200 [&_.bg-muted\/50]:!bg-gray-100 [&_.bg-background]:!bg-white [&_.border-muted-foreground\/30]:!border-gray-300" data-theme="light">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PenTool className="h-5 w-5 text-primary" />
