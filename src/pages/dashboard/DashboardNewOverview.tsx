@@ -227,6 +227,8 @@ function EmptyProcessPipeline({
   profileName,
   onSignTermSheet,
   isSigned,
+  deploymentStages,
+  generatedDocs,
 }: { 
   onStartUpload: () => void; 
   hasSubmission: boolean;
@@ -240,9 +242,12 @@ function EmptyProcessPipeline({
   profileName: string;
   onSignTermSheet: () => void;
   isSigned: boolean;
+  deploymentStages: any[] | undefined;
+  generatedDocs: any[] | undefined;
 }) {
   const navigate = useNavigate();
-  const processSteps = getProcessSteps(hasSubmission, isReleased, submissionDate, releasedDate);
+  const isDeploymentApproved = !!(submission as any)?.deployment_approved;
+  const processSteps = getProcessSteps(hasSubmission, isReleased, isSigned, isDeploymentApproved, submissionDate, releasedDate);
   const completedCount = processSteps.filter(s => s.status === "completed").length;
 
   return (
