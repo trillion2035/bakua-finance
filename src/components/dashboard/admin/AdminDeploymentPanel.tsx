@@ -176,7 +176,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 /* ── Stage Row ── */
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -196,7 +196,9 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   executingStep?: string | null;
   onDeployContract?: (network: "testnet" | "mainnet") => void;
   deployingContract?: boolean;
-  deployResult?: any;
+  deployingNetwork?: "testnet" | "mainnet" | null;
+  testnetResult?: any;
+  mainnetResult?: any;
   onPreflightCheck?: () => void;
   preflightLoading?: boolean;
   preflightResult?: any;
