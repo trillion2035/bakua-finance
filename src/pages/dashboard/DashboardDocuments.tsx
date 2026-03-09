@@ -398,9 +398,6 @@ export default function DashboardDocuments() {
   if (spv && spvDocs && spvDocs.length > 0) {
     return <MockDocumentsByStage />;
   }
-      </div>
-    );
-  }
 
   // If user has uploaded documents (from wizard), show stage-based view
   if (uploadedDocs && uploadedDocs.length > 0) {
