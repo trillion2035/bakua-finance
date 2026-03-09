@@ -1,6 +1,5 @@
-import { Building2, Shield, ChevronDown, ExternalLink, Eye, Download } from "lucide-react";
+import { Building2, Shield, ChevronDown, ExternalLink, TrendingUp, Users, Landmark, Calendar, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -8,10 +7,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useOwnerSpvs, useSpvScoreDimensions, useSpvDocuments, useSpvContracts, useDocumentSubmission } from "@/hooks/useSpvData";
+import { useOwnerSpvs, useSpvScoreDimensions, useSpvDocuments, useSpvContracts, useDocumentSubmission, useSpvMilestones, useInvestorSegments } from "@/hooks/useSpvData";
 import { useGeneratedDocuments } from "@/hooks/useDeploymentData";
 import { ScoreBar } from "@/components/dashboard/spv/ScoreBar";
 import { CopyButton } from "@/components/dashboard/spv/CopyButton";
+import { Progress } from "@/components/ui/progress";
 
 export default function DashboardSPV() {
   const { data: spvs, isLoading } = useOwnerSpvs();
@@ -22,6 +22,8 @@ export default function DashboardSPV() {
   const { data: scoreDimensions } = useSpvScoreDimensions(spv?.id);
   const { data: legalDocs } = useSpvDocuments(spv?.id);
   const { data: contracts } = useSpvContracts(spv?.id);
+  const { data: milestones } = useSpvMilestones(spv?.id);
+  const { data: investorSegments } = useInvestorSegments(spv?.id);
   const { data: submission } = useDocumentSubmission();
   const { data: generatedDocs } = useGeneratedDocuments(submission?.id);
 
@@ -55,6 +57,10 @@ export default function DashboardSPV() {
   ];
   const visibleDocs = showAllDocs ? allLegalDocs : allLegalDocs.slice(0, 4);
 
+  const fundedPercent = spv.funded_percent || 0;
+  const targetAmount = spv.target_amount || 0;
+  const fundedAmount = spv.funded_amount || 0;
+
   return (
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
       <div>
@@ -77,6 +83,26 @@ export default function DashboardSPV() {
         </CollapsibleTrigger>
 
         <CollapsibleContent className="space-y-6 mt-4">
+          {/* Overview KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-card border border-border rounded-lg p-4">
+              <p className="text-xs text-muted-foreground">Status</p>
+              <p className="text-lg font-bold text-foreground capitalize">{spv.status}</p>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <p className="text-xs text-muted-foreground">Total Investors</p>
+              <p className="text-lg font-bold text-foreground">{spv.total_investors || 0}</p>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <p className="text-xs text-muted-foreground">Funded</p>
+              <p className="text-lg font-bold text-foreground">{fundedPercent}%</p>
+            </div>
+            <div className="bg-card border border-border rounded-lg p-4">
+              <p className="text-xs text-muted-foreground">Target IRR</p>
+              <p className="text-lg font-bold text-foreground">{spv.target_irr || spv.projected_irr || "—"}</p>
+            </div>
+          </div>
+
           {/* Entity Info + Asset Score */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-card border border-border rounded-lg p-6 space-y-4">
@@ -94,6 +120,8 @@ export default function DashboardSPV() {
                   ["Incorporation Date", spv.incorporation_date],
                   ["Capital Social", spv.capital_social],
                   ["Shareholder", spv.shareholder],
+                  ["Asset Type", spv.asset_type],
+                  ["Currency", spv.currency],
                 ].map(([label, value]) => (
                   <div key={label as string} className="flex justify-between gap-4">
                     <span className="text-xs text-muted-foreground shrink-0">{label}</span>
@@ -117,6 +145,106 @@ export default function DashboardSPV() {
             )}
           </div>
 
+          {/* Capital & Fundraising */}
+          {(targetAmount > 0 || (investorSegments && investorSegments.length > 0)) && (
+            <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Capital & Fundraising</h3>
+              </div>
+
+              {targetAmount > 0 && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Target Amount</p>
+                      <p className="text-sm font-bold text-foreground">{spv.target_amount_usd || `${spv.currency} ${targetAmount.toLocaleString()}`}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Funded Amount</p>
+                      <p className="text-sm font-bold text-foreground">{spv.currency} {fundedAmount.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Disbursed</p>
+                      <p className="text-sm font-bold text-foreground">{spv.disbursed_percent || 0}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">DSRA Reserve</p>
+                      <p className="text-sm font-bold text-foreground">{spv.dsra_reserve || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Funding Progress</span>
+                      <span className="font-medium text-foreground">{fundedPercent}%</span>
+                    </div>
+                    <Progress value={fundedPercent} className="h-2" />
+                  </div>
+                </div>
+              )}
+
+              {investorSegments && investorSegments.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Investor Segments</p>
+                  <div className="space-y-2">
+                    {investorSegments.map((seg) => (
+                      <div key={seg.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                        <div>
+                          <span className="text-sm font-medium text-foreground">{seg.name}</span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <Users className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{seg.investor_count || 0} investors</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-bold text-foreground">{seg.usdc_raised || "—"}</span>
+                          <p className="text-xs text-muted-foreground">{seg.percent_of_spv || "—"}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Milestones */}
+          {milestones && milestones.length > 0 && (
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                  Disbursement Milestones ({milestones.filter(m => m.status === "disbursed").length}/{milestones.length})
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {milestones.map((m) => (
+                  <div key={m.id} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                    <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                      m.status === "disbursed" ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
+                    )}>
+                      {m.milestone_code?.replace("M", "") || "·"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-foreground">{m.name}</span>
+                      {m.oracle_trigger && (
+                        <p className="text-xs text-muted-foreground mt-0.5">Trigger: {m.oracle_trigger}</p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-sm font-bold text-foreground">{m.amount || "—"}</span>
+                      {m.date_disbursed ? (
+                        <p className="text-xs text-emerald-600">✓ {m.date_disbursed}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Pending</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Smart Contracts */}
           {contracts && contracts.length > 0 && (
             <div className="bg-card border border-border rounded-lg p-6">
@@ -133,9 +261,9 @@ export default function DashboardSPV() {
                       <span className="text-sm font-medium text-foreground block">{c.name}</span>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground">{c.deployed_date}</span>
-                        {(c as any).network && (
+                        {c.network && (
                           <Badge variant="outline" className="text-[10px]">
-                            {(c as any).network === "mainnet" ? "Mainnet" : "Testnet"}
+                            {c.network === "mainnet" ? "Mainnet" : "Testnet"}
                           </Badge>
                         )}
                       </div>
@@ -146,7 +274,7 @@ export default function DashboardSPV() {
                       </code>
                       <CopyButton text={c.address} />
                       <a
-                        href={`https://${(c as any).network === "mainnet" ? "basescan.org" : "sepolia.basescan.org"}/address/${c.address}`}
+                        href={`https://${c.network === "mainnet" ? "basescan.org" : "sepolia.basescan.org"}/address/${c.address}`}
                         target="_blank" rel="noopener noreferrer"
                         className="text-primary hover:text-primary/80"
                       >
@@ -166,7 +294,7 @@ export default function DashboardSPV() {
           {allLegalDocs.length > 0 && (
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center gap-2 mb-4">
-                <ExternalLink className="h-4 w-4 text-primary" />
+                <Landmark className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
                   Legal Documents ({allLegalDocs.length})
                 </h3>
