@@ -1,4 +1,5 @@
 import { Shield, BarChart3, Zap, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const benefits = [
   { icon: Shield, title: "On-Chain Transparency", desc: "Every SPV's cash flows, oracle data, and smart contract logic is fully auditable. No opaque fund structures." },
