@@ -674,6 +674,7 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const [testnetResult, setTestnetResult] = useState<any>(null);
   const [mainnetResult, setMainnetResult] = useState<any>(null);
   const [preflightResult, setPreflightResult] = useState<any>(null);
+  const [mainnetPreflightResult, setMainnetPreflightResult] = useState<any>(null);
   const [deployingNetwork, setDeployingNetwork] = useState<"testnet" | "mainnet" | null>(null);
 
   // Load persisted deployment results from generated_documents on mount
