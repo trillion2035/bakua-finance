@@ -253,7 +253,7 @@ export function useCompleteStage() {
   });
 }
 
-// Launch SC Development AI Agent
+// Launch SC Development AI Agent (also used for regeneration)
 export function useLaunchSCDevelopment() {
   const queryClient = useQueryClient();
 
@@ -274,6 +274,30 @@ export function useLaunchSCDevelopment() {
     },
     onError: (error) => {
       toast.error("AI Agent failed", { description: error instanceof Error ? error.message : "Please try again." });
+    },
+  });
+}
+
+// Execute a specific step from the development plan
+export function useExecuteStep() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ submissionId, phaseNumber, stepNumber }: { submissionId: string; phaseNumber: number; stepNumber: number }) => {
+      const response = await supabase.functions.invoke("generate-spv-documents", {
+        body: { submission_id: submissionId, stage_key: "sc_execute_step", phase_number: phaseNumber, step_number: stepNumber },
+      });
+      if (response.error) throw new Error(response.error.message || "Failed to execute step");
+      const data = response.data as any;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      toast.success(`Step ${variables.phaseNumber}.${variables.stepNumber} completed!`);
+    },
+    onError: (error) => {
+      toast.error("Step execution failed", { description: error instanceof Error ? error.message : "Please try again." });
     },
   });
 }
