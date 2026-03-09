@@ -633,6 +633,7 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const preflightCheck = usePreflightCheck();
   const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
   const [deployResult, setDeployResult] = useState<any>(null);
+  const [preflightResult, setPreflightResult] = useState<any>(null);
 
   const handleExecuteStep = (phaseNumber: number, stepNumber: number) => {
     const ref = `${phaseNumber}.${stepNumber}`;
@@ -647,6 +648,20 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     deployContract.mutate(
       { submissionId: submission.id, network },
       { onSuccess: (data) => setDeployResult(data) }
+    );
+  };
+
+  const handlePreflightCheck = () => {
+    preflightCheck.mutate(
+      { submissionId: submission.id, network: "testnet", mode: "check" },
+      { onSuccess: (data) => setPreflightResult(data) }
+    );
+  };
+
+  const handlePreflightFix = () => {
+    preflightCheck.mutate(
+      { submissionId: submission.id, network: "testnet", mode: "fix" },
+      { onSuccess: (data) => setPreflightResult(data) }
     );
   };
 
