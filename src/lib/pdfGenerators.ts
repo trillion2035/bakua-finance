@@ -119,9 +119,9 @@ export function generateAssetScorePDF(report: AnalysisReport, profileName: strin
       doc.setFillColor(240, 240, 240);
       doc.roundedRect(20, yPos + 2, barWidth, 4, 1, 1, "FD");
       
-      const dimColor = dim.score >= 80 ? SUCCESS_COLOR :
+      const dimColor: [number, number, number] = dim.score >= 80 ? SUCCESS_COLOR :
                        dim.score >= 60 ? PRIMARY_COLOR : DANGER_COLOR;
-      doc.setFillColor(...dimColor);
+      doc.setFillColor(dimColor[0], dimColor[1], dimColor[2]);
       doc.roundedRect(20, yPos + 2, fillWidth, 4, 1, 1, "F");
       
       doc.setFontSize(10);
