@@ -175,6 +175,153 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
   );
 }
 
+/* ── Deploy Result Card ── */
+function DeployResultCard({ result }: { result: any }) {
+  return (
+    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <CheckCircle className="h-4 w-4 text-emerald-600" />
+        <span className="text-sm font-bold text-emerald-700">{result.network || "Contract"} — Deployed</span>
+      </div>
+      <div className="space-y-1 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground font-medium w-28">Contract:</span>
+          <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px]">{result.contract_address}</code>
+        </div>
+        {result.tx_hash && (
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground font-medium w-28">Tx Hash:</span>
+            <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px] truncate max-w-[200px]">{result.tx_hash}</code>
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2 pt-1">
+        {result.explorer_url && (
+          <a href={result.explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+            <ExternalLink className="h-3 w-3" /> View Contract
+          </a>
+        )}
+        {result.tx_explorer_url && (
+          <a href={result.tx_explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+            <ExternalLink className="h-3 w-3" /> View Transaction
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Network Deploy Card (per-network preflight + deploy) ── */
+function NetworkDeployCard({ label, network, result, preflightResult, preflightLoading, onPreflightCheck, onPreflightFix, onDeploy, deploying, deployingAny }: {
+  label: string;
+  network: "testnet" | "mainnet";
+  result: any;
+  preflightResult: any;
+  preflightLoading?: boolean;
+  onPreflightCheck?: () => void;
+  onPreflightFix?: () => void;
+  onDeploy: () => void;
+  deploying: boolean;
+  deployingAny: boolean;
+}) {
+  // Already deployed
+  if (result) {
+    return <DeployResultCard result={result} />;
+  }
+
+  return (
+    <div className="rounded-lg border border-border p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Rocket className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-bold text-foreground">{label}</span>
+        {network === "mainnet" && <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">Production</Badge>}
+      </div>
+
+      {/* Step 1: Pre-flight check */}
+      {!preflightResult && (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">Run a pre-flight check to verify wallet balance, secrets, and code compilation before deploying.</p>
+          <Button size="sm" variant="outline" onClick={onPreflightCheck} disabled={preflightLoading || deployingAny} className="gap-2">
+            {preflightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
+            {preflightLoading ? "Running Checks..." : `Run Pre-flight Check`}
+          </Button>
+        </div>
+      )}
+
+      {/* Pre-flight failed */}
+      {preflightResult && !preflightResult.ready && (
+        <div className="rounded-lg border p-3 space-y-2 bg-red-50 border-red-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <span className="text-sm font-bold text-red-700">Issues Found</span>
+            </div>
+            <Button size="sm" variant="ghost" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-1.5 text-xs h-7">
+              {preflightLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+              Re-check
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">{preflightResult.summary}</p>
+          <div className="space-y-1.5 pt-1">
+            {preflightResult.checks?.map((check: any) => (
+              <div key={check.id} className={cn("flex items-start gap-2 text-xs rounded p-2 border",
+                check.status === "pass" ? "bg-emerald-50/50 border-emerald-200" :
+                check.status === "warning" ? "bg-amber-50/50 border-amber-200" : "bg-red-50/50 border-red-200"
+              )}>
+                {check.status === "pass" ? <CheckCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" /> :
+                 check.status === "warning" ? <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" /> :
+                 <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0 mt-0.5" />}
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-foreground">{check.label}</span>
+                  <p className="text-muted-foreground mt-0.5">{check.message}</p>
+                  {check.details && <p className="text-muted-foreground/80 mt-0.5 text-[11px] font-mono break-all">{check.details}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {preflightResult.has_fixable_issues && onPreflightFix && (
+            <div className="pt-2 border-t border-red-200">
+              <Button size="sm" onClick={onPreflightFix} disabled={preflightLoading} className="gap-2">
+                {preflightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+                {preflightLoading ? "AI Fixing Issues..." : "Auto-fix with AI Agent"}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Pre-flight passed — show deploy button */}
+      {preflightResult?.ready && (
+        <div className="space-y-2">
+          <div className="rounded-lg border p-3 bg-emerald-50 border-emerald-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-bold text-emerald-700">All Checks Passed</span>
+              </div>
+              <Button size="sm" variant="ghost" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-1.5 text-xs h-7">
+                {preflightLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                Re-check
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{preflightResult.summary}</p>
+          </div>
+          <Button size="sm" onClick={onDeploy} disabled={deploying || deployingAny} className="gap-2">
+            {deploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+            {deploying ? "Deploying..." : `Deploy to ${label}`}
+          </Button>
+          {deploying && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>AI is consolidating, compiling, and deploying to {label}...</span>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Stage Row ── */
 function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix, onMainnetPreflightCheck, mainnetPreflightLoading, mainnetPreflightResult, onMainnetPreflightFix }: {
   stage: DeploymentStage;
