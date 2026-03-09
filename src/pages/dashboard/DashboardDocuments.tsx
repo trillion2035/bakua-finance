@@ -665,3 +665,135 @@ export default function DashboardDocuments() {
   // Fallback: show mock documents arranged by process stages
   return <MockDocumentsByStage />;
 }
+
+function MockDocumentsByStage() {
+  const [searchParams] = useSearchParams();
+  const stageParam = searchParams.get("stage") as ProcessStage | null;
+  const stages: ProcessStage[] = ["document_submission", "asset_standardization", "spv_deployment", "listing", "funding", "capital_disbursement"];
+
+  return (
+    <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          {mockDocuments.length} documents across {stages.length} stages
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {stages.map((stage, idx) => {
+          const docs = getDocsByStage(stage);
+          const step = mockSPV.processSteps.find(s => stepIdToStage[s.id] === stage);
+          const status = step?.status || "pending";
+          const isTarget = stageParam === stage;
+
+          return (
+            <MockStageSection
+              key={stage}
+              stage={stage}
+              stepNumber={idx + 1}
+              status={status as "completed" | "in_progress" | "pending"}
+              docs={docs}
+              defaultOpen={isTarget || status === "in_progress"}
+              autoScroll={isTarget}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MockStageSection({ stage, stepNumber, status, docs, defaultOpen, autoScroll }: {
+  stage: ProcessStage;
+  stepNumber: number;
+  status: "completed" | "in_progress" | "pending";
+  docs: any[];
+  defaultOpen: boolean;
+  autoScroll?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const ref = useRef<HTMLDivElement>(null);
+  const subPhaseGroups = getDocsBySubPhase(stage);
+
+  useEffect(() => {
+    if (autoScroll && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      setOpen(true);
+    }
+  }, [autoScroll]);
+
+  const statusConfig = {
+    completed: { label: "Completed", className: "text-emerald-600", icon: Check },
+    in_progress: { label: "In Progress", className: "text-amber-600", icon: Clock },
+    pending: { label: "Pending", className: "text-muted-foreground", icon: Lock },
+  };
+  const StatusIcon = statusConfig[status].icon;
+
+  return (
+    <div ref={ref} className={cn(
+      "border border-border rounded-xl overflow-hidden bg-card",
+      status === "in_progress" && "border-amber-300/50",
+      status === "completed" && "border-emerald-300/30",
+      status === "pending" && "opacity-70"
+    )}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-4 p-5 text-left hover:bg-muted/30 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl shrink-0">
+          {stageIcons[stage]}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-bold text-muted-foreground tracking-wider">STEP {stepNumber}</span>
+            <span className="text-sm font-bold text-foreground">{stageLabels[stage]}</span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {docs.length} document{docs.length !== 1 ? "s" : ""}
+            {status === "completed" && ` · ${docs.filter(d => d.status === "verified").length} verified`}
+          </span>
+        </div>
+        <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", statusConfig[status].className)}>
+          <StatusIcon className="h-3.5 w-3.5" /> {statusConfig[status].label}
+        </span>
+        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
+      </button>
+
+      {open && (
+        <div className="p-4 pt-0 space-y-4">
+          {subPhaseGroups.map(({ subPhase, docs: phaseDocs }) => (
+            <div key={subPhase} className="space-y-2 pt-4">
+              {subPhaseGroups.length > 1 && (
+                <h4 className="text-xs font-semibold tracking-wider uppercase text-muted-foreground px-1">
+                  {subPhase}
+                  <span className="text-[10px] font-normal ml-1.5">({phaseDocs.length})</span>
+                </h4>
+              )}
+              <div className="space-y-2">
+                {phaseDocs.map((doc) => (
+                  <div key={doc.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{doc.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{doc.fileName} · {doc.fileSize}</p>
+                    </div>
+                    <span className={cn(
+                      "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border shrink-0",
+                      doc.status === "verified" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"
+                    )}>
+                      {doc.status === "verified" ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                      {doc.status === "verified" ? "Verified" : "Pending"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
