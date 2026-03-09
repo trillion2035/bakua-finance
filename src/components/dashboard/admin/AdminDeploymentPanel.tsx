@@ -440,164 +440,42 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
         );
       })()}
 
-      {/* SC Deployment: Deploy to blockchain */}
+      {/* SC Deployment: Per-network preflight + deploy cards */}
       {stage.stage_key === "sc_deployment" && stage.status === "in_progress" && onDeployContract && (
-        <div className="space-y-3 pt-1">
-          <div className="space-y-3">
-            {/* Show preflight section only if no deployments exist yet */}
-            {!testnetResult && !mainnetResult && !preflightResult && (
-              <Button size="sm" variant="outline" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-2">
-                {preflightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
-                {preflightLoading ? "Running Pre-flight Checks..." : "Run Pre-flight Check"}
-              </Button>
-            )}
-            {preflightLoading && (
-              <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Checking secrets, wallet balance, code completeness, and compilation...</span>
-              </div>
-            )}
-            {preflightResult && !preflightResult.ready && (
-              <div className="rounded-lg border p-3 space-y-2 bg-red-50 border-red-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-red-600" />
-                    <span className="text-sm font-bold text-red-700">Issues Found</span>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-1.5 text-xs h-7">
-                    {preflightLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    Re-check
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">{preflightResult.summary}</p>
-                <div className="space-y-1.5 pt-1">
-                  {preflightResult.checks?.map((check: any) => (
-                    <div key={check.id} className={cn("flex items-start gap-2 text-xs rounded p-2 border",
-                      check.status === "pass" ? "bg-emerald-50/50 border-emerald-200" :
-                      check.status === "warning" ? "bg-amber-50/50 border-amber-200" : "bg-red-50/50 border-red-200"
-                    )}>
-                      {check.status === "pass" ? <CheckCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" /> :
-                       check.status === "warning" ? <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" /> :
-                       <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0 mt-0.5" />}
-                      <div className="flex-1 min-w-0">
-                        <span className="font-medium text-foreground">{check.label}</span>
-                        <p className="text-muted-foreground mt-0.5">{check.message}</p>
-                        {check.details && <p className="text-muted-foreground/80 mt-0.5 text-[11px] font-mono break-all">{check.details}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {preflightResult.has_fixable_issues && onPreflightFix && (
-                  <div className="pt-2 border-t border-red-200">
-                    <Button size="sm" onClick={onPreflightFix} disabled={preflightLoading} className="gap-2">
-                      {preflightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
-                      {preflightLoading ? "AI Fixing Issues..." : "Auto-fix with AI Agent"}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-            {preflightResult?.ready && !testnetResult && !mainnetResult && (
-              <div className="rounded-lg border p-3 space-y-2 bg-emerald-50 border-emerald-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-bold text-emerald-700">All Checks Passed</span>
-                  </div>
-                  <Button size="sm" variant="ghost" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-1.5 text-xs h-7">
-                    {preflightLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    Re-check
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">{preflightResult.summary}</p>
-              </div>
-            )}
-            {/* Deploy buttons: show when preflight passed OR when a deployment already exists */}
-            {(preflightResult?.ready || testnetResult || mainnetResult) && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <Button size="sm" onClick={() => onDeployContract("testnet")}
-                    disabled={deployingContract || !!testnetResult} className="gap-2">
-                    {deployingNetwork === "testnet" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                    {deployingNetwork === "testnet" ? "Deploying..." : testnetResult ? "Base Sepolia ✓" : "Deploy to Testnet (Base Sepolia)"}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => onDeployContract("mainnet")}
-                    disabled={deployingContract || !!mainnetResult} className="gap-2">
-                    {deployingNetwork === "mainnet" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                    {deployingNetwork === "mainnet" ? "Deploying..." : mainnetResult ? "Base Mainnet ✓" : "Deploy to Mainnet (Base)"}
-                  </Button>
-                </div>
-                {deployingNetwork && (
-                  <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    <span>AI is consolidating, compiling, and deploying to {deployingNetwork === "mainnet" ? "Base Mainnet" : "Base Sepolia"}...</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          {/* Show deployment results */}
-          {[testnetResult, mainnetResult].filter(Boolean).map((result: any, idx: number) => (
-            <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm font-bold text-emerald-700">{result.network || "Contract"} — Deployed</span>
-              </div>
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground font-medium w-28">Contract:</span>
-                  <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px]">{result.contract_address}</code>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground font-medium w-28">Network:</span>
-                  <span className="text-foreground">{result.network}</span>
-                </div>
-                {result.tx_hash && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground font-medium w-28">Tx Hash:</span>
-                    <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px] truncate max-w-[200px]">{result.tx_hash}</code>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2 pt-1">
-                {result.explorer_url && (
-                  <a href={result.explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
-                    <ExternalLink className="h-3 w-3" /> View Contract
-                  </a>
-                )}
-                {result.tx_explorer_url && (
-                  <a href={result.tx_explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
-                    <ExternalLink className="h-3 w-3" /> View Transaction
-                  </a>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="space-y-4 pt-1">
+          {/* ── Testnet Card ── */}
+          <NetworkDeployCard
+            label="Base Sepolia (Testnet)"
+            network="testnet"
+            result={testnetResult}
+            preflightResult={preflightResult}
+            preflightLoading={preflightLoading}
+            onPreflightCheck={onPreflightCheck}
+            onPreflightFix={onPreflightFix}
+            onDeploy={() => onDeployContract("testnet")}
+            deploying={deployingNetwork === "testnet"}
+            deployingAny={!!deployingContract}
+          />
+          {/* ── Mainnet Card ── */}
+          <NetworkDeployCard
+            label="Base Mainnet"
+            network="mainnet"
+            result={mainnetResult}
+            preflightResult={mainnetPreflightResult}
+            preflightLoading={mainnetPreflightLoading}
+            onPreflightCheck={onMainnetPreflightCheck}
+            onPreflightFix={onMainnetPreflightFix}
+            onDeploy={() => onDeployContract("mainnet")}
+            deploying={deployingNetwork === "mainnet"}
+            deployingAny={!!deployingContract}
+          />
         </div>
       )}
       {/* SC Deployment results shown when stage is completed */}
       {stage.stage_key === "sc_deployment" && stage.status === "completed" && (testnetResult || mainnetResult) && (
         <div className="space-y-2 pt-1">
           {[testnetResult, mainnetResult].filter(Boolean).map((result: any, idx: number) => (
-            <div key={idx} className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm font-bold text-emerald-700">{result.network} — Deployed</span>
-              </div>
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground font-medium w-28">Contract:</span>
-                  <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px]">{result.contract_address}</code>
-                </div>
-              </div>
-              <div className="flex gap-2 pt-1">
-                {result.explorer_url && (
-                  <a href={result.explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
-                    <ExternalLink className="h-3 w-3" /> View Contract
-                  </a>
-                )}
-              </div>
-            </div>
+            <DeployResultCard key={idx} result={result} />
           ))}
         </div>
       )}
