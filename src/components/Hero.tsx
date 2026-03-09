@@ -24,7 +24,7 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
 
           {/* Subtext */}
           <p className="text-[17px] leading-[1.7] text-muted-foreground font-light max-w-[540px] mb-12 animate-fade-up" style={{ animationDelay: "0.16s" }}>
-            We transform infrastructure projects across emerging markets into standardized, on-chain investment vehicles — connecting project owners with global DeFi capital in 60 days, not 36 months.
+            Transform your infrastructure project into a standardized, on-chain investment vehicle — and access global DeFi capital in 60 days, not 36 months.
           </p>
 
           {/* CTAs */}
