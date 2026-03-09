@@ -1,4 +1,5 @@
 import { Shield, BarChart3, Zap, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const benefits = [
   { icon: Shield, title: "On-Chain Transparency", desc: "Every SPV's cash flows, oracle data, and smart contract logic is fully auditable. No opaque fund structures." },
@@ -7,7 +8,9 @@ const benefits = [
   { icon: Lock, title: "Smart Contract Protections", desc: "Automated waterfalls, reserve accounts, and liquidation triggers built into every SPV." },
 ];
 
-const InvestorsSection = () => (
+const InvestorsSection = () => {
+  const navigate = useNavigate();
+  return (
   <section id="investors" className="py-28 px-6 md:px-10 lg:px-16">
     <div className="max-w-[1100px] mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
@@ -55,7 +58,7 @@ const InvestorsSection = () => (
                 </div>
               ))}
             </div>
-            <button className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all">
+            <button onClick={() => navigate("/earn")} className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-semibold hover:brightness-110 transition-all">
               Earn Now
             </button>
             <p className="text-[11px] text-muted-foreground/60 text-center mt-4 leading-relaxed">
@@ -67,5 +70,7 @@ const InvestorsSection = () => (
     </div>
   </section>
 );
+
+};
 
 export default InvestorsSection;
