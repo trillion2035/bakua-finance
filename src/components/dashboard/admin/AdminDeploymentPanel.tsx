@@ -1052,7 +1052,11 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         onPreflightCheck={stage.stage_key === "sc_deployment" ? handlePreflightCheck : undefined}
                         preflightLoading={stage.stage_key === "sc_deployment" ? preflightCheck.isPending : false}
                         preflightResult={stage.stage_key === "sc_deployment" ? preflightResult : undefined}
-                        onPreflightFix={stage.stage_key === "sc_deployment" ? handlePreflightFix : undefined} />
+                        onPreflightFix={stage.stage_key === "sc_deployment" ? handlePreflightFix : undefined}
+                        onMainnetPreflightCheck={stage.stage_key === "sc_deployment" ? handleMainnetPreflightCheck : undefined}
+                        mainnetPreflightLoading={stage.stage_key === "sc_deployment" ? preflightCheck.isPending : false}
+                        mainnetPreflightResult={stage.stage_key === "sc_deployment" ? mainnetPreflightResult : undefined}
+                        onMainnetPreflightFix={stage.stage_key === "sc_deployment" ? handleMainnetPreflightFix : undefined} />
                     );
                   })}
 
