@@ -666,6 +666,28 @@ Generate a structured development plan in JSON format using tool calling.`;
                         required: ["phase_number", "phase_name", "duration", "description", "steps"]
                       }
                     },
+                    spec_evaluation: {
+                      type: "object",
+                      properties: {
+                        overall_quality: { type: "string", enum: ["excellent", "good", "needs_improvement", "poor"] },
+                        issues_found: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              severity: { type: "string", enum: ["critical", "warning", "info"] },
+                              area: { type: "string" },
+                              description: { type: "string" },
+                              recommendation: { type: "string" }
+                            },
+                            required: ["severity", "area", "description", "recommendation"]
+                          }
+                        },
+                        corrections_applied: { type: "array", items: { type: "string" }, description: "List of corrections/improvements incorporated into the plan" }
+                      },
+                      required: ["overall_quality", "issues_found", "corrections_applied"],
+                      description: "Critical evaluation of the specification document"
+                    },
                     security_considerations: {
                       type: "array",
                       items: { type: "string" },
@@ -673,7 +695,7 @@ Generate a structured development plan in JSON format using tool calling.`;
                     },
                     testing_strategy: { type: "string", description: "Overview of testing approach" }
                   },
-                  required: ["summary", "estimated_duration", "tech_stack", "phases", "security_considerations", "testing_strategy"]
+                  required: ["summary", "estimated_duration", "tech_stack", "phases", "spec_evaluation", "security_considerations", "testing_strategy"]
                 }
               }
             }
