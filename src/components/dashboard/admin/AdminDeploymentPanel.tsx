@@ -1,8 +1,8 @@
 import { useState, useRef } from "react";
-import { Check, Loader2, ChevronDown, ChevronUp, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, RefreshCw } from "lucide-react";
+import { Check, Loader2, ChevronDown, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import {
   type GeneratedDocument,
 } from "@/hooks/useDeploymentData";
 
+/* ── Status Badge ── */
 function StageStatusBadge({ status }: { status: DeploymentStage["status"] }) {
   if (status === "completed") {
     return (
@@ -45,22 +46,32 @@ function StageStatusBadge({ status }: { status: DeploymentStage["status"] }) {
   );
 }
 
-// View document content modal
+/* ── Phase-level badge (for accordion headers) ── */
+function PhaseBadge({ status }: { status: "completed" | "in_progress" | "pending" | "awaiting" }) {
+  if (status === "completed") {
+    return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] ml-auto shrink-0"><Check className="h-2.5 w-2.5 mr-0.5" /> Completed</Badge>;
+  }
+  if (status === "in_progress") {
+    return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] ml-auto shrink-0"><Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> In Progress</Badge>;
+  }
+  if (status === "awaiting") {
+    return <Badge variant="outline" className="text-[10px] ml-auto shrink-0">Awaiting</Badge>;
+  }
+  return <Badge variant="outline" className="text-[10px] ml-auto shrink-0">Pending</Badge>;
+}
+
+/* ── View Document Modal ── */
 function ViewDocumentModal({ doc, open, onOpenChange }: { doc: GeneratedDocument | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   if (!doc) return null;
-
   const handleDownload = () => {
     if (doc.content) {
       const blob = new Blob([doc.content], { type: "text/plain" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = `${doc.document_name}.txt`;
-      a.click();
+      a.href = url; a.download = `${doc.document_name}.txt`; a.click();
       URL.revokeObjectURL(url);
     }
   };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -69,17 +80,13 @@ function ViewDocumentModal({ doc, open, onOpenChange }: { doc: GeneratedDocument
             <FileText className="h-5 w-5 text-primary" />
             {doc.document_name}
           </DialogTitle>
-          <DialogDescription>
-            {doc.document_type} · Status: {doc.status}
-          </DialogDescription>
+          <DialogDescription>{doc.document_type} · Status: {doc.status}</DialogDescription>
         </DialogHeader>
         <div className="prose prose-sm max-w-none text-foreground whitespace-pre-wrap text-sm leading-relaxed border border-border rounded-lg p-4 bg-muted/20">
           {doc.content || "No content available."}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleDownload} className="gap-2">
-            <Download className="h-4 w-4" /> Download
-          </Button>
+          <Button variant="outline" onClick={handleDownload} className="gap-2"><Download className="h-4 w-4" /> Download</Button>
           <Button onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
@@ -87,12 +94,11 @@ function ViewDocumentModal({ doc, open, onOpenChange }: { doc: GeneratedDocument
   );
 }
 
-// Sign facility document modal
+/* ── Sign Facility Document Modal ── */
 function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocument | null; open: boolean; onOpenChange: (v: boolean) => void }) {
   const signDoc = useSignGeneratedDocument();
   const [signerName, setSignerName] = useState("");
   const [signatureData, setSignatureData] = useState<string | null>(null);
-
   if (!doc) return null;
 
   const handleTypedSig = (typed: string) => {
@@ -114,16 +120,8 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
   };
 
   const handleSign = () => {
-    if (!signatureData || !signerName.trim()) {
-      toast.error("Please provide your name and signature");
-      return;
-    }
-    signDoc.mutate({
-      documentId: doc.id,
-      signerName: signerName.trim(),
-      signatureData,
-      signatureType: "typed",
-    }, {
+    if (!signatureData || !signerName.trim()) { toast.error("Please provide your name and signature"); return; }
+    signDoc.mutate({ documentId: doc.id, signerName: signerName.trim(), signatureData, signatureType: "typed" }, {
       onSuccess: () => onOpenChange(false),
     });
   };
@@ -140,25 +138,18 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
             By signing, you confirm this document has been reviewed and is legally binding.
           </DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: "#374151" }}>Full Legal Name</label>
-            <input
-              value={signerName}
-              onChange={(e) => handleTypedSig(e.target.value)}
-              placeholder="Enter your full legal name"
+            <input value={signerName} onChange={(e) => handleTypedSig(e.target.value)} placeholder="Enter your full legal name"
               className="w-full px-3 py-2 rounded-md border-2 border-gray-300 focus:border-blue-500 focus:outline-none text-base"
-              style={{ background: "#fff", color: "#1a1a1a" }}
-            />
+              style={{ background: "#fff", color: "#1a1a1a" }} />
           </div>
-
           {signerName.trim() && (
             <div className="rounded-lg p-4 flex items-center justify-center h-20 border-2 border-gray-300" style={{ background: "#fff" }}>
               <span className="text-2xl italic font-serif" style={{ color: "#1a1a1a" }}>{signerName}</span>
             </div>
           )}
-
           <div className="rounded-lg p-3 text-xs space-y-1" style={{ background: "#f9fafb", color: "#6b7280" }}>
             <p className="font-medium" style={{ color: "#374151" }}>By signing you confirm:</p>
             <ul className="list-disc list-inside space-y-0.5">
@@ -168,14 +159,9 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
             </ul>
           </div>
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} style={{ borderColor: "#d1d5db", color: "#374151" }}>Cancel</Button>
-          <Button
-            onClick={handleSign}
-            disabled={!signatureData || !signerName.trim() || signDoc.isPending}
-            className="gap-2"
-          >
+          <Button onClick={handleSign} disabled={!signatureData || !signerName.trim() || signDoc.isPending} className="gap-2">
             {signDoc.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PenTool className="h-4 w-4" />}
             Sign Document
           </Button>
@@ -185,7 +171,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
   );
 }
 
-// Shared stage rendering component
+/* ── Stage Row ── */
 function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
@@ -209,11 +195,7 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingCert(true);
-    uploadCert.mutate({
-      submissionId: submission.id,
-      userId: submission.user_id,
-      file,
-    }, {
+    uploadCert.mutate({ submissionId: submission.id, userId: submission.user_id, file }, {
       onSettled: () => setUploadingCert(false),
     });
   };
@@ -227,28 +209,14 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
         </div>
         <div className="flex items-center gap-2">
           {onUploadDoc && stage.status === "in_progress" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onUploadDoc(stage.stage_key)}
-              className="gap-1.5 text-xs"
-            >
+            <Button size="sm" variant="outline" onClick={() => onUploadDoc(stage.stage_key)} className="gap-1.5 text-xs">
               <Upload className="h-3 w-3" /> Upload
             </Button>
           )}
           {stage.status === "in_progress" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => completeStage.mutate({
-                stageId: stage.id,
-                submissionId: submission.id,
-                currentStageKey: stage.stage_key,
-                userId: submission.user_id,
-              })}
-              disabled={completeStage.isPending || !canComplete}
-              className="gap-1.5 text-xs"
-            >
+            <Button size="sm" variant="outline"
+              onClick={() => completeStage.mutate({ stageId: stage.id, submissionId: submission.id, currentStageKey: stage.stage_key, userId: submission.user_id })}
+              disabled={completeStage.isPending || !canComplete} className="gap-1.5 text-xs">
               {completeStage.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
               Mark Complete
             </Button>
@@ -258,36 +226,20 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
       <p className="text-xs text-muted-foreground">{stage.description}</p>
 
       {blocker && (
-        <p className="text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
-          ⚠️ {blocker}
-        </p>
+        <p className="text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">⚠️ {blocker}</p>
       )}
 
-      {/* SPV Incorporation: upload certificate */}
       {stage.stage_key === "spv_incorporation" && stage.status === "in_progress" && !incorpCertUploaded && (
         <div className="space-y-2 pt-1">
           <p className="text-xs font-medium text-foreground">Upload Incorporation Certificate</p>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => fileRef.current?.click()}
-            disabled={uploadingCert}
-            className="gap-1.5 text-xs"
-          >
+          <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploadingCert} className="gap-1.5 text-xs">
             {uploadingCert ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
             Upload Certificate
           </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            className="hidden"
-            accept=".pdf,.jpg,.jpeg,.png,.docx"
-            onChange={handleCertUpload}
-          />
+          <input ref={fileRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.docx" onChange={handleCertUpload} />
         </div>
       )}
 
-      {/* Show generated docs for this stage */}
       {stageDocs.length > 0 && (
         <div className="space-y-1 pt-1">
           {stageDocs.map((doc) => (
@@ -295,26 +247,16 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
               <FileText className="h-3 w-3 text-muted-foreground" />
               <span className="text-foreground font-medium flex-1">{doc.document_name}</span>
               <Badge variant="secondary" className="text-[10px]">{doc.status}</Badge>
-              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onViewDoc(doc)} title="View">
-                <Eye className="h-3 w-3 text-muted-foreground" />
-              </Button>
-              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onDownloadDoc(doc)} title="Download">
-                <Download className="h-3 w-3 text-muted-foreground" />
-              </Button>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onViewDoc(doc)} title="View"><Eye className="h-3 w-3 text-muted-foreground" /></Button>
+              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => onDownloadDoc(doc)} title="Download"><Download className="h-3 w-3 text-muted-foreground" /></Button>
               {doc.stage_key === "facility_doc_creation" && doc.status !== "signed" && (
-                <Button size="sm" variant="outline" className="h-6 px-2 text-[10px] gap-1" onClick={() => onSignDoc(doc)}>
-                  <PenTool className="h-2.5 w-2.5" /> Sign
-                </Button>
+                <Button size="sm" variant="outline" className="h-6 px-2 text-[10px] gap-1" onClick={() => onSignDoc(doc)}><PenTool className="h-2.5 w-2.5" /> Sign</Button>
               )}
               {doc.status === "signed" && (
-                <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-0.5">
-                  <Check className="h-2.5 w-2.5" /> Signed
-                </span>
+                <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-0.5"><Check className="h-2.5 w-2.5" /> Signed</span>
               )}
               {showDocActions && onDeleteDoc && (
-                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => onDeleteDoc(doc)} title="Delete">
-                  <Trash2 className="h-3 w-3" />
-                </Button>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => onDeleteDoc(doc)} title="Delete"><Trash2 className="h-3 w-3" /></Button>
               )}
             </div>
           ))}
@@ -322,14 +264,15 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
       )}
 
       {stage.completed_at && (
-        <p className="text-[10px] text-muted-foreground">
-          Completed {new Date(stage.completed_at).toLocaleDateString()}
-        </p>
+        <p className="text-[10px] text-muted-foreground">Completed {new Date(stage.completed_at).toLocaleDateString()}</p>
       )}
     </div>
   );
 }
 
+/* ══════════════════════════════════════════════
+   Main Panel — Accordion Layout
+   ══════════════════════════════════════════════ */
 interface AdminDeploymentPanelProps {
   submission: any;
 }
@@ -362,404 +305,308 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
 
   if (!isAnalysisComplete) return null;
 
-  // Check gating conditions for deployment stages
+  // Gating
   const facilityDocs = generatedDocs?.filter(d => d.stage_key === "facility_doc_creation") || [];
   const allFacilityDocsSigned = facilityDocs.length > 0 && facilityDocs.every(d => d.status === "signed");
   const incorpCertUploaded = generatedDocs?.some(d => d.stage_key === "spv_incorporation" && d.document_type === "incorporation_certificate");
 
   const getDeploymentBlocker = (stage: DeploymentStage): string | null => {
-    if (stage.stage_key === "spv_incorporation" && !incorpCertUploaded) {
-      return "Upload the incorporation certificate before completing this stage.";
-    }
+    if (stage.stage_key === "spv_incorporation" && !incorpCertUploaded) return "Upload the incorporation certificate before completing this stage.";
     if (stage.stage_key === "legal_close" && !allFacilityDocsSigned) {
       const unsigned = facilityDocs.filter(d => d.status !== "signed").length;
       return `${unsigned} facility document${unsigned !== 1 ? "s" : ""} still need to be signed.`;
     }
     return null;
   };
-
   const canCompleteDeploymentStage = (stage: DeploymentStage) => {
     if (stage.stage_key === "spv_incorporation") return !!incorpCertUploaded;
     if (stage.stage_key === "legal_close") return allFacilityDocsSigned;
     return true;
   };
 
+  // Doc handlers
   const handleViewDoc = async (doc: GeneratedDocument) => {
     if (doc.file_url && !doc.content) {
-      const { data } = await supabase.storage
-        .from("project-documents")
-        .createSignedUrl(doc.file_url, 3600);
+      const { data } = await supabase.storage.from("project-documents").createSignedUrl(doc.file_url, 3600);
       if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-    } else {
-      setViewDoc(doc);
-    }
+    } else { setViewDoc(doc); }
   };
-
   const handleDownloadDoc = async (doc: GeneratedDocument) => {
     if (doc.file_url) {
       const { data } = await supabase.storage.from("project-documents").download(doc.file_url);
-      if (data) {
-        const url = URL.createObjectURL(data);
-        const a = document.createElement("a"); a.href = url; a.download = doc.document_name; a.click();
-        URL.revokeObjectURL(url);
-      }
+      if (data) { const url = URL.createObjectURL(data); const a = document.createElement("a"); a.href = url; a.download = doc.document_name; a.click(); URL.revokeObjectURL(url); }
     } else if (doc.content) {
-      const blob = new Blob([doc.content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = `${doc.document_name}.txt`; a.click();
-      URL.revokeObjectURL(url);
+      const blob = new Blob([doc.content], { type: "text/plain" }); const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${doc.document_name}.txt`; a.click(); URL.revokeObjectURL(url);
     }
   };
-
   const handleDeleteDoc = async () => {
     if (!deleteConfirm) return;
     setDeleting(true);
     try {
-      const { error } = await supabase
-        .from("generated_documents" as any)
-        .delete()
-        .eq("id", deleteConfirm.id);
+      const { error } = await supabase.from("generated_documents" as any).delete().eq("id", deleteConfirm.id);
       if (error) throw error;
-      if (deleteConfirm.file_url) {
-        await supabase.storage.from("project-documents").remove([deleteConfirm.file_url]);
-      }
+      if (deleteConfirm.file_url) await supabase.storage.from("project-documents").remove([deleteConfirm.file_url]);
       queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
       toast.success("Document deleted");
-    } catch (err) {
-      toast.error("Failed to delete document");
-    } finally {
-      setDeleting(false);
-      setDeleteConfirm(null);
-    }
+    } catch { toast.error("Failed to delete document"); }
+    finally { setDeleting(false); setDeleteConfirm(null); }
   };
-
   const handleUploadReplacement = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadStageKey) return;
     setUploading(true);
     try {
       const filePath = `${submission.user_id}/${submission.id}/${uploadStageKey}-${Date.now()}.${file.name.split('.').pop()}`;
-      const { error: uploadErr } = await supabase.storage
-        .from("project-documents")
-        .upload(filePath, file);
+      const { error: uploadErr } = await supabase.storage.from("project-documents").upload(filePath, file);
       if (uploadErr) throw uploadErr;
-
-      const { error: insertErr } = await supabase
-        .from("generated_documents" as any)
-        .insert({
-          submission_id: submission.id,
-          user_id: submission.user_id,
-          stage_key: uploadStageKey,
-          document_name: file.name.replace(/\.[^/.]+$/, ""),
-          document_type: "uploaded_replacement",
-          file_url: filePath,
-          status: "draft",
-        } as any);
+      const { error: insertErr } = await supabase.from("generated_documents" as any).insert({
+        submission_id: submission.id, user_id: submission.user_id, stage_key: uploadStageKey,
+        document_name: file.name.replace(/\.[^/.]+$/, ""), document_type: "uploaded_replacement", file_url: filePath, status: "draft",
+      } as any);
       if (insertErr) throw insertErr;
-
       queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
       toast.success("Document uploaded");
-    } catch (err) {
-      toast.error("Failed to upload document");
-    } finally {
-      setUploading(false);
-      setUploadStageKey(null);
-    }
+    } catch { toast.error("Failed to upload document"); }
+    finally { setUploading(false); setUploadStageKey(null); }
   };
 
-  // Status badges
-  const deploymentStatusBadge = () => {
-    if (isDeploymentComplete) {
-      return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"><Check className="h-2.5 w-2.5 mr-0.5" /> Completed</Badge>;
-    }
-    if (isDeploymentApproved) {
-      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]"><Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> In Progress</Badge>;
-    }
-    if (hasSignatures) {
-      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Ready for Approval</Badge>;
-    }
-    return <Badge variant="outline" className="text-[10px]">Awaiting Term Sheet Signature</Badge>;
-  };
-
-  const listingStatusBadge = () => {
-    if (isListingComplete) {
-      return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"><Check className="h-2.5 w-2.5 mr-0.5" /> Completed</Badge>;
-    }
-    if (listingStages && listingStages.length > 0) {
-      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]"><Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> In Progress</Badge>;
-    }
-    return <Badge variant="outline" className="text-[10px]">Awaiting Deployment</Badge>;
-  };
+  // Phase statuses
+  const standardizationStatus: "completed" | "in_progress" | "pending" = isAnalysisComplete ? "completed" : "in_progress";
+  const deploymentStatus: "completed" | "in_progress" | "pending" | "awaiting" = isDeploymentComplete ? "completed" : isDeploymentApproved ? "in_progress" : hasSignatures ? "pending" : "awaiting";
+  const listingStatus: "completed" | "in_progress" | "pending" | "awaiting" = isListingComplete ? "completed" : (listingStages && listingStages.length > 0) ? "in_progress" : "awaiting";
 
   const isListingStarted = listingStages && listingStages.length > 0;
+
+  // Determine which accordion items to open by default
+  const defaultOpen: string[] = [];
+  if (standardizationStatus !== "completed") defaultOpen.push("standardization");
+  if (deploymentStatus === "in_progress") defaultOpen.push("deployment");
+  if (listingStatus === "in_progress") defaultOpen.push("listing");
+  if (defaultOpen.length === 0) defaultOpen.push("standardization");
 
   return (
     <>
       <div className="border-t border-border pt-4">
-        <Tabs defaultValue="standardization" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 h-auto">
-            <TabsTrigger value="standardization" className="text-xs py-2 gap-1.5">
-              ⚖️ Asset Standardization
-            </TabsTrigger>
-            <TabsTrigger value="deployment" className="text-xs py-2 gap-1.5">
-              🏛️ SPV Deployment {deploymentStatusBadge()}
-            </TabsTrigger>
-            <TabsTrigger value="listing" className="text-xs py-2 gap-1.5" disabled={!isDeploymentApproved && !isListingStarted}>
-              📋 Listing {isListingStarted && listingStatusBadge()}
-            </TabsTrigger>
-          </TabsList>
+        <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-2">
 
-          {/* ===== ASSET STANDARDIZATION TAB ===== */}
-          <TabsContent value="standardization" className="space-y-4 pt-3">
-            {/* Project Description */}
-            {submission.project_description && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Project Description</p>
-                <p className="text-sm text-foreground">{submission.project_description}</p>
+          {/* ═══ 1. ASSET STANDARDIZATION ═══ */}
+          <AccordionItem value="standardization" className="border border-border rounded-lg overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-sm font-bold text-foreground">⚖️ Asset Standardization</span>
+                <PhaseBadge status={standardizationStatus} />
               </div>
-            )}
-
-            {/* KYC Signatories */}
-            {submission.kyc_signatories && submission.kyc_signatories.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">KYC Signatories</p>
-                <div className="flex flex-wrap gap-2">
-                  {submission.kyc_signatories.map((sig: any, idx: number) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">
-                      {sig.name} ({sig.role})
-                    </Badge>
-                  ))}
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-4">
+              {/* Project Description */}
+              {submission.project_description && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Project Description</p>
+                  <p className="text-sm text-foreground">{submission.project_description}</p>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Analysis Results */}
-            {report && report.analysis_status === "completed" && (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Score</p>
-                    <p className={cn(
-                      "text-2xl font-bold",
-                      report.total_score >= 90 ? "text-emerald-600" :
-                      report.total_score >= 75 ? "text-green-600" :
-                      report.total_score >= 60 ? "text-amber-600" : "text-red-600"
-                    )}>{report.total_score}</p>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Grade</p>
-                    <p className="text-lg font-bold text-foreground">{report.grade}</p>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Classification</p>
-                    <p className="text-sm font-medium text-foreground">{report.grade_label}</p>
-                  </div>
-                  <div className="bg-muted/50 rounded-lg p-3">
-                    <p className="text-xs text-muted-foreground">Doc Completeness</p>
-                    <p className="text-lg font-bold text-foreground">{report.document_completeness_score}%</p>
+              {/* KYC Signatories */}
+              {submission.kyc_signatories && submission.kyc_signatories.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">KYC Signatories</p>
+                  <div className="flex flex-wrap gap-2">
+                    {submission.kyc_signatories.map((sig: any, idx: number) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">{sig.name} ({sig.role})</Badge>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {/* Score Dimensions */}
-                {report.score_dimensions && report.score_dimensions.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Score Dimensions</p>
-                    <div className="space-y-2">
-                      {report.score_dimensions.map((dim: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-3">
-                          <span className="text-xs text-muted-foreground w-[140px] shrink-0 truncate">{dim.name}</span>
-                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className={cn(
-                                "h-full rounded-full transition-all",
-                                dim.score >= 90 ? "bg-emerald-500" :
-                                dim.score >= 80 ? "bg-green-500" :
-                                dim.score >= 70 ? "bg-amber-500" : "bg-red-500"
-                              )}
-                              style={{ width: `${dim.score}%` }}
-                            />
+              {/* Analysis Results */}
+              {report && report.analysis_status === "completed" && (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Score</p>
+                      <p className={cn("text-2xl font-bold",
+                        report.total_score >= 90 ? "text-emerald-600" :
+                        report.total_score >= 75 ? "text-green-600" :
+                        report.total_score >= 60 ? "text-amber-600" : "text-red-600"
+                      )}>{report.total_score}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Grade</p>
+                      <p className="text-lg font-bold text-foreground">{report.grade}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Classification</p>
+                      <p className="text-sm font-medium text-foreground">{report.grade_label}</p>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <p className="text-xs text-muted-foreground">Doc Completeness</p>
+                      <p className="text-lg font-bold text-foreground">{report.document_completeness_score}%</p>
+                    </div>
+                  </div>
+
+                  {/* Score Dimensions */}
+                  {report.score_dimensions && report.score_dimensions.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Score Dimensions</p>
+                      <div className="space-y-2">
+                        {report.score_dimensions.map((dim: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <span className="text-xs text-muted-foreground w-[140px] shrink-0 truncate">{dim.name}</span>
+                            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                              <div className={cn("h-full rounded-full transition-all",
+                                dim.score >= 90 ? "bg-emerald-500" : dim.score >= 80 ? "bg-green-500" : dim.score >= 70 ? "bg-amber-500" : "bg-red-500"
+                              )} style={{ width: `${dim.score}%` }} />
+                            </div>
+                            <span className="text-xs font-bold w-8 text-right">{dim.score}</span>
+                            <span className="text-[10px] text-muted-foreground w-10 text-right">{dim.weight}%</span>
                           </div>
-                          <span className="text-xs font-bold w-8 text-right">{dim.score}</span>
-                          <span className="text-[10px] text-muted-foreground w-10 text-right">{dim.weight}%</span>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Project Summary */}
-                {report.project_summary && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">AI Summary</p>
-                    <p className="text-sm text-foreground line-clamp-3">{report.project_summary}</p>
+                  {/* Project Summary */}
+                  {report.project_summary && (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">AI Summary</p>
+                      <p className="text-sm text-foreground line-clamp-3">{report.project_summary}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Term Sheet Signature Status */}
+              <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Term Sheet Signature</p>
+                {hasSignatures ? (
+                  <div className="space-y-1">
+                    {signatures.map((sig: any) => (
+                      <div key={sig.id} className="flex items-center gap-2 text-xs">
+                        <CheckCircle className="h-3 w-3 text-emerald-600" />
+                        <span className="text-foreground font-medium">{sig.signer_name}</span>
+                        <span className="text-muted-foreground">signed {new Date(sig.signed_at).toLocaleDateString()}</span>
+                        <Badge variant="secondary" className="text-[10px]">{sig.signature_type}</Badge>
+                      </div>
+                    ))}
                   </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No signatures yet. Client must sign the term sheet before deployment can proceed.</p>
                 )}
               </div>
-            )}
+            </AccordionContent>
+          </AccordionItem>
 
-            {/* Term Sheet Signature Status */}
-            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Term Sheet Signature</p>
-              {hasSignatures ? (
-                <div className="space-y-1">
-                  {signatures.map((sig: any) => (
-                    <div key={sig.id} className="flex items-center gap-2 text-xs">
-                      <CheckCircle className="h-3 w-3 text-emerald-600" />
-                      <span className="text-foreground font-medium">{sig.signer_name}</span>
-                      <span className="text-muted-foreground">signed {new Date(sig.signed_at).toLocaleDateString()}</span>
-                      <Badge variant="secondary" className="text-[10px]">{sig.signature_type}</Badge>
-                    </div>
-                  ))}
+          {/* ═══ 2. SPV DEPLOYMENT ═══ */}
+          <AccordionItem value="deployment" className="border border-border rounded-lg overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-sm font-bold text-foreground">🏛️ SPV Deployment</span>
+                <PhaseBadge status={deploymentStatus} />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-4">
+              {/* Approve Button */}
+              {canApprove && (
+                <Button onClick={() => approveDeployment.mutate({ submissionId: submission.id, userId: submission.user_id })}
+                  disabled={approveDeployment.isPending} className="gap-2">
+                  {approveDeployment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                  Approve SPV Deployment
+                </Button>
+              )}
+
+              {!isDeploymentApproved && !canApprove && (
+                <div className="bg-muted/30 rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {!hasSignatures ? "Awaiting term sheet signature from the client before deployment can be approved."
+                      : !submission.released_to_client ? "Release the analysis to the client first, then approve deployment."
+                      : "Deployment conditions not yet met."}
+                  </p>
+                </div>
+              )}
+
+              {stages && stages.length > 0 && (
+                <div className="space-y-2">
+                  {stages.map((stage) => {
+                    const stageDocs = generatedDocs?.filter(d => d.stage_key === stage.stage_key) || [];
+                    const blocker = stage.status === "in_progress" ? getDeploymentBlocker(stage) : null;
+                    return (
+                      <StageRow key={stage.id} stage={stage} stageDocs={stageDocs} completeStage={completeStage}
+                        canComplete={canCompleteDeploymentStage(stage)} blocker={blocker}
+                        onViewDoc={handleViewDoc} onDownloadDoc={handleDownloadDoc} onSignDoc={(doc) => setSignDoc(doc)} submission={submission} />
+                    );
+                  })}
+                </div>
+              )}
+
+              {isDeploymentComplete && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-medium text-emerald-700">SPV Deployment completed. Listing stage is now active.</span>
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ═══ 3. LISTING ═══ */}
+          <AccordionItem value="listing" className="border border-border rounded-lg overflow-hidden">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/30 [&[data-state=open]]:bg-muted/20">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className="text-sm font-bold text-foreground">📋 Listing</span>
+                <PhaseBadge status={listingStatus} />
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-4">
+              {!isListingStarted ? (
+                <div className="bg-muted/30 rounded-lg p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Listing stages will become available once SPV Deployment is completed.
+                  </p>
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground">No signatures yet. Client must sign the term sheet before deployment can proceed.</p>
-              )}
-            </div>
-          </TabsContent>
+                <div className="space-y-2">
+                  {listingStages!.map((stage) => {
+                    const stageDocs = generatedDocs?.filter(d =>
+                      d.stage_key === stage.stage_key || (stage.stage_key === "sc_auditing" && (d.stage_key === "sc_deployment_record" || d.stage_key === "ipfs_anchoring"))
+                    ) || [];
+                    return (
+                      <StageRow key={stage.id} stage={stage} stageDocs={stageDocs} completeStage={completeStage}
+                        canComplete={true} blocker={null} onViewDoc={handleViewDoc} onDownloadDoc={handleDownloadDoc}
+                        onSignDoc={(doc) => setSignDoc(doc)} onDeleteDoc={(doc) => setDeleteConfirm(doc)}
+                        onUploadDoc={(key) => { setUploadStageKey(key); uploadFileRef.current?.click(); }}
+                        submission={submission} showDocActions={true} />
+                    );
+                  })}
 
-          {/* ===== SPV DEPLOYMENT TAB ===== */}
-          <TabsContent value="deployment" className="space-y-4 pt-3">
-            {/* Approve Button */}
-            {canApprove && (
-              <Button
-                onClick={() => approveDeployment.mutate({ submissionId: submission.id, userId: submission.user_id })}
-                disabled={approveDeployment.isPending}
-                className="gap-2"
-              >
-                {approveDeployment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                Approve SPV Deployment
-              </Button>
-            )}
-
-            {!isDeploymentApproved && !canApprove && (
-              <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {!hasSignatures 
-                    ? "Awaiting term sheet signature from the client before deployment can be approved."
-                    : !submission.released_to_client
-                    ? "Release the analysis to the client first, then approve deployment."
-                    : "Deployment conditions not yet met."}
-                </p>
-              </div>
-            )}
-
-            {/* Deployment Stages */}
-            {stages && stages.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deployment Stages</p>
-                {stages.map((stage) => {
-                  const stageDocs = generatedDocs?.filter(d => d.stage_key === stage.stage_key) || [];
-                  const blocker = stage.status === "in_progress" ? getDeploymentBlocker(stage) : null;
-                  return (
-                    <StageRow
-                      key={stage.id}
-                      stage={stage}
-                      stageDocs={stageDocs}
-                      completeStage={completeStage}
-                      canComplete={canCompleteDeploymentStage(stage)}
-                      blocker={blocker}
-                      onViewDoc={handleViewDoc}
-                      onDownloadDoc={handleDownloadDoc}
-                      onSignDoc={(doc) => setSignDoc(doc)}
-                      submission={submission}
-                    />
-                  );
-                })}
-              </div>
-            )}
-
-            {isDeploymentComplete && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm font-medium text-emerald-700">SPV Deployment completed. Listing stage is now active.</span>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* ===== LISTING TAB ===== */}
-          <TabsContent value="listing" className="space-y-4 pt-3">
-            {!isListingStarted ? (
-              <div className="bg-muted/30 rounded-lg p-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Listing stages will become available once SPV Deployment is completed.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Listing Stages</p>
-                  {listingStatusBadge()}
+                  {isListingComplete && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-emerald-600" />
+                      <span className="text-sm font-medium text-emerald-700">Listing completed. Funding stage is now active.</span>
+                    </div>
+                  )}
                 </div>
-                {listingStages!.map((stage) => {
-                  const stageDocs = generatedDocs?.filter(d => d.stage_key === stage.stage_key || (stage.stage_key === "sc_auditing" && (d.stage_key === "sc_deployment_record" || d.stage_key === "ipfs_anchoring"))) || [];
-                  return (
-                    <StageRow
-                      key={stage.id}
-                      stage={stage}
-                      stageDocs={stageDocs}
-                      completeStage={completeStage}
-                      canComplete={true}
-                      blocker={null}
-                      onViewDoc={handleViewDoc}
-                      onDownloadDoc={handleDownloadDoc}
-                      onSignDoc={(doc) => setSignDoc(doc)}
-                      onDeleteDoc={(doc) => setDeleteConfirm(doc)}
-                      onUploadDoc={(key) => { setUploadStageKey(key); uploadFileRef.current?.click(); }}
-                      submission={submission}
-                      showDocActions={true}
-                    />
-                  );
-                })}
-
-                {isListingComplete && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-medium text-emerald-700">Listing completed. Funding stage is now active.</span>
-                  </div>
-                )}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
-      {/* Hidden file input for replacement uploads */}
-      <input
-        ref={uploadFileRef}
-        type="file"
-        className="hidden"
-        accept=".pdf,.docx,.txt,.json"
-        onChange={handleUploadReplacement}
-      />
+      {/* Hidden file input */}
+      <input ref={uploadFileRef} type="file" className="hidden" accept=".pdf,.docx,.txt,.json" onChange={handleUploadReplacement} />
 
-      {/* View Document Modal */}
+      {/* Modals */}
       <ViewDocumentModal doc={viewDoc} open={!!viewDoc} onOpenChange={(v) => !v && setViewDoc(null)} />
-
-      {/* Sign Document Modal */}
       <SignFacilityDocModal doc={signDoc} open={!!signDoc} onOpenChange={(v) => !v && setSignDoc(null)} />
-
-      {/* Delete Confirmation Modal */}
       <Dialog open={!!deleteConfirm} onOpenChange={(v) => !v && setDeleteConfirm(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-5 w-5 text-destructive" />
-              Delete Document
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{deleteConfirm?.document_name}"? This action cannot be undone.
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Trash2 className="h-5 w-5 text-destructive" /> Delete Document</DialogTitle>
+            <DialogDescription>Are you sure you want to delete "{deleteConfirm?.document_name}"? This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteDoc}
-              disabled={deleting}
-              className="gap-2"
-            >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              Delete
+            <Button variant="destructive" onClick={handleDeleteDoc} disabled={deleting} className="gap-2">
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Delete
             </Button>
           </DialogFooter>
         </DialogContent>
