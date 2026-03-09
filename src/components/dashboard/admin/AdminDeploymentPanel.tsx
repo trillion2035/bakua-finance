@@ -850,7 +850,10 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         agentLoading={stage.stage_key === "sc_development" ? launchSCDev.isPending : false}
                         onRegeneratePlan={stage.stage_key === "sc_development" ? () => launchSCDev.mutate({ submissionId: submission.id }) : undefined}
                         onExecuteStep={stage.stage_key === "sc_development" ? handleExecuteStep : undefined}
-                        executingStep={stage.stage_key === "sc_development" ? executingStepRef : null} />
+                        executingStep={stage.stage_key === "sc_development" ? executingStepRef : null}
+                        onDeployContract={stage.stage_key === "sc_deployment" ? handleDeployContract : undefined}
+                        deployingContract={stage.stage_key === "sc_deployment" ? deployContract.isPending : false}
+                        deployResult={stage.stage_key === "sc_deployment" ? deployResult : undefined} />
                     );
                   })}
 
