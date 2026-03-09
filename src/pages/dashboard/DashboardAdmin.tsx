@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { FileSearch, Play, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader2, Download, FileText, FileSpreadsheet } from "lucide-react";
-import { useAllSubmissionsWithAnalysis, useTriggerAnalysis, useTermSheet } from "@/hooks/useAnalysisData";
+import { FileSearch, Play, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader2, Download, FileText, FileSpreadsheet, Send } from "lucide-react";
+import { useAllSubmissionsWithAnalysis, useTriggerAnalysis, useTermSheet, useReleaseToClient } from "@/hooks/useAnalysisData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
