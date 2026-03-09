@@ -659,22 +659,6 @@ export default function DashboardDocuments() {
     );
   }
 
-  // Empty state
-  return (
-    <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
-          <p className="text-sm text-muted-foreground mt-1">0 documents</p>
-        </div>
-      </div>
-      <div className="bg-card border border-border rounded-lg p-12 text-center space-y-3">
-        <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto" />
-        <h3 className="text-base font-bold text-foreground">No documents yet</h3>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Documents will appear here once you submit your project documents through the Overview tab. Start by clicking "Submit Documents" on the Process Status pipeline.
-        </p>
-      </div>
-    </div>
-  );
+  // Fallback: show mock documents arranged by process stages
+  return <MockDocumentsByStage />;
 }
