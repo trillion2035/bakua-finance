@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Check, Loader2, ChevronDown, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, Bot, Zap, RefreshCw, AlertTriangle, Info, ChevronRight, Rocket, ExternalLink } from "lucide-react";
+import { Check, Loader2, ChevronDown, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, Bot, Zap, RefreshCw, AlertTriangle, Info, ChevronRight, Rocket, ExternalLink, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -21,6 +21,7 @@ import {
   useIsListingComplete,
   useLaunchSCDevelopment,
   useExecuteStep,
+  usePreflightCheck,
   useDeployContract,
   type DeploymentStage,
   type GeneratedDocument,
@@ -175,7 +176,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 /* ── Stage Row ── */
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployResult }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -196,6 +197,10 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   onDeployContract?: (network: "testnet" | "mainnet") => void;
   deployingContract?: boolean;
   deployResult?: any;
+  onPreflightCheck?: () => void;
+  preflightLoading?: boolean;
+  preflightResult?: any;
+  onPreflightFix?: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingCert, setUploadingCert] = useState(false);
@@ -432,12 +437,91 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
       {/* SC Deployment: Deploy to blockchain button */}
       {stage.stage_key === "sc_deployment" && stage.status === "in_progress" && onDeployContract && (
         <div className="space-y-3 pt-1">
+          {/* Pre-flight Check Section */}
           {!deployResult && (
-            <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => onDeployContract("testnet")} disabled={deployingContract} className="gap-2">
-                {deployingContract ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                {deployingContract ? "Deploying to Base Sepolia..." : "Deploy to Base Sepolia (Testnet)"}
-              </Button>
+            <div className="space-y-3">
+              {/* Pre-flight button */}
+              {!preflightResult && (
+                <Button size="sm" variant="outline" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-2">
+                  {preflightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />}
+                  {preflightLoading ? "Running Pre-flight Checks..." : "Run Pre-flight Check"}
+                </Button>
+              )}
+
+              {preflightLoading && (
+                <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Checking secrets, wallet balance, code completeness, and compilation...</span>
+                </div>
+              )}
+
+              {/* Pre-flight Results */}
+              {preflightResult && (
+                <div className={cn("rounded-lg border p-3 space-y-2",
+                  preflightResult.ready ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200"
+                )}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {preflightResult.ready ? (
+                        <CheckCircle className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                      )}
+                      <span className={cn("text-sm font-bold", preflightResult.ready ? "text-emerald-700" : "text-red-700")}>
+                        {preflightResult.ready ? "All Checks Passed" : "Issues Found"}
+                      </span>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={onPreflightCheck} disabled={preflightLoading} className="gap-1.5 text-xs h-7">
+                      {preflightLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                      Re-check
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{preflightResult.summary}</p>
+
+                  {/* Individual checks */}
+                  <div className="space-y-1.5 pt-1">
+                    {preflightResult.checks?.map((check: any) => (
+                      <div key={check.id} className={cn("flex items-start gap-2 text-xs rounded p-2 border",
+                        check.status === "pass" ? "bg-emerald-50/50 border-emerald-200" :
+                        check.status === "warning" ? "bg-amber-50/50 border-amber-200" :
+                        "bg-red-50/50 border-red-200"
+                      )}>
+                        {check.status === "pass" ? <CheckCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" /> :
+                         check.status === "warning" ? <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" /> :
+                         <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0 mt-0.5" />}
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-foreground">{check.label}</span>
+                          <p className="text-muted-foreground mt-0.5">{check.message}</p>
+                          {check.details && (
+                            <p className="text-muted-foreground/80 mt-0.5 text-[11px] font-mono break-all">{check.details}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Fix button for fixable issues */}
+                  {preflightResult.has_fixable_issues && onPreflightFix && (
+                    <div className="pt-2 border-t border-red-200">
+                      <Button size="sm" onClick={onPreflightFix} disabled={preflightLoading} className="gap-2">
+                        {preflightLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+                        {preflightLoading ? "AI Fixing Issues..." : "Auto-fix with AI Agent"}
+                      </Button>
+                      <p className="text-[11px] text-muted-foreground mt-1">AI will attempt to fix compilation errors and re-run checks.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Deploy button — only shown after preflight passes */}
+              {preflightResult?.ready && (
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={() => onDeployContract("testnet")} disabled={deployingContract} className="gap-2">
+                    {deployingContract ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                    {deployingContract ? "Deploying to Base Sepolia..." : "Deploy to Base Sepolia (Testnet)"}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
           {deployingContract && (
@@ -546,8 +630,10 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const launchSCDev = useLaunchSCDevelopment();
   const executeStep = useExecuteStep();
   const deployContract = useDeployContract();
+  const preflightCheck = usePreflightCheck();
   const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
   const [deployResult, setDeployResult] = useState<any>(null);
+  const [preflightResult, setPreflightResult] = useState<any>(null);
 
   const handleExecuteStep = (phaseNumber: number, stepNumber: number) => {
     const ref = `${phaseNumber}.${stepNumber}`;
@@ -562,6 +648,20 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     deployContract.mutate(
       { submissionId: submission.id, network },
       { onSuccess: (data) => setDeployResult(data) }
+    );
+  };
+
+  const handlePreflightCheck = () => {
+    preflightCheck.mutate(
+      { submissionId: submission.id, network: "testnet", mode: "check" },
+      { onSuccess: (data) => setPreflightResult(data) }
+    );
+  };
+
+  const handlePreflightFix = () => {
+    preflightCheck.mutate(
+      { submissionId: submission.id, network: "testnet", mode: "fix" },
+      { onSuccess: (data) => setPreflightResult(data) }
     );
   };
 
@@ -853,7 +953,11 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         executingStep={stage.stage_key === "sc_development" ? executingStepRef : null}
                         onDeployContract={stage.stage_key === "sc_deployment" ? handleDeployContract : undefined}
                         deployingContract={stage.stage_key === "sc_deployment" ? deployContract.isPending : false}
-                        deployResult={stage.stage_key === "sc_deployment" ? deployResult : undefined} />
+                        deployResult={stage.stage_key === "sc_deployment" ? deployResult : undefined}
+                        onPreflightCheck={stage.stage_key === "sc_deployment" ? handlePreflightCheck : undefined}
+                        preflightLoading={stage.stage_key === "sc_deployment" ? preflightCheck.isPending : false}
+                        preflightResult={stage.stage_key === "sc_deployment" ? preflightResult : undefined}
+                        onPreflightFix={stage.stage_key === "sc_deployment" ? handlePreflightFix : undefined} />
                     );
                   })}
 
