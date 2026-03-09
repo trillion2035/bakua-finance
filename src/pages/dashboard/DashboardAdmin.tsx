@@ -20,6 +20,7 @@ function SubmissionRow({ submission }: { submission: any }) {
   const [expanded, setExpanded] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState("agriculture");
   const triggerAnalysis = useTriggerAnalysis();
+  const releaseToClient = useReleaseToClient();
 
   const report = submission.analysis_report;
   const profile = submission.profiles;

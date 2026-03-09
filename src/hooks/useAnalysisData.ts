@@ -225,7 +225,38 @@ export function useTriggerAnalysis() {
         toast.warning(`Analysis complete: ${data.grade} - ${data.grade_label}`, {
           description: "Project did not meet the minimum threshold.",
         });
-      }
+}
+
+// Release analysis results to client
+export function useReleaseToClient() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (submissionId: string) => {
+      const { error } = await supabase
+        .from("document_submissions")
+        .update({
+          released_to_client: true,
+          released_at: new Date().toISOString(),
+        } as any)
+        .eq("id", submissionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-submissions-analysis"] });
+      queryClient.invalidateQueries({ queryKey: ["document-submission"] });
+      toast.success("Results released to project owner", {
+        description: "The project owner can now view their analysis results.",
+      });
+    },
+    onError: (error) => {
+      toast.error("Failed to release results", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    },
+  });
+}
     },
     onError: (error) => {
       toast.error("Analysis failed", {
