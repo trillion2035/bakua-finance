@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { generateAssetScorePDF, generateProjectDossierPDF, generateTermSheetPDF } from "@/lib/pdfGenerators";
 import { toast } from "sonner";
+import { AdminDeploymentPanel } from "@/components/dashboard/admin/AdminDeploymentPanel";
 
 const INDUSTRIES = [
   { value: "agriculture", label: "Agriculture" },
