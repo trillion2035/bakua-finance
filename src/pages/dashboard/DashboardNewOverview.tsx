@@ -337,6 +337,20 @@ function EmptyProcessPipeline({
                 </div>
               )}
 
+              {/* SPV Deployment completed - show View Documents */}
+              {step.status === "completed" && step.id === 3 && (
+                <div className="mt-3 bg-green/5 border border-green/20 rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <div className="flex items-center gap-3 text-xs text-green">
+                    <Check className="h-3.5 w-3.5" />
+                    <span>{generatedDocs?.length || 0} document{(generatedDocs?.length || 0) !== 1 ? "s" : ""} created</span>
+                  </div>
+                  <Button size="sm" variant="outline" className="gap-2" onClick={() => navigate("/dashboard/documents")}>
+                    <Eye className="h-3.5 w-3.5" /> View Documents
+                  </Button>
+                </div>
+              )}
+
               {/* SPV Deployment in progress - show sub-stages */}
               {step.status === "in_progress" && step.id === 3 && (
                 <div className="mt-3 bg-gold/5 border border-gold/20 rounded-lg p-4 space-y-3">
@@ -397,6 +411,7 @@ function EmptyProcessPipeline({
                     <div className="flex items-center gap-2 text-xs text-gold">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Setting up deployment stages...
+                    </div>
                     </div>
                   )}
                 </div>
