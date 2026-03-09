@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Settings,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -34,6 +35,7 @@ const menuItems = [
   { title: "Oracle", url: "/dashboard/oracle", icon: Radio },
   { title: "Messages", url: "/dashboard/messages", icon: MessageSquare },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
+  { title: "Admin", url: "/dashboard/admin", icon: ShieldCheck },
 ];
 
 export function DashboardSidebar() {
