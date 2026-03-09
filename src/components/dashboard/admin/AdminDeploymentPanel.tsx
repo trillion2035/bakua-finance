@@ -1122,7 +1122,10 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         onMainnetPreflightCheck={stage.stage_key === "sc_deployment" ? handleMainnetPreflightCheck : undefined}
                         mainnetPreflightLoading={stage.stage_key === "sc_deployment" ? preflightCheck.isPending : false}
                         mainnetPreflightResult={stage.stage_key === "sc_deployment" ? mainnetPreflightResult : undefined}
-                        onMainnetPreflightFix={stage.stage_key === "sc_deployment" ? handleMainnetPreflightFix : undefined} />
+                        onMainnetPreflightFix={stage.stage_key === "sc_deployment" ? handleMainnetPreflightFix : undefined}
+                        onVerifyContract={stage.stage_key === "sc_deployment" ? handleVerifyContract : undefined}
+                        verifyingNetwork={stage.stage_key === "sc_deployment" ? verifyingNetwork : null}
+                        verifiedNetworks={stage.stage_key === "sc_deployment" ? verifiedNetworks : undefined} />
                     );
                   })}
 
