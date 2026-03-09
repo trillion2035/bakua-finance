@@ -2,13 +2,17 @@ import { useState } from "react";
 import {
   ArrowRight, Clock, Check, Loader2, FileUp, Eye,
   DollarSign, TrendingUp, Shield, Percent,
+  Download, FileText, FileSpreadsheet, PenTool,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerSpvs, useDocumentSubmission, useUserUploadedDocuments } from "@/hooks/useSpvData";
+import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import { useNavigate } from "react-router-dom";
+import { generateAssetScorePDF, generateProjectDossierPDF, generateTermSheetPDF } from "@/lib/pdfGenerators";
+import { toast } from "sonner";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
 function formatCurrency(amount: number | string | null, currency?: string | null): string {
@@ -32,18 +36,20 @@ function formatCapitalTarget(raw: string): string {
   return [prefix, formatted, suffix].filter(Boolean).join(" ");
 }
 
-function EmptyKPICards({ capitalTarget, spv }: { capitalTarget: string; spv: any }) {
+function EmptyKPICards({ capitalTarget, spv, analysisReport }: { capitalTarget: string; spv: any; analysisReport: any }) {
+  const hasScore = analysisReport?.analysis_status === "completed";
+
   const kpis = spv
     ? [
         { label: "Total Capital Target", value: spv.target_amount ? formatCurrency(spv.target_amount, spv.currency) : "—", subtext: spv.target_amount_usd || "Not set", icon: DollarSign },
         { label: "Funded", value: spv.funded_percent ? `${spv.funded_percent}%` : "—", subtext: spv.funded_percent === 100 ? "Fully funded" : "In progress", icon: TrendingUp },
-        { label: "Asset Score™", value: "AS-88", subtext: "Standard Grade", icon: Shield },
+        { label: "Asset Score™", value: hasScore ? analysisReport.grade : "—", subtext: hasScore ? analysisReport.grade_label : "Pending analysis", icon: Shield },
         { label: "IRR Target", value: spv.target_irr || "—", subtext: "36-month term", icon: Percent },
       ]
     : [
         { label: "Total Capital Target", value: formatCapitalTarget(capitalTarget), subtext: capitalTarget ? "As submitted" : "Not yet determined", icon: DollarSign },
         { label: "Funded", value: "—", subtext: "Awaiting documents", icon: TrendingUp },
-        { label: "Asset Score™", value: "—", subtext: "Pending analysis", icon: Shield },
+        { label: "Asset Score™", value: hasScore ? analysisReport.grade : "—", subtext: hasScore ? analysisReport.grade_label : "Pending analysis", icon: Shield },
         { label: "IRR Target", value: "—", subtext: "Pending model", icon: Percent },
       ];
 
@@ -82,7 +88,24 @@ interface ProcessStep {
   actionable: boolean;
 }
 
-function getProcessSteps(hasSubmission: boolean, submissionDate?: string): ProcessStep[] {
+function getProcessSteps(hasSubmission: boolean, isReleased: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
+  if (hasSubmission && isReleased) {
+    const formattedDate = submissionDate 
+      ? new Date(submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "Recently";
+    const formattedRelease = releasedDate
+      ? new Date(releasedDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "Recently";
+    return [
+      { id: 1, title: "Document Submission", description: "Your documents have been submitted and processed.", status: "completed", dateRange: `Submitted ${formattedDate}`, actionable: false },
+      { id: 2, title: "Asset Standardization", description: "AI analysis complete. Your Asset Score™ and project documents are ready.", status: "completed", dateRange: `Completed ${formattedRelease}`, actionable: false },
+      { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "in_progress", dateRange: "Awaiting term sheet signing", actionable: false },
+      { id: 4, title: "Listing", description: "Smart contract deployed, audited, and SPV listed on the investor marketplace.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
+      { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
+      { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
+    ];
+  }
+
   if (hasSubmission) {
     const formattedDate = submissionDate 
       ? new Date(submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -107,19 +130,164 @@ function getProcessSteps(hasSubmission: boolean, submissionDate?: string): Proce
   ];
 }
 
+interface AnalysisDocsSectionProps {
+  report: any;
+  termSheet: any;
+  submission: any;
+  profileName: string;
+}
+
+function AnalysisDocsSection({ report, termSheet, submission, profileName }: AnalysisDocsSectionProps) {
+  const [signing, setSigning] = useState(false);
+
+  const handleDownloadAssetScore = () => {
+    try {
+      const pdf = generateAssetScorePDF(report, profileName);
+      pdf.save(`Asset-Score-${report.grade}.pdf`);
+      toast.success("Asset Score PDF downloaded");
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleDownloadDossier = () => {
+    try {
+      const pdf = generateProjectDossierPDF(report, submission, profileName);
+      pdf.save(`Project-Dossier.pdf`);
+      toast.success("Project Dossier PDF downloaded");
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleDownloadTermSheet = () => {
+    if (!termSheet) return;
+    try {
+      const pdf = generateTermSheetPDF(termSheet, report, profileName);
+      pdf.save(`Term-Sheet-${termSheet.reference_code}.pdf`);
+      toast.success("Term Sheet PDF downloaded");
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleSignTermSheet = () => {
+    setSigning(true);
+    // Simulate signing - in production this would be a real e-signature flow
+    setTimeout(() => {
+      setSigning(false);
+      toast.success("Term Sheet signed successfully!", {
+        description: "Your signed term sheet has been recorded. SPV deployment will begin shortly.",
+      });
+    }, 2000);
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Score summary */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <p className="text-xs text-muted-foreground">Score</p>
+          <p className="text-xl font-extrabold text-foreground">{report.total_score}</p>
+        </div>
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <p className="text-xs text-muted-foreground">Grade</p>
+          <p className="text-xl font-extrabold text-foreground">{report.grade}</p>
+        </div>
+        <div className="bg-muted/50 rounded-lg p-3 text-center">
+          <p className="text-xs text-muted-foreground">Classification</p>
+          <p className="text-sm font-bold text-foreground">{report.grade_label}</p>
+        </div>
+      </div>
+
+      {/* Downloadable documents */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Your Documents</p>
+        
+        <button
+          onClick={handleDownloadAssetScore}
+          className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors text-left"
+        >
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <Shield className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Asset Standardization Score</p>
+            <p className="text-xs text-muted-foreground">Score breakdown, dimensions, risk analysis</p>
+          </div>
+          <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+        </button>
+
+        <button
+          onClick={handleDownloadDossier}
+          className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors text-left"
+        >
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+            <FileText className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Project Dossier</p>
+            <p className="text-xs text-muted-foreground">Executive summary, verification, recommendations</p>
+          </div>
+          <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+        </button>
+
+        {termSheet && (
+          <div className="space-y-2">
+            <button
+              onClick={handleDownloadTermSheet}
+              className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted/50 rounded-lg transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <FileSpreadsheet className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Term Sheet</p>
+                <p className="text-xs text-muted-foreground">
+                  Ref: {termSheet.reference_code} · Valid until {new Date(termSheet.valid_until).toLocaleDateString()}
+                </p>
+              </div>
+              <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+            </button>
+
+            <Button
+              onClick={handleSignTermSheet}
+              disabled={signing}
+              className="w-full gap-2"
+            >
+              {signing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <PenTool className="h-4 w-4" />
+              )}
+              Sign Term Sheet
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function EmptyProcessPipeline({ 
   onStartUpload, 
   hasSubmission, 
+  isReleased,
   submissionDate,
+  releasedDate,
   uploadedDocsCount,
+  analysisReport,
+  termSheet,
+  submission,
+  profileName,
 }: { 
   onStartUpload: () => void; 
   hasSubmission: boolean;
+  isReleased: boolean;
   submissionDate?: string;
+  releasedDate?: string;
   uploadedDocsCount: number;
+  analysisReport: any;
+  termSheet: any;
+  submission: any;
+  profileName: string;
 }) {
   const navigate = useNavigate();
-  const processSteps = getProcessSteps(hasSubmission, submissionDate);
+  const processSteps = getProcessSteps(hasSubmission, isReleased, submissionDate, releasedDate);
   const completedCount = processSteps.filter(s => s.status === "completed").length;
 
   return (
@@ -166,7 +334,7 @@ function EmptyProcessPipeline({
               </div>
               <span className="text-xs text-muted-foreground">{step.dateRange}</span>
               
-              {/* Show expanded content for completed submission or actionable step */}
+              {/* Document Submission completed */}
               {step.status === "completed" && step.id === 1 && (
                 <div className="mt-3 bg-green/5 border border-green/20 rounded-lg p-4 space-y-3">
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
@@ -180,6 +348,19 @@ function EmptyProcessPipeline({
                 </div>
               )}
               
+              {/* Asset Standardization completed - show documents */}
+              {step.status === "completed" && step.id === 2 && isReleased && analysisReport && (
+                <div className="mt-3 bg-green/5 border border-green/20 rounded-lg p-4">
+                  <AnalysisDocsSection 
+                    report={analysisReport} 
+                    termSheet={termSheet} 
+                    submission={submission}
+                    profileName={profileName}
+                  />
+                </div>
+              )}
+
+              {/* Asset Standardization in progress */}
               {step.status === "in_progress" && step.id === 2 && (
                 <div className="mt-3 bg-gold/5 border border-gold/20 rounded-lg p-4 space-y-3">
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
@@ -189,7 +370,19 @@ function EmptyProcessPipeline({
                   </div>
                 </div>
               )}
+
+              {/* SPV Deployment in progress */}
+              {step.status === "in_progress" && step.id === 3 && (
+                <div className="mt-3 bg-gold/5 border border-gold/20 rounded-lg p-4 space-y-3">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <div className="flex items-center gap-2 text-xs text-gold">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Awaiting term sheet signing to begin deployment
+                  </div>
+                </div>
+              )}
               
+              {/* Start upload action */}
               {step.actionable && !hasSubmission && (
                 <div className="mt-3 bg-secondary/50 border border-border rounded-lg p-4 space-y-3">
                   <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
@@ -212,14 +405,26 @@ export default function DashboardNewOverview() {
   const { data: spvs } = useOwnerSpvs();
   const { data: submission } = useDocumentSubmission();
   const { data: uploadedDocs } = useUserUploadedDocuments();
+  const { data: analysisReports } = useUserAnalysisReports();
 
   const spv = spvs?.[0];
   const firstName = profile?.full_name?.split(" ")[0] || "there";
   const companyName = profile?.company_name || "";
   const capitalTarget = user?.user_metadata?.capital_target || "";
+  const profileName = profile?.company_name || profile?.full_name || "Project";
   
   const hasSubmission = !!submission;
   const uploadedDocsCount = uploadedDocs?.length || 0;
+  
+  // Check if results have been released to client
+  const isReleased = !!(submission as any)?.released_to_client;
+  const releasedDate = (submission as any)?.released_at;
+  
+  // Get the latest completed analysis report
+  const latestReport = analysisReports?.find(r => r.analysis_status === "completed") || null;
+  
+  // Fetch term sheet for the report
+  const { data: termSheet } = useTermSheet(latestReport?.id);
 
   if (showWizard) {
     return <DocumentWizard sector={user?.user_metadata?.asset_type || "default"} onBack={() => setShowWizard(false)} />;
@@ -236,15 +441,21 @@ export default function DashboardNewOverview() {
         </p>
       </div>
 
-      <EmptyKPICards capitalTarget={capitalTarget} spv={spv} />
+      <EmptyKPICards capitalTarget={capitalTarget} spv={spv} analysisReport={latestReport} />
       {spv ? (
         <ProcessPipeline />
       ) : (
         <EmptyProcessPipeline 
           onStartUpload={() => setShowWizard(true)} 
           hasSubmission={hasSubmission}
+          isReleased={isReleased}
           submissionDate={submission?.submitted_at}
+          releasedDate={releasedDate}
           uploadedDocsCount={uploadedDocsCount}
+          analysisReport={latestReport}
+          termSheet={termSheet}
+          submission={submission}
+          profileName={profileName}
         />
       )}
     </div>

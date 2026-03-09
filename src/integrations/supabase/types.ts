@@ -102,6 +102,8 @@ export type Database = {
           id: string
           kyc_signatories: Json | null
           project_description: string | null
+          released_at: string | null
+          released_to_client: boolean | null
           reviewed_at: string | null
           reviewer_notes: string | null
           spv_id: string | null
@@ -113,6 +115,8 @@ export type Database = {
           id?: string
           kyc_signatories?: Json | null
           project_description?: string | null
+          released_at?: string | null
+          released_to_client?: boolean | null
           reviewed_at?: string | null
           reviewer_notes?: string | null
           spv_id?: string | null
@@ -124,6 +128,8 @@ export type Database = {
           id?: string
           kyc_signatories?: Json | null
           project_description?: string | null
+          released_at?: string | null
+          released_to_client?: boolean | null
           reviewed_at?: string | null
           reviewer_notes?: string | null
           spv_id?: string | null
