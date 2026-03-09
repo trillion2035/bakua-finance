@@ -18,7 +18,7 @@ const Hero = ({ onOpenModal, onScrollTo }: { onOpenModal: (type: string) => void
 
           {/* Headline */}
           <h1 className="font-display text-[clamp(42px,6.5vw,80px)] font-extrabold leading-[0.95] tracking-[-3px] text-foreground mb-7 animate-fade-up" style={{ animationDelay: "0.08s" }}>
-            Infrastructure Capital,{" "}
+            Infrastructure Capital,<br />
             <span className="text-gradient-primary">On-Chain.</span>
           </h1>
 
