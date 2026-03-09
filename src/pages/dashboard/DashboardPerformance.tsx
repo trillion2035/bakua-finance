@@ -138,10 +138,15 @@ export default function DashboardPerformance() {
 
   const hasOperationalData = (harvestData && harvestData.length > 0);
   const hasFinancialData = (financials && financials.length > 0);
+  const useMock = !!spv && (!hasOperationalData || !hasFinancialData);
 
-  // Always show mock summary values for this SPV
-  const summaryValues = [performanceSummary.totalCherryIntake, performanceSummary.cumulativeRevenue, performanceSummary.projectedIRR, performanceSummary.avgGradeA];
-  const subtexts = [`Target: ${performanceSummary.cherryTarget} (${performanceSummary.cherryPercent}%)`, `Next repayment: ${performanceSummary.nextRepayment}`, "36-month term", `Green export: ${performanceSummary.totalGreenExport}`];
+  // Always show mock summary values for SPV
+  const summaryValues = spv
+    ? [performanceSummary.totalCherryIntake, performanceSummary.cumulativeRevenue, performanceSummary.projectedIRR, performanceSummary.avgGradeA]
+    : ["—", "—", "—", "—"];
+  const subtexts = spv
+    ? [`Target: ${performanceSummary.cherryTarget} (${performanceSummary.cherryPercent}%)`, `Next repayment: ${performanceSummary.nextRepayment}`, "36-month term", `Green export: ${performanceSummary.totalGreenExport}`]
+    : [undefined, undefined, undefined, undefined];
 
   return (
     <div className="space-y-6">
