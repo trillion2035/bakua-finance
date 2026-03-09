@@ -20,6 +20,7 @@ import DashboardOracle from "./pages/dashboard/DashboardOracle";
 import DashboardMessages from "./pages/dashboard/DashboardMessages";
 import DashboardSettings from "./pages/dashboard/DashboardSettings";
 import DashboardNewOverview from "./pages/dashboard/DashboardNewOverview";
+import DashboardAdmin from "./pages/dashboard/DashboardAdmin";
 
 const queryClient = new QueryClient();
 
