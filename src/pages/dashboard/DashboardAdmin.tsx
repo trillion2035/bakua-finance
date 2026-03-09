@@ -337,6 +337,9 @@ function SubmissionRow({ submission }: { submission: any }) {
               </div>
             )}
           </div>
+
+          {/* SPV Deployment Panel */}
+          <AdminDeploymentPanel submission={submission} />
         </div>
       )}
     </div>
