@@ -153,10 +153,10 @@ export function generateAssetScorePDF(report: AnalysisReport, profileName: strin
         yPos = 30;
       }
       
-      const severityColor = risk.severity === "HIGH" ? DANGER_COLOR :
-                           risk.severity === "MEDIUM" ? [234, 179, 8] : GRAY_COLOR;
+      const severityColor: [number, number, number] = risk.severity === "HIGH" ? DANGER_COLOR :
+                           risk.severity === "MEDIUM" ? WARNING_COLOR : GRAY_COLOR;
       
-      doc.setFillColor(...severityColor);
+      doc.setFillColor(severityColor[0], severityColor[1], severityColor[2]);
       doc.roundedRect(20, yPos - 3, 20, 5, 1, 1, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8);
