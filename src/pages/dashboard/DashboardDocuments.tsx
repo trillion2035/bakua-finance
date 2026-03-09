@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown } from "lucide-react";
+import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown, Lock } from "lucide-react";
 import { useOwnerSpvs, useSpvDocuments, useUserUploadedDocuments, useDocumentSubmission } from "@/hooks/useSpvData";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,11 +46,6 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
-function getFileExtension(fileName: string): string {
-  const ext = fileName.split(".").pop()?.toUpperCase() || "FILE";
-  return ext;
-}
-
 type DocStatus = "verified" | "pending" | "action_required";
 
 interface DocumentItemProps {
@@ -65,7 +60,6 @@ interface DocumentItemProps {
 
 function DocumentItem({ doc, status = "pending" }: DocumentItemProps) {
   const [expanded, setExpanded] = useState(false);
-  const ext = getFileExtension(doc.name);
   const displayName = formatDocName(doc.name);
 
   const handleView = async () => {
@@ -150,41 +144,65 @@ function DocumentItem({ doc, status = "pending" }: DocumentItemProps) {
   );
 }
 
+type StageStatus = "processing" | "locked" | "completed";
+
 interface StageSectionProps {
   stage: typeof STAGE_CONFIG[0];
   docs: DocumentItemProps["doc"][];
+  status: StageStatus;
   defaultOpen?: boolean;
 }
 
-function StageSection({ stage, docs, defaultOpen = false }: StageSectionProps) {
-  const [open, setOpen] = useState(defaultOpen);
-  const verifiedCount = docs.length; // For now, treat all as pending until we have status tracking
+function StageSection({ stage, docs, status, defaultOpen = false }: StageSectionProps) {
+  const [open, setOpen] = useState(defaultOpen && status !== "locked");
+  const isLocked = status === "locked";
+
+  const statusDisplay = {
+    processing: { label: "Processing", className: "text-amber-600", icon: Clock },
+    completed: { label: "Completed", className: "text-emerald-600", icon: Check },
+    locked: { label: "Locked", className: "text-muted-foreground", icon: Lock },
+  };
+
+  const StatusIcon = statusDisplay[status].icon;
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-card">
+    <div className={cn(
+      "border border-border rounded-xl overflow-hidden bg-card",
+      isLocked && "opacity-60"
+    )}>
       <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-4 p-5 text-left hover:bg-muted/30 transition-colors"
+        onClick={() => !isLocked && setOpen(!open)}
+        className={cn(
+          "w-full flex items-center gap-4 p-5 text-left transition-colors",
+          !isLocked && "hover:bg-muted/30",
+          isLocked && "cursor-not-allowed"
+        )}
+        disabled={isLocked}
       >
         <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xl shrink-0">
           {stage.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-muted-foreground tracking-wider">STEP {stage.step}</span>
-            <span className="text-sm font-bold text-foreground">{stage.label}</span>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {docs.length} document{docs.length !== 1 ? "s" : ""} · {verifiedCount} pending
-          </span>
+          <span className="text-sm font-bold text-foreground">{stage.label}</span>
+          <p className="text-xs text-muted-foreground">
+            {docs.length > 0 
+              ? `${docs.length} document${docs.length !== 1 ? "s" : ""} · ${docs.length} pending`
+              : "No documents yet"
+            }
+          </p>
         </div>
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600 shrink-0">
-          <Clock className="h-3.5 w-3.5" /> Processing
+        <span className={cn(
+          "inline-flex items-center gap-1 text-xs font-semibold shrink-0",
+          statusDisplay[status].className
+        )}>
+          <StatusIcon className="h-3.5 w-3.5" /> {statusDisplay[status].label}
         </span>
-        {open ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+        {!isLocked && (
+          open ? (
+            <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+          )
         )}
       </button>
 
@@ -241,23 +259,12 @@ export default function DashboardDocuments() {
   }
 
   // If user has uploaded documents (from wizard), show stage-based view
+  // All uploaded docs go under "Document Submission" since that's the current stage
   if (uploadedDocs && uploadedDocs.length > 0) {
-    // Group by category
-    const grouped = uploadedDocs.reduce((acc, doc) => {
-      const cat = doc.category;
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(doc);
-      return acc;
-    }, {} as Record<string, typeof uploadedDocs>);
-
-    // Calculate totals
     const totalDocs = uploadedDocs.length;
-    const verifiedCount = 0; // Will be tracked via database status later
+    const verifiedCount = 0;
     const pendingCount = totalDocs;
     const actionCount = 0;
-
-    // Get stages that have documents
-    const stagesWithDocs = STAGE_CONFIG.filter(s => grouped[s.key]?.length > 0);
 
     return (
       <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
@@ -265,7 +272,7 @@ export default function DashboardDocuments() {
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {totalDocs} document{totalDocs !== 1 ? "s" : ""} across {stagesWithDocs.length} stage{stagesWithDocs.length !== 1 ? "s" : ""}
+              {totalDocs} document{totalDocs !== 1 ? "s" : ""} across {STAGE_CONFIG.length} stages
             </p>
             
             {/* Status summary */}
@@ -290,14 +297,19 @@ export default function DashboardDocuments() {
         {/* Stage sections */}
         <div className="space-y-4">
           {STAGE_CONFIG.map((stage, idx) => {
-            const docs = grouped[stage.key] || [];
-            if (docs.length === 0) return null;
+            // Only first stage (Document Submission) has the uploaded documents
+            // All other stages are locked until process advances
+            const isFirstStage = idx === 0;
+            const docs = isFirstStage ? uploadedDocs : [];
+            const status: StageStatus = isFirstStage ? "processing" : "locked";
+            
             return (
               <StageSection 
                 key={stage.key} 
                 stage={stage} 
-                docs={docs} 
-                defaultOpen={idx === 0}
+                docs={docs}
+                status={status}
+                defaultOpen={isFirstStage}
               />
             );
           })}
