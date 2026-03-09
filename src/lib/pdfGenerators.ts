@@ -258,11 +258,11 @@ export function generateProjectDossierPDF(report: AnalysisReport, submission: an
         yPos = 30;
       }
       
-      const statusColor = docVerif.status === "VERIFIED" ? SUCCESS_COLOR :
-                         docVerif.status === "PENDING" ? [234, 179, 8] :
+      const statusColor: [number, number, number] = docVerif.status === "VERIFIED" ? SUCCESS_COLOR :
+                         docVerif.status === "PENDING" ? WARNING_COLOR :
                          docVerif.status === "MISSING" ? DANGER_COLOR : GRAY_COLOR;
       
-      doc.setFillColor(...statusColor);
+      doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
       doc.roundedRect(20, yPos - 3, 20, 5, 1, 1, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(7);
