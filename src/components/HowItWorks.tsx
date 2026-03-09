@@ -16,7 +16,7 @@ const HowItWorks = () => (
           From project to funded.<br />Four steps. Sixty days.
         </h2>
         <p className="text-[16px] text-muted-foreground font-light max-w-[480px] leading-relaxed">
-          We removed every barrier between your infrastructure project and global capital.
+          Every barrier between your infrastructure project and global capital — removed.
         </p>
       </div>
 
