@@ -666,7 +666,9 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         canComplete={true} blocker={null} onViewDoc={handleViewDoc} onDownloadDoc={handleDownloadDoc}
                         onSignDoc={(doc) => setSignDoc(doc)} onDeleteDoc={(doc) => setDeleteConfirm(doc)}
                         onUploadDoc={(key) => { setUploadStageKey(key); uploadFileRef.current?.click(); }}
-                        submission={submission} showDocActions={true} />
+                        submission={submission} showDocActions={true}
+                        onLaunchAgent={stage.stage_key === "sc_development" ? () => launchSCDev.mutate({ submissionId: submission.id }) : undefined}
+                        agentLoading={stage.stage_key === "sc_development" ? launchSCDev.isPending : false} />
                     );
                   })}
 
