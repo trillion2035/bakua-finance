@@ -846,6 +846,60 @@ export type Database = {
         }
         Relationships: []
       }
+      term_sheet_signatures: {
+        Row: {
+          analysis_report_id: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          signature_data: string
+          signature_type: string
+          signed_at: string
+          signer_name: string
+          submission_id: string
+          user_id: string
+        }
+        Insert: {
+          analysis_report_id: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          signature_data: string
+          signature_type: string
+          signed_at?: string
+          signer_name: string
+          submission_id: string
+          user_id: string
+        }
+        Update: {
+          analysis_report_id?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          signature_data?: string
+          signature_type?: string
+          signed_at?: string
+          signer_name?: string
+          submission_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "term_sheet_signatures_analysis_report_id_fkey"
+            columns: ["analysis_report_id"]
+            isOneToOne: false
+            referencedRelation: "asset_analysis_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "term_sheet_signatures_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "document_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       term_sheets: {
         Row: {
           analysis_report_id: string

@@ -1,9 +1,15 @@
 import { useRef, useState } from "react";
-import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown, Lock } from "lucide-react";
+import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown, Lock, Shield, FileSpreadsheet, PenTool } from "lucide-react";
 import { useOwnerSpvs, useSpvDocuments, useUserUploadedDocuments, useDocumentSubmission } from "@/hooks/useSpvData";
+import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { generateAssetScorePDF, generateProjectDossierPDF, generateTermSheetPDF } from "@/lib/pdfGenerators";
+import { SignTermSheetModal } from "@/components/dashboard/documents/SignTermSheetModal";
+import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 // Stage configuration matching the process pipeline
 const STAGE_CONFIG = [
@@ -148,12 +154,14 @@ type StageStatus = "processing" | "locked" | "completed";
 
 interface StageSectionProps {
   stage: typeof STAGE_CONFIG[0];
-  docs: DocumentItemProps["doc"][];
   status: StageStatus;
   defaultOpen?: boolean;
+  children?: React.ReactNode;
+  docCount?: number;
+  statusSummary?: string;
 }
 
-function StageSection({ stage, docs, status, defaultOpen = false }: StageSectionProps) {
+function StageSection({ stage, status, defaultOpen = false, children, docCount, statusSummary }: StageSectionProps) {
   const [open, setOpen] = useState(defaultOpen && status !== "locked");
   const isLocked = status === "locked";
 
@@ -185,10 +193,10 @@ function StageSection({ stage, docs, status, defaultOpen = false }: StageSection
         <div className="flex-1 min-w-0">
           <span className="text-sm font-bold text-foreground">{stage.label}</span>
           <p className="text-xs text-muted-foreground">
-            {docs.length > 0 
-              ? `${docs.length} document${docs.length !== 1 ? "s" : ""} · ${docs.length} pending`
+            {statusSummary || (docCount != null && docCount > 0 
+              ? `${docCount} document${docCount !== 1 ? "s" : ""}`
               : "No documents yet"
-            }
+            )}
           </p>
         </div>
         <span className={cn(
@@ -206,25 +214,132 @@ function StageSection({ stage, docs, status, defaultOpen = false }: StageSection
         )}
       </button>
 
-      {open && docs.length > 0 && (
+      {open && children && (
         <div className="p-4 pt-0 space-y-2">
-          {docs.map((doc) => (
-            <DocumentItem key={doc.path} doc={doc} status="pending" />
-          ))}
+          {children}
         </div>
       )}
     </div>
   );
 }
 
+// AI-generated document item for the Asset Standardization section
+interface GeneratedDocItemProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  onView: () => void;
+  onDownload: () => void;
+  actions?: React.ReactNode;
+}
+
+function GeneratedDocItem({ icon, title, subtitle, onView, onDownload, actions }: GeneratedDocItemProps) {
+  return (
+    <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onView} title="View">
+          <Eye className="h-4 w-4 text-muted-foreground" />
+        </Button>
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onDownload} title="Download">
+          <Download className="h-4 w-4 text-muted-foreground" />
+        </Button>
+        {actions}
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardDocuments() {
   const { data: spvs, isLoading: loadingSpvs } = useOwnerSpvs();
+  const { user } = useAuth();
   const spv = spvs?.[0];
   const { data: spvDocs, isLoading: loadingSpvDocs } = useSpvDocuments(spv?.id);
   const { data: uploadedDocs, isLoading: loadingUploaded } = useUserUploadedDocuments();
   const { data: submission } = useDocumentSubmission();
+  const { data: analysisReports } = useUserAnalysisReports();
+  const [showSignModal, setShowSignModal] = useState(false);
+
+  const isReleased = !!(submission as any)?.released_to_client;
+  const latestReport = analysisReports?.find(r => r.analysis_status === "completed") || null;
+  const { data: termSheet } = useTermSheet(latestReport?.id);
+  
+  const { data: existingSignature } = useQuery({
+    queryKey: ["term-sheet-signature", submission?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("term_sheet_signatures" as any)
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("submission_id", submission!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!submission?.id,
+  });
 
   const isLoading = loadingSpvs || loadingSpvDocs || loadingUploaded;
+
+  // PDF generation handlers
+  const profileName = "";
+  
+  const handleViewAssetScore = () => {
+    if (!latestReport) return;
+    try {
+      const pdf = generateAssetScorePDF(latestReport as any, profileName);
+      const blob = pdf.output("blob");
+      window.open(URL.createObjectURL(blob), "_blank");
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleDownloadAssetScore = () => {
+    if (!latestReport) return;
+    try {
+      const pdf = generateAssetScorePDF(latestReport as any, profileName);
+      pdf.save(`Asset-Score-${latestReport.grade}.pdf`);
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleViewDossier = () => {
+    if (!latestReport) return;
+    try {
+      const pdf = generateProjectDossierPDF(latestReport as any, submission, profileName);
+      const blob = pdf.output("blob");
+      window.open(URL.createObjectURL(blob), "_blank");
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleDownloadDossier = () => {
+    if (!latestReport) return;
+    try {
+      const pdf = generateProjectDossierPDF(latestReport as any, submission, profileName);
+      pdf.save(`Project-Dossier.pdf`);
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleViewTermSheet = () => {
+    if (!termSheet || !latestReport) return;
+    try {
+      const pdf = generateTermSheetPDF(termSheet, latestReport as any, profileName);
+      const blob = pdf.output("blob");
+      window.open(URL.createObjectURL(blob), "_blank");
+    } catch { toast.error("Failed to generate PDF"); }
+  };
+
+  const handleDownloadTermSheet = () => {
+    if (!termSheet || !latestReport) return;
+    try {
+      const pdf = generateTermSheetPDF(termSheet, latestReport as any, profileName);
+      pdf.save(`Term-Sheet-${termSheet.reference_code}.pdf`);
+    } catch { toast.error("Failed to generate PDF"); }
+  };
 
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Loading...</div>;
@@ -259,12 +374,15 @@ export default function DashboardDocuments() {
   }
 
   // If user has uploaded documents (from wizard), show stage-based view
-  // All uploaded docs go under "Document Submission" since that's the current stage
   if (uploadedDocs && uploadedDocs.length > 0) {
     const totalDocs = uploadedDocs.length;
-    const verifiedCount = 0;
-    const pendingCount = totalDocs;
-    const actionCount = 0;
+    const submissionCompleted = isReleased;
+    const hasAnalysis = isReleased && latestReport;
+    const analysisDocCount = hasAnalysis ? (termSheet ? 3 : 2) : 0;
+
+    // Count statuses
+    const verifiedCount = submissionCompleted ? totalDocs : 0;
+    const pendingCount = submissionCompleted ? 0 : totalDocs;
 
     return (
       <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
@@ -272,19 +390,16 @@ export default function DashboardDocuments() {
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {totalDocs} document{totalDocs !== 1 ? "s" : ""} across {STAGE_CONFIG.length} stages
+              {totalDocs + analysisDocCount} document{(totalDocs + analysisDocCount) !== 1 ? "s" : ""} across {STAGE_CONFIG.length} stages
             </p>
             
             {/* Status summary */}
             <div className="flex items-center gap-4 mt-4">
               <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600">
-                <Check className="h-4 w-4" /> {verifiedCount} Verified
+                <Check className="h-4 w-4" /> {verifiedCount + analysisDocCount} Verified
               </span>
               <span className="inline-flex items-center gap-1.5 text-sm text-amber-600">
                 <Clock className="h-4 w-4" /> {pendingCount} Pending
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-sm text-red-600">
-                <AlertCircle className="h-4 w-4" /> {actionCount} Action Required
               </span>
             </div>
           </div>
@@ -297,23 +412,111 @@ export default function DashboardDocuments() {
         {/* Stage sections */}
         <div className="space-y-4">
           {STAGE_CONFIG.map((stage, idx) => {
-            // Only first stage (Document Submission) has the uploaded documents
-            // All other stages are locked until process advances
             const isFirstStage = idx === 0;
-            const docs = isFirstStage ? uploadedDocs : [];
-            const status: StageStatus = isFirstStage ? "processing" : "locked";
+            const isStandardization = idx === 1;
             
+            if (isFirstStage) {
+              const stageStatus: StageStatus = submissionCompleted ? "completed" : "processing";
+              return (
+                <StageSection 
+                  key={stage.key} 
+                  stage={stage} 
+                  status={stageStatus}
+                  defaultOpen={!submissionCompleted}
+                  docCount={totalDocs}
+                  statusSummary={`${totalDocs} document${totalDocs !== 1 ? "s" : ""} · ${submissionCompleted ? "All verified" : `${totalDocs} pending`}`}
+                >
+                  {uploadedDocs.map((doc) => (
+                    <DocumentItem 
+                      key={doc.path} 
+                      doc={doc} 
+                      status={submissionCompleted ? "verified" : "pending"} 
+                    />
+                  ))}
+                </StageSection>
+              );
+            }
+            
+            if (isStandardization) {
+              if (!hasAnalysis) {
+                return (
+                  <StageSection 
+                    key={stage.key} 
+                    stage={stage} 
+                    status={submissionCompleted ? "processing" : "locked"}
+                    docCount={0}
+                  />
+                );
+              }
+              
+              return (
+                <StageSection 
+                  key={stage.key} 
+                  stage={stage} 
+                  status="completed"
+                  defaultOpen
+                  docCount={analysisDocCount}
+                  statusSummary={`${analysisDocCount} documents · Score: ${latestReport!.grade}`}
+                >
+                  <GeneratedDocItem
+                    icon={<Shield className="h-5 w-5 text-primary" />}
+                    title="Asset Standardization Score"
+                    subtitle={`Score: ${latestReport!.total_score} · Grade: ${latestReport!.grade} · ${latestReport!.grade_label}`}
+                    onView={handleViewAssetScore}
+                    onDownload={handleDownloadAssetScore}
+                  />
+                  <GeneratedDocItem
+                    icon={<FileText className="h-5 w-5 text-primary" />}
+                    title="Project Dossier"
+                    subtitle="Executive summary, verification log, recommendations"
+                    onView={handleViewDossier}
+                    onDownload={handleDownloadDossier}
+                  />
+                  {termSheet && (
+                    <GeneratedDocItem
+                      icon={<FileSpreadsheet className="h-5 w-5 text-primary" />}
+                      title="Term Sheet"
+                      subtitle={`Ref: ${termSheet.reference_code} · Valid until ${new Date(termSheet.valid_until).toLocaleDateString()}`}
+                      onView={handleViewTermSheet}
+                      onDownload={handleDownloadTermSheet}
+                      actions={
+                        existingSignature ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 px-2">
+                            <Check className="h-3.5 w-3.5" /> Signed
+                          </span>
+                        ) : (
+                          <Button size="sm" className="gap-1.5 h-8" onClick={() => setShowSignModal(true)}>
+                            <PenTool className="h-3.5 w-3.5" /> Sign
+                          </Button>
+                        )
+                      }
+                    />
+                  )}
+                </StageSection>
+              );
+            }
+            
+            // All other stages are locked
             return (
               <StageSection 
                 key={stage.key} 
                 stage={stage} 
-                docs={docs}
-                status={status}
-                defaultOpen={isFirstStage}
+                status="locked"
+                docCount={0}
               />
             );
           })}
         </div>
+
+        {/* Sign Term Sheet Modal */}
+        {submission && latestReport && (
+          <SignTermSheetModal
+            open={showSignModal}
+            onOpenChange={setShowSignModal}
+            submissionId={submission.id}
+            analysisReportId={latestReport.id}
+          />
+        )}
       </div>
     );
   }
