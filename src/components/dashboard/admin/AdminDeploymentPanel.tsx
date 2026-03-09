@@ -1,11 +1,13 @@
 import { useState, useRef } from "react";
-import { Check, Loader2, ChevronDown, ChevronUp, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool } from "lucide-react";
+import { Check, Loader2, ChevronDown, ChevronUp, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useDeploymentStages,
   useListingStages,
@@ -184,7 +186,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 // Shared stage rendering component
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, submission }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -193,7 +195,10 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   onViewDoc: (doc: GeneratedDocument) => void;
   onDownloadDoc: (doc: GeneratedDocument) => void;
   onSignDoc: (doc: GeneratedDocument) => void;
+  onDeleteDoc?: (doc: GeneratedDocument) => void;
+  onUploadDoc?: (stageKey: string) => void;
   submission: any;
+  showDocActions?: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingCert, setUploadingCert] = useState(false);
@@ -220,23 +225,35 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
           <span className="text-sm font-semibold text-foreground">{stage.stage_label}</span>
           <StageStatusBadge status={stage.status} />
         </div>
-        {stage.status === "in_progress" && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => completeStage.mutate({
-              stageId: stage.id,
-              submissionId: submission.id,
-              currentStageKey: stage.stage_key,
-              userId: submission.user_id,
-            })}
-            disabled={completeStage.isPending || !canComplete}
-            className="gap-1.5 text-xs"
-          >
-            {completeStage.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-            Mark Complete
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {onUploadDoc && stage.status === "in_progress" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onUploadDoc(stage.stage_key)}
+              className="gap-1.5 text-xs"
+            >
+              <Upload className="h-3 w-3" /> Upload
+            </Button>
+          )}
+          {stage.status === "in_progress" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => completeStage.mutate({
+                stageId: stage.id,
+                submissionId: submission.id,
+                currentStageKey: stage.stage_key,
+                userId: submission.user_id,
+              })}
+              disabled={completeStage.isPending || !canComplete}
+              className="gap-1.5 text-xs"
+            >
+              {completeStage.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+              Mark Complete
+            </Button>
+          )}
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">{stage.description}</p>
 
@@ -294,6 +311,11 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
                   <Check className="h-2.5 w-2.5" /> Signed
                 </span>
               )}
+              {showDocActions && onDeleteDoc && (
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive hover:text-destructive" onClick={() => onDeleteDoc(doc)} title="Delete">
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -313,9 +335,14 @@ interface AdminDeploymentPanelProps {
 }
 
 export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) {
-  const [expanded, setExpanded] = useState(false);
   const [viewDoc, setViewDoc] = useState<GeneratedDocument | null>(null);
   const [signDoc, setSignDoc] = useState<GeneratedDocument | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<GeneratedDocument | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const uploadFileRef = useRef<HTMLInputElement>(null);
+  const [uploadStageKey, setUploadStageKey] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: stages } = useDeploymentStages(submission.id);
   const { data: listingStages } = useListingStages(submission.id);
@@ -384,13 +411,69 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     }
   };
 
-  // Overall status badge for deployment section
+  const handleDeleteDoc = async () => {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("generated_documents" as any)
+        .delete()
+        .eq("id", deleteConfirm.id);
+      if (error) throw error;
+      if (deleteConfirm.file_url) {
+        await supabase.storage.from("project-documents").remove([deleteConfirm.file_url]);
+      }
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      toast.success("Document deleted");
+    } catch (err) {
+      toast.error("Failed to delete document");
+    } finally {
+      setDeleting(false);
+      setDeleteConfirm(null);
+    }
+  };
+
+  const handleUploadReplacement = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !uploadStageKey) return;
+    setUploading(true);
+    try {
+      const filePath = `${submission.user_id}/${submission.id}/${uploadStageKey}-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: uploadErr } = await supabase.storage
+        .from("project-documents")
+        .upload(filePath, file);
+      if (uploadErr) throw uploadErr;
+
+      const { error: insertErr } = await supabase
+        .from("generated_documents" as any)
+        .insert({
+          submission_id: submission.id,
+          user_id: submission.user_id,
+          stage_key: uploadStageKey,
+          document_name: file.name.replace(/\.[^/.]+$/, ""),
+          document_type: "uploaded_replacement",
+          file_url: filePath,
+          status: "draft",
+        } as any);
+      if (insertErr) throw insertErr;
+
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      toast.success("Document uploaded");
+    } catch (err) {
+      toast.error("Failed to upload document");
+    } finally {
+      setUploading(false);
+      setUploadStageKey(null);
+    }
+  };
+
+  // Status badges
   const deploymentStatusBadge = () => {
     if (isDeploymentComplete) {
       return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"><Check className="h-2.5 w-2.5 mr-0.5" /> Completed</Badge>;
     }
     if (isDeploymentApproved) {
-      return <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"><Check className="h-2.5 w-2.5 mr-0.5" /> Approved</Badge>;
+      return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]"><Loader2 className="h-2.5 w-2.5 mr-0.5 animate-spin" /> In Progress</Badge>;
     }
     if (hasSignatures) {
       return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]">Ready for Approval</Badge>;
@@ -408,22 +491,112 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     return <Badge variant="outline" className="text-[10px]">Awaiting Deployment</Badge>;
   };
 
+  const isListingStarted = listingStages && listingStages.length > 0;
+
   return (
     <>
-      <div className="border-t border-border pt-4 space-y-3">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between text-left"
-        >
-          <div className="flex items-center gap-2">
-            <h4 className="text-xs font-bold uppercase tracking-wide text-foreground">SPV Deployment & Listing</h4>
-            {deploymentStatusBadge()}
-          </div>
-          {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </button>
+      <div className="border-t border-border pt-4">
+        <Tabs defaultValue="standardization" className="w-full">
+          <TabsList className="w-full grid grid-cols-3 h-auto">
+            <TabsTrigger value="standardization" className="text-xs py-2 gap-1.5">
+              ⚖️ Asset Standardization
+            </TabsTrigger>
+            <TabsTrigger value="deployment" className="text-xs py-2 gap-1.5">
+              🏛️ SPV Deployment {deploymentStatusBadge()}
+            </TabsTrigger>
+            <TabsTrigger value="listing" className="text-xs py-2 gap-1.5" disabled={!isDeploymentApproved && !isListingStarted}>
+              📋 Listing {isListingStarted && listingStatusBadge()}
+            </TabsTrigger>
+          </TabsList>
 
-        {expanded && (
-          <div className="space-y-4">
+          {/* ===== ASSET STANDARDIZATION TAB ===== */}
+          <TabsContent value="standardization" className="space-y-4 pt-3">
+            {/* Project Description */}
+            {submission.project_description && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Project Description</p>
+                <p className="text-sm text-foreground">{submission.project_description}</p>
+              </div>
+            )}
+
+            {/* KYC Signatories */}
+            {submission.kyc_signatories && submission.kyc_signatories.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">KYC Signatories</p>
+                <div className="flex flex-wrap gap-2">
+                  {submission.kyc_signatories.map((sig: any, idx: number) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">
+                      {sig.name} ({sig.role})
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Analysis Results */}
+            {report && report.analysis_status === "completed" && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Score</p>
+                    <p className={cn(
+                      "text-2xl font-bold",
+                      report.total_score >= 90 ? "text-emerald-600" :
+                      report.total_score >= 75 ? "text-green-600" :
+                      report.total_score >= 60 ? "text-amber-600" : "text-red-600"
+                    )}>{report.total_score}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Grade</p>
+                    <p className="text-lg font-bold text-foreground">{report.grade}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Classification</p>
+                    <p className="text-sm font-medium text-foreground">{report.grade_label}</p>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">Doc Completeness</p>
+                    <p className="text-lg font-bold text-foreground">{report.document_completeness_score}%</p>
+                  </div>
+                </div>
+
+                {/* Score Dimensions */}
+                {report.score_dimensions && report.score_dimensions.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Score Dimensions</p>
+                    <div className="space-y-2">
+                      {report.score_dimensions.map((dim: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground w-[140px] shrink-0 truncate">{dim.name}</span>
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                dim.score >= 90 ? "bg-emerald-500" :
+                                dim.score >= 80 ? "bg-green-500" :
+                                dim.score >= 70 ? "bg-amber-500" : "bg-red-500"
+                              )}
+                              style={{ width: `${dim.score}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-bold w-8 text-right">{dim.score}</span>
+                          <span className="text-[10px] text-muted-foreground w-10 text-right">{dim.weight}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Project Summary */}
+                {report.project_summary && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">AI Summary</p>
+                    <p className="text-sm text-foreground line-clamp-3">{report.project_summary}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Term Sheet Signature Status */}
             <div className="bg-muted/30 rounded-lg p-3 space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Term Sheet Signature</p>
@@ -442,7 +615,10 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                 <p className="text-xs text-muted-foreground">No signatures yet. Client must sign the term sheet before deployment can proceed.</p>
               )}
             </div>
+          </TabsContent>
 
+          {/* ===== SPV DEPLOYMENT TAB ===== */}
+          <TabsContent value="deployment" className="space-y-4 pt-3">
             {/* Approve Button */}
             {canApprove && (
               <Button
@@ -455,7 +631,19 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
               </Button>
             )}
 
-            {/* ===== DEPLOYMENT STAGES ===== */}
+            {!isDeploymentApproved && !canApprove && (
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {!hasSignatures 
+                    ? "Awaiting term sheet signature from the client before deployment can be approved."
+                    : !submission.released_to_client
+                    ? "Release the analysis to the client first, then approve deployment."
+                    : "Deployment conditions not yet met."}
+                </p>
+              </div>
+            )}
+
+            {/* Deployment Stages */}
             {stages && stages.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Deployment Stages</p>
@@ -480,48 +668,102 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
               </div>
             )}
 
-            {/* ===== LISTING STAGES ===== */}
             {isDeploymentComplete && (
-              <div className="space-y-2 border-t border-border pt-3">
-                <div className="flex items-center gap-2">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-700">SPV Deployment completed. Listing stage is now active.</span>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ===== LISTING TAB ===== */}
+          <TabsContent value="listing" className="space-y-4 pt-3">
+            {!isListingStarted ? (
+              <div className="bg-muted/30 rounded-lg p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Listing stages will become available once SPV Deployment is completed.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Listing Stages</p>
                   {listingStatusBadge()}
                 </div>
-                {listingStages && listingStages.length > 0 ? (
-                  listingStages.map((stage) => {
-                    const stageDocs = generatedDocs?.filter(d => d.stage_key === stage.stage_key || (stage.stage_key === "sc_auditing" && (d.stage_key === "sc_deployment_record" || d.stage_key === "ipfs_anchoring"))) || [];
-                    return (
-                      <StageRow
-                        key={stage.id}
-                        stage={stage}
-                        stageDocs={stageDocs}
-                        completeStage={completeStage}
-                        canComplete={true}
-                        blocker={null}
-                        onViewDoc={handleViewDoc}
-                        onDownloadDoc={handleDownloadDoc}
-                        onSignDoc={(doc) => setSignDoc(doc)}
-                        submission={submission}
-                      />
-                    );
-                  })
-                ) : (
-                  <div className="flex items-center gap-2 text-xs text-gold">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Setting up listing stages...
+                {listingStages!.map((stage) => {
+                  const stageDocs = generatedDocs?.filter(d => d.stage_key === stage.stage_key || (stage.stage_key === "sc_auditing" && (d.stage_key === "sc_deployment_record" || d.stage_key === "ipfs_anchoring"))) || [];
+                  return (
+                    <StageRow
+                      key={stage.id}
+                      stage={stage}
+                      stageDocs={stageDocs}
+                      completeStage={completeStage}
+                      canComplete={true}
+                      blocker={null}
+                      onViewDoc={handleViewDoc}
+                      onDownloadDoc={handleDownloadDoc}
+                      onSignDoc={(doc) => setSignDoc(doc)}
+                      onDeleteDoc={(doc) => setDeleteConfirm(doc)}
+                      onUploadDoc={(key) => { setUploadStageKey(key); uploadFileRef.current?.click(); }}
+                      submission={submission}
+                      showDocActions={true}
+                    />
+                  );
+                })}
+
+                {isListingComplete && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-medium text-emerald-700">Listing completed. Funding stage is now active.</span>
                   </div>
                 )}
               </div>
             )}
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Hidden file input for replacement uploads */}
+      <input
+        ref={uploadFileRef}
+        type="file"
+        className="hidden"
+        accept=".pdf,.docx,.txt,.json"
+        onChange={handleUploadReplacement}
+      />
 
       {/* View Document Modal */}
       <ViewDocumentModal doc={viewDoc} open={!!viewDoc} onOpenChange={(v) => !v && setViewDoc(null)} />
 
       {/* Sign Document Modal */}
       <SignFacilityDocModal doc={signDoc} open={!!signDoc} onOpenChange={(v) => !v && setSignDoc(null)} />
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(v) => !v && setDeleteConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Delete Document
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{deleteConfirm?.document_name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteDoc}
+              disabled={deleting}
+              className="gap-2"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -142,137 +142,19 @@ function SubmissionRow({ submission }: { submission: any }) {
 
       {expanded && (
         <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-          {/* Project Description */}
-          {submission.project_description && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                Project Description
-              </p>
-              <p className="text-sm text-foreground">{submission.project_description}</p>
-            </div>
-          )}
-
-          {/* KYC Signatories */}
-          {submission.kyc_signatories && submission.kyc_signatories.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                KYC Signatories
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {submission.kyc_signatories.map((sig: any, idx: number) => (
-                  <Badge key={idx} variant="secondary" className="text-xs">
-                    {sig.name} ({sig.role})
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Analysis Results */}
-          {report && report.analysis_status === "completed" && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Score</p>
-                  <p className={cn(
-                    "text-2xl font-bold",
-                    report.total_score >= 90 ? "text-emerald-600" :
-                    report.total_score >= 75 ? "text-green-600" :
-                    report.total_score >= 60 ? "text-amber-600" : "text-red-600"
-                  )}>
-                    {report.total_score}
-                  </p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Grade</p>
-                  <p className="text-lg font-bold text-foreground">{report.grade}</p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Classification</p>
-                  <p className="text-sm font-medium text-foreground">{report.grade_label}</p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground">Doc Completeness</p>
-                  <p className="text-lg font-bold text-foreground">{report.document_completeness_score}%</p>
-                </div>
-              </div>
-
-              {/* Score Dimensions */}
-              {report.score_dimensions && report.score_dimensions.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                    Score Dimensions
-                  </p>
-                  <div className="space-y-2">
-                    {report.score_dimensions.map((dim: any, idx: number) => (
-                      <div key={idx} className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground w-[140px] shrink-0 truncate">
-                          {dim.name}
-                        </span>
-                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all",
-                              dim.score >= 90 ? "bg-emerald-500" :
-                              dim.score >= 80 ? "bg-green-500" :
-                              dim.score >= 70 ? "bg-amber-500" : "bg-red-500"
-                            )}
-                            style={{ width: `${dim.score}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-bold w-8 text-right">{dim.score}</span>
-                        <span className="text-[10px] text-muted-foreground w-10 text-right">
-                          {dim.weight}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Project Summary */}
-              {report.project_summary && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
-                    AI Summary
-                  </p>
-                  <p className="text-sm text-foreground line-clamp-3">{report.project_summary}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* PDF Download Buttons */}
+          {/* PDF Download Buttons & Release - shown above tabs */}
           {report?.analysis_status === "completed" && (
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-medium text-muted-foreground mr-2">Download Reports:</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadAssetScore}
-                className="gap-2"
-              >
-                <Download className="h-3 w-3" />
-                Asset Score
+              <Button variant="outline" size="sm" onClick={handleDownloadAssetScore} className="gap-2">
+                <Download className="h-3 w-3" /> Asset Score
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadDossier}
-                className="gap-2"
-              >
-                <FileText className="h-3 w-3" />
-                Project Dossier
+              <Button variant="outline" size="sm" onClick={handleDownloadDossier} className="gap-2">
+                <FileText className="h-3 w-3" /> Project Dossier
               </Button>
               {termSheet && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadTermSheet}
-                  className="gap-2"
-                >
-                  <FileSpreadsheet className="h-3 w-3" />
-                  Term Sheet
+                <Button variant="outline" size="sm" onClick={handleDownloadTermSheet} className="gap-2">
+                  <FileSpreadsheet className="h-3 w-3" /> Term Sheet
                 </Button>
               )}
               {/* Release to client button */}
@@ -283,11 +165,7 @@ function SubmissionRow({ submission }: { submission: any }) {
                   disabled={releaseToClient.isPending}
                   className="gap-2 ml-auto"
                 >
-                  {releaseToClient.isPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Send className="h-3 w-3" />
-                  )}
+                  {releaseToClient.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
                   Release to Client
                 </Button>
               ) : (
@@ -299,46 +177,34 @@ function SubmissionRow({ submission }: { submission: any }) {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 pt-2">
-            {(!report || report.analysis_status === "failed" || report.analysis_status === "pending") && (
-              <>
-                <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select industry" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INDUSTRIES.map((ind) => (
-                      <SelectItem key={ind.value} value={ind.value}>
-                        {ind.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={handleRunAnalysis}
-                  disabled={triggerAnalysis.isPending}
-                  className="gap-2"
-                >
-                  {triggerAnalysis.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                  Run AI Analysis
-                </Button>
-              </>
-            )}
-            
-            {report?.analysis_status === "processing" && (
-              <div className="flex items-center gap-2 text-amber-600">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">Analysis in progress...</span>
-              </div>
-            )}
-          </div>
+          {/* Action Buttons for analysis */}
+          {(!report || report.analysis_status === "failed" || report.analysis_status === "pending") && (
+            <div className="flex items-center gap-3">
+              <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select industry" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INDUSTRIES.map((ind) => (
+                    <SelectItem key={ind.value} value={ind.value}>{ind.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleRunAnalysis} disabled={triggerAnalysis.isPending} className="gap-2">
+                {triggerAnalysis.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                Run AI Analysis
+              </Button>
+            </div>
+          )}
 
-          {/* SPV Deployment Panel */}
+          {report?.analysis_status === "processing" && (
+            <div className="flex items-center gap-2 text-amber-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Analysis in progress...</span>
+            </div>
+          )}
+
+          {/* Tabbed Panel (Asset Standardization / SPV Deployment / Listing) */}
           <AdminDeploymentPanel submission={submission} />
         </div>
       )}
