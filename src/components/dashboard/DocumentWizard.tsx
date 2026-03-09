@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import {
-  ChevronRight, ChevronLeft, CheckCircle2, Upload, Plus, Trash2, FileText, X, AlertCircle, Phone,
+  ChevronRight, ChevronLeft, CheckCircle2, Upload, Plus, Trash2, FileText, X, AlertCircle, Phone, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 // ───── Constants ─────
 
@@ -51,18 +53,27 @@ interface KYCPerson {
   uploaded: boolean;
   whatsappCountryCode: string;
   whatsappNumber: string;
+  fileUrl?: string;
 }
 
 interface OtherDoc {
   id: string;
   name: string;
   uploaded: boolean;
+  fileUrl?: string;
+}
+
+interface UploadedFile {
+  docId: string;
+  file: File;
+  url?: string;
 }
 
 interface WizardState {
   projectDescription: string;
   selectedDocs: Record<string, Set<string>>; // categoryKey -> set of doc ids
   uploadedDocs: Set<string>; // global uploaded doc ids
+  uploadedFiles: Map<string, UploadedFile>; // docId -> file info
   kycPersons: KYCPerson[];
   otherDocs: Record<string, OtherDoc[]>; // categoryKey -> other docs
 }
@@ -176,6 +187,7 @@ function StepSelectAndUpload({
   selectedDocs,
   uploadedDocs,
   otherDocs,
+  uploadingDocId,
   onToggleDoc,
   onUploadDoc,
   onAddOther,
@@ -187,6 +199,7 @@ function StepSelectAndUpload({
   selectedDocs: Set<string>;
   uploadedDocs: Set<string>;
   otherDocs: OtherDoc[];
+  uploadingDocId: string | null;
   onToggleDoc: (docId: string) => void;
   onUploadDoc: (docId: string, file: File) => void;
   onAddOther: () => void;
@@ -194,8 +207,6 @@ function StepSelectAndUpload({
   onUploadOther: (id: string, file: File) => void;
   onOtherNameChange: (id: string, name: string) => void;
 }) {
-  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
-
   const handleFileSelect = (docId: string, isOther: boolean) => {
     const input = document.createElement("input");
     input.type = "file";
@@ -237,6 +248,7 @@ function StepSelectAndUpload({
           {category.documents.map((doc) => {
             const isSelected = selectedDocs.has(doc.id);
             const isUploaded = uploadedDocs.has(doc.id);
+            const isUploading = uploadingDocId === doc.id;
             return (
               <div key={doc.id} className="px-4 py-3">
                 <div className="flex items-start gap-3">
@@ -244,6 +256,7 @@ function StepSelectAndUpload({
                     checked={isSelected}
                     onCheckedChange={() => onToggleDoc(doc.id)}
                     className="mt-0.5"
+                    disabled={isUploading}
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{doc.name}</p>
@@ -253,6 +266,10 @@ function StepSelectAndUpload({
                     isUploaded ? (
                       <span className="flex items-center gap-1 text-xs text-green font-medium shrink-0">
                         <CheckCircle2 className="h-3.5 w-3.5" /> Uploaded
+                      </span>
+                    ) : isUploading ? (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading...
                       </span>
                     ) : (
                       <Button
@@ -278,35 +295,43 @@ function StepSelectAndUpload({
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Other documents
           </p>
-          {otherDocs.map((od) => (
-            <div key={od.id} className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3">
-              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Input
-                placeholder="Document name..."
-                value={od.name}
-                onChange={(e) => onOtherNameChange(od.id, e.target.value)}
-                className="flex-1 h-8 text-sm bg-secondary border-border"
-              />
-              {od.uploaded ? (
-                <span className="flex items-center gap-1 text-xs text-green font-medium shrink-0">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Uploaded
-                </span>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 text-xs shrink-0"
-                  onClick={() => handleFileSelect(od.id, true)}
-                  disabled={!od.name.trim()}
-                >
-                  <Upload className="h-3.5 w-3.5" /> Upload
-                </Button>
-              )}
-              <button onClick={() => onRemoveOther(od.id)} className="text-muted-foreground hover:text-destructive">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
+          {otherDocs.map((od) => {
+            const isUploading = uploadingDocId === od.id;
+            return (
+              <div key={od.id} className="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-3">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <Input
+                  placeholder="Document name..."
+                  value={od.name}
+                  onChange={(e) => onOtherNameChange(od.id, e.target.value)}
+                  className="flex-1 h-8 text-sm bg-secondary border-border"
+                  disabled={isUploading}
+                />
+                {od.uploaded ? (
+                  <span className="flex items-center gap-1 text-xs text-green font-medium shrink-0">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Uploaded
+                  </span>
+                ) : isUploading ? (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading...
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-xs shrink-0"
+                    onClick={() => handleFileSelect(od.id, true)}
+                    disabled={!od.name.trim()}
+                  >
+                    <Upload className="h-3.5 w-3.5" /> Upload
+                  </Button>
+                )}
+                <button onClick={() => onRemoveOther(od.id)} className="text-muted-foreground hover:text-destructive" disabled={isUploading}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            );
+          })}
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={onAddOther}>
             <Plus className="h-3.5 w-3.5" /> Add Other Document
           </Button>
@@ -318,16 +343,18 @@ function StepSelectAndUpload({
 
 function StepKYC({
   persons,
+  uploadingPersonId,
   onAddPerson,
   onRemovePerson,
   onUpdatePerson,
   onUploadId,
 }: {
   persons: KYCPerson[];
+  uploadingPersonId: string | null;
   onAddPerson: () => void;
   onRemovePerson: (id: string) => void;
   onUpdatePerson: (id: string, field: keyof KYCPerson, value: string) => void;
-  onUploadId: (id: string) => void;
+  onUploadId: (id: string, file: File) => void;
 }) {
   const handleUploadClick = (personId: string) => {
     const input = document.createElement("input");
@@ -341,7 +368,7 @@ function StepKYC({
         toast.error(error);
         return;
       }
-      onUploadId(personId);
+      onUploadId(personId, file);
     };
     input.click();
   };
@@ -359,116 +386,123 @@ function StepKYC({
       </div>
 
       <div className="space-y-4">
-        {persons.map((person, idx) => (
-          <div key={person.id} className="bg-card border border-border rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                {idx === 0 ? "Primary Signatory" : idx === 1 ? "Secondary Signatory" : `Additional Signatory ${idx - 1}`}
-                {idx === 0 && <span className="text-destructive ml-1">*</span>}
-              </span>
-              {idx > 1 && (
-                <button onClick={() => onRemovePerson(person.id)} className="text-muted-foreground hover:text-destructive">
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">
-                  Full Name {idx === 0 && <span className="text-destructive">*</span>}
-                </label>
-                <Input
-                  placeholder="Full legal name"
-                  value={person.name}
-                  onChange={(e) => onUpdatePerson(person.id, "name", e.target.value)}
-                  className="h-9 text-sm bg-secondary border-border"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">
-                  Role / Title {idx === 0 && <span className="text-destructive">*</span>}
-                </label>
-                <Input
-                  placeholder="e.g. Director, CEO"
-                  value={person.role}
-                  onChange={(e) => onUpdatePerson(person.id, "role", e.target.value)}
-                  className="h-9 text-sm bg-secondary border-border"
-                />
-              </div>
-            </div>
-
-            {/* WhatsApp number */}
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
-                <Phone className="h-3 w-3" /> WhatsApp Number {idx === 0 && <span className="text-destructive">*</span>}
-              </label>
-              <div className="flex gap-2">
-                <Select
-                  value={person.whatsappCountryCode}
-                  onValueChange={(v) => onUpdatePerson(person.id, "whatsappCountryCode", v)}
-                >
-                  <SelectTrigger className="w-[120px] h-9 text-sm bg-secondary border-border">
-                    <SelectValue placeholder="Code" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COUNTRY_CODES.map((cc) => (
-                      <SelectItem key={cc.code} value={cc.code}>
-                        {cc.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="e.g. 6 70 00 00 00"
-                  value={person.whatsappNumber}
-                  onChange={(e) => onUpdatePerson(person.id, "whatsappNumber", e.target.value.replace(/[^0-9\s]/g, ""))}
-                  className="flex-1 h-9 text-sm bg-secondary border-border"
-                  type="tel"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-muted-foreground mb-1.5 block">ID Type</label>
-              <div className="flex gap-3">
-                {[
-                  { value: "national_id", label: "National ID" },
-                  { value: "passport", label: "Passport" },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => onUpdatePerson(person.id, "idType", opt.value)}
-                    className={cn(
-                      "text-xs px-3 py-1.5 rounded-full border transition-colors",
-                      person.idType === opt.value
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-muted-foreground border-border hover:border-primary/40"
-                    )}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-3 pt-1">
-              {person.uploaded ? (
-                <span className="flex items-center gap-1 text-xs text-green font-medium">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> ID Uploaded
+        {persons.map((person, idx) => {
+          const isUploading = uploadingPersonId === person.id;
+          return (
+            <div key={person.id} className="bg-card border border-border rounded-lg p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  {idx === 0 ? "Primary Signatory" : idx === 1 ? "Secondary Signatory" : `Additional Signatory ${idx - 1}`}
+                  {idx === 0 && <span className="text-destructive ml-1">*</span>}
                 </span>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 text-xs"
-                  onClick={() => handleUploadClick(person.id)}
-                  disabled={!person.name.trim()}
-                >
-                  <Upload className="h-3.5 w-3.5" /> Upload {person.idType === "passport" ? "Passport" : "National ID"}
-                </Button>
-              )}
+                {idx > 1 && (
+                  <button onClick={() => onRemovePerson(person.id)} className="text-muted-foreground hover:text-destructive" disabled={isUploading}>
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">
+                    Full Name {idx === 0 && <span className="text-destructive">*</span>}
+                  </label>
+                  <Input
+                    placeholder="Full legal name"
+                    value={person.name}
+                    onChange={(e) => onUpdatePerson(person.id, "name", e.target.value)}
+                    className="h-9 text-sm bg-secondary border-border"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">
+                    Role / Title {idx === 0 && <span className="text-destructive">*</span>}
+                  </label>
+                  <Input
+                    placeholder="e.g. Director, CEO"
+                    value={person.role}
+                    onChange={(e) => onUpdatePerson(person.id, "role", e.target.value)}
+                    className="h-9 text-sm bg-secondary border-border"
+                  />
+                </div>
+              </div>
+
+              {/* WhatsApp number */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
+                  <Phone className="h-3 w-3" /> WhatsApp Number {idx === 0 && <span className="text-destructive">*</span>}
+                </label>
+                <div className="flex gap-2">
+                  <Select
+                    value={person.whatsappCountryCode}
+                    onValueChange={(v) => onUpdatePerson(person.id, "whatsappCountryCode", v)}
+                  >
+                    <SelectTrigger className="w-[120px] h-9 text-sm bg-secondary border-border">
+                      <SelectValue placeholder="Code" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COUNTRY_CODES.map((cc) => (
+                        <SelectItem key={cc.code} value={cc.code}>
+                          {cc.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="e.g. 6 70 00 00 00"
+                    value={person.whatsappNumber}
+                    onChange={(e) => onUpdatePerson(person.id, "whatsappNumber", e.target.value.replace(/[^0-9\s]/g, ""))}
+                    className="flex-1 h-9 text-sm bg-secondary border-border"
+                    type="tel"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1.5 block">ID Type</label>
+                <div className="flex gap-3">
+                  {[
+                    { value: "national_id", label: "National ID" },
+                    { value: "passport", label: "Passport" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => onUpdatePerson(person.id, "idType", opt.value)}
+                      className={cn(
+                        "text-xs px-3 py-1.5 rounded-full border transition-colors",
+                        person.idType === opt.value
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-muted-foreground border-border hover:border-primary/40"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-1">
+                {person.uploaded ? (
+                  <span className="flex items-center gap-1 text-xs text-green font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> ID Uploaded
+                  </span>
+                ) : isUploading ? (
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading...
+                  </span>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-xs"
+                    onClick={() => handleUploadClick(person.id)}
+                    disabled={!person.name.trim()}
+                  >
+                    <Upload className="h-3.5 w-3.5" /> Upload {person.idType === "passport" ? "Passport" : "National ID"}
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={onAddPerson}>
@@ -508,26 +542,53 @@ function ValidationSummary({ errors }: { errors: ValidationErrors }) {
 interface DocumentWizardProps {
   sector: string;
   onBack: () => void;
+  spvId?: string;
 }
 
-export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
+export function DocumentWizard({ sector, onBack, spvId }: DocumentWizardProps) {
+  const { user } = useAuth();
   const categories = getDocumentCategories(sector);
   // Steps: 0 = project description, 1..N = categories
   const totalSteps = 1 + categories.length;
   const [currentStep, setCurrentStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingDocId, setUploadingDocId] = useState<string | null>(null);
+  const [uploadingPersonId, setUploadingPersonId] = useState<string | null>(null);
 
   const [state, setState] = useState<WizardState>({
     projectDescription: "",
     selectedDocs: {},
     uploadedDocs: new Set(),
+    uploadedFiles: new Map(),
     kycPersons: [
       { id: "p1", name: "", role: "", idType: "national_id", uploaded: false, whatsappCountryCode: "+237", whatsappNumber: "" },
       { id: "p2", name: "", role: "", idType: "national_id", uploaded: false, whatsappCountryCode: "+237", whatsappNumber: "" },
     ],
     otherDocs: {},
   });
+
+  // Upload file to storage
+  const uploadToStorage = async (file: File, docId: string, category: string): Promise<string | null> => {
+    if (!user) return null;
+    
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${docId}-${Date.now()}.${fileExt}`;
+    const filePath = `${user.id}/${category}/${fileName}`;
+    
+    const { error } = await supabase.storage
+      .from("project-documents")
+      .upload(filePath, file);
+    
+    if (error) {
+      console.error("Upload error:", error);
+      toast.error(`Failed to upload ${file.name}: ${error.message}`);
+      return null;
+    }
+    
+    return filePath;
+  };
 
   // Helpers
   const toggleDoc = (catKey: string, docId: string) => {
@@ -539,13 +600,32 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     });
   };
 
-  const uploadDoc = (docId: string, _file?: File) => {
-    setState((prev) => {
-      const newUploaded = new Set(prev.uploadedDocs);
-      newUploaded.add(docId);
-      return { ...prev, uploadedDocs: newUploaded };
-    });
-    toast.success("Document uploaded successfully");
+  const uploadDoc = async (docId: string, file: File) => {
+    setUploadingDocId(docId);
+    
+    // Find category for this doc
+    let category = "general";
+    for (const cat of categories) {
+      if (cat.documents.some(d => d.id === docId)) {
+        category = cat.key;
+        break;
+      }
+    }
+    
+    const filePath = await uploadToStorage(file, docId, category);
+    
+    if (filePath) {
+      setState((prev) => {
+        const newUploaded = new Set(prev.uploadedDocs);
+        newUploaded.add(docId);
+        const newFiles = new Map(prev.uploadedFiles);
+        newFiles.set(docId, { docId, file, url: filePath });
+        return { ...prev, uploadedDocs: newUploaded, uploadedFiles: newFiles };
+      });
+      toast.success("Document uploaded successfully");
+    }
+    
+    setUploadingDocId(null);
   };
 
   const addOther = (catKey: string) => {
@@ -568,15 +648,25 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     }));
   };
 
-  const uploadOther = (catKey: string, id: string, _file?: File) => {
-    setState((prev) => ({
-      ...prev,
-      otherDocs: {
-        ...prev.otherDocs,
-        [catKey]: (prev.otherDocs[catKey] || []).map((d) => (d.id === id ? { ...d, uploaded: true } : d)),
-      },
-    }));
-    toast.success("Document uploaded successfully");
+  const uploadOther = async (catKey: string, id: string, file: File) => {
+    setUploadingDocId(id);
+    
+    const filePath = await uploadToStorage(file, id, catKey);
+    
+    if (filePath) {
+      setState((prev) => ({
+        ...prev,
+        otherDocs: {
+          ...prev.otherDocs,
+          [catKey]: (prev.otherDocs[catKey] || []).map((d) => 
+            d.id === id ? { ...d, uploaded: true, fileUrl: filePath } : d
+          ),
+        },
+      }));
+      toast.success("Document uploaded successfully");
+    }
+    
+    setUploadingDocId(null);
   };
 
   const otherNameChange = (catKey: string, id: string, name: string) => {
@@ -616,14 +706,22 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
     }));
   };
 
-  const uploadPersonId = (id: string) => {
-    setState((prev) => ({
-      ...prev,
-      kycPersons: prev.kycPersons.map((p) =>
-        p.id === id ? { ...p, uploaded: true } : p
-      ),
-    }));
-    toast.success("ID document uploaded successfully");
+  const uploadPersonId = async (id: string, file: File) => {
+    setUploadingPersonId(id);
+    
+    const filePath = await uploadToStorage(file, `kyc-${id}`, "identity");
+    
+    if (filePath) {
+      setState((prev) => ({
+        ...prev,
+        kycPersons: prev.kycPersons.map((p) =>
+          p.id === id ? { ...p, uploaded: true, fileUrl: filePath } : p
+        ),
+      }));
+      toast.success("ID document uploaded successfully");
+    }
+    
+    setUploadingPersonId(null);
   };
 
   // Calculate total uploaded count
@@ -641,8 +739,135 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
   const validationErrors = getSubmissionErrors(state);
   const hasErrors = Object.keys(validationErrors).length > 0;
 
+  // Submit all data to database
+  const submitToDatabase = async () => {
+    if (!user) {
+      toast.error("You must be logged in to submit documents");
+      return false;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 1. Create document submission record
+      const kycData = state.kycPersons
+        .filter(p => p.name.trim() || p.uploaded)
+        .map(p => ({
+          name: p.name,
+          role: p.role,
+          idType: p.idType,
+          whatsapp: `${p.whatsappCountryCode}${p.whatsappNumber}`,
+          fileUrl: p.fileUrl,
+        }));
+
+      const { data: submission, error: subError } = await supabase
+        .from("document_submissions")
+        .insert({
+          user_id: user.id,
+          spv_id: spvId || null,
+          project_description: state.projectDescription,
+          kyc_signatories: kycData,
+          status: "pending",
+        })
+        .select()
+        .single();
+
+      if (subError) {
+        console.error("Submission error:", subError);
+        toast.error("Failed to create submission record");
+        setIsSubmitting(false);
+        return false;
+      }
+
+      // 2. If we have an SPV, save document records
+      if (spvId) {
+        const docRecords: Array<{
+          spv_id: string;
+          name: string;
+          file_url: string;
+          category: string;
+          doc_type: string;
+          uploaded_by: string;
+        }> = [];
+
+        // Standard docs
+        for (const [docId, fileInfo] of state.uploadedFiles.entries()) {
+          let category = "general";
+          let docName = docId;
+          for (const cat of categories) {
+            const doc = cat.documents.find(d => d.id === docId);
+            if (doc) {
+              category = cat.key;
+              docName = doc.name;
+              break;
+            }
+          }
+          
+          docRecords.push({
+            spv_id: spvId,
+            name: docName,
+            file_url: fileInfo.url || "",
+            category,
+            doc_type: docId,
+            uploaded_by: user.id,
+          });
+        }
+
+        // Other docs
+        for (const [catKey, docs] of Object.entries(state.otherDocs)) {
+          for (const doc of docs) {
+            if (doc.uploaded && doc.fileUrl) {
+              docRecords.push({
+                spv_id: spvId,
+                name: doc.name,
+                file_url: doc.fileUrl,
+                category: catKey,
+                doc_type: "other",
+                uploaded_by: user.id,
+              });
+            }
+          }
+        }
+
+        // KYC docs
+        for (const person of state.kycPersons) {
+          if (person.uploaded && person.fileUrl) {
+            docRecords.push({
+              spv_id: spvId,
+              name: `${person.name} - ${person.idType === "passport" ? "Passport" : "National ID"}`,
+              file_url: person.fileUrl,
+              category: "identity",
+              doc_type: person.idType,
+              uploaded_by: user.id,
+            });
+          }
+        }
+
+        if (docRecords.length > 0) {
+          const { error: docsError } = await supabase
+            .from("spv_documents")
+            .insert(docRecords);
+
+          if (docsError) {
+            console.error("Documents save error:", docsError);
+            // Don't fail the whole submission, just log
+          }
+        }
+      }
+
+      toast.success("Documents submitted successfully!");
+      setIsSubmitting(false);
+      return true;
+    } catch (err) {
+      console.error("Submission error:", err);
+      toast.error("An error occurred while submitting");
+      setIsSubmitting(false);
+      return false;
+    }
+  };
+
   // Navigation
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep === 0 && state.projectDescription.trim().length < 100) {
       toast.error(`Project description needs at least 100 characters (currently ${state.projectDescription.trim().length}).`);
       return;
@@ -657,7 +882,11 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
         toast.error("Please complete all required sections before submitting.");
         return;
       }
-      setSubmitted(true);
+      
+      const success = await submitToDatabase();
+      if (success) {
+        setSubmitted(true);
+      }
     }
   };
 
@@ -774,6 +1003,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
         {currentCategory && currentCategory.key === "identity" && (
           <StepKYC
             persons={state.kycPersons}
+            uploadingPersonId={uploadingPersonId}
             onAddPerson={addPerson}
             onRemovePerson={removePerson}
             onUpdatePerson={updatePerson}
@@ -786,6 +1016,7 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
             selectedDocs={state.selectedDocs[currentCategory.key] || new Set()}
             uploadedDocs={state.uploadedDocs}
             otherDocs={state.otherDocs[currentCategory.key] || []}
+            uploadingDocId={uploadingDocId}
             onToggleDoc={(docId) => toggleDoc(currentCategory.key, docId)}
             onUploadDoc={(docId, file) => uploadDoc(docId, file)}
             onAddOther={() => addOther(currentCategory.key)}
@@ -802,14 +1033,22 @@ export function DocumentWizard({ sector, onBack }: DocumentWizardProps) {
           variant="outline"
           size="sm"
           onClick={handlePrev}
-          disabled={currentStep === 0}
+          disabled={currentStep === 0 || isSubmitting}
           className="gap-1.5"
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Previous
         </Button>
-        <Button size="sm" onClick={handleNext} className="gap-1.5">
-          {isLast ? "Submit All Documents" : "Next"}
-          <ChevronRight className="h-3.5 w-3.5" />
+        <Button size="sm" onClick={handleNext} disabled={isSubmitting} className="gap-1.5">
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting...
+            </>
+          ) : isLast ? (
+            "Submit All Documents"
+          ) : (
+            "Next"
+          )}
+          {!isSubmitting && <ChevronRight className="h-3.5 w-3.5" />}
         </Button>
       </div>
     </div>
