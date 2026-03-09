@@ -394,30 +394,10 @@ export default function DashboardDocuments() {
     return <div className="p-6 text-muted-foreground">Loading...</div>;
   }
 
-  // If user has SPV with documents, show those
+  // If user has SPV with documents, show mock stage-grouped view
   if (spv && spvDocs && spvDocs.length > 0) {
-    return (
-      <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">My Documents</h1>
-            <p className="text-sm text-muted-foreground mt-1">{spvDocs.length} documents across 6 stages</p>
-          </div>
-          <UploadDropZone />
-        </div>
-
-        <div className="space-y-3">
-          {spvDocs.map((doc) => (
-            <div key={doc.id} className="bg-card border border-border rounded-lg p-4 flex items-center gap-3">
-              <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
-                {doc.purpose && <p className="text-xs text-muted-foreground truncate">{doc.purpose}</p>}
-              </div>
-              {doc.signed_date && <span className="text-xs text-muted-foreground shrink-0">{doc.signed_date}</span>}
-            </div>
-          ))}
-        </div>
+    return <MockDocumentsByStage />;
+  }
       </div>
     );
   }
