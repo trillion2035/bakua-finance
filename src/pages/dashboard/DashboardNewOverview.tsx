@@ -251,7 +251,8 @@ function EmptyProcessPipeline({
 }) {
   const navigate = useNavigate();
   const isDeploymentApproved = !!(submission as any)?.deployment_approved;
-  const processSteps = getProcessSteps(hasSubmission, isReleased, isSigned, isDeploymentApproved, submissionDate, releasedDate);
+  const isDeploymentComplete = useIsDeploymentComplete(deploymentStages);
+  const processSteps = getProcessSteps(hasSubmission, isReleased, isSigned, isDeploymentApproved, isDeploymentComplete, submissionDate, releasedDate);
   const completedCount = processSteps.filter(s => s.status === "completed").length;
 
   return (
