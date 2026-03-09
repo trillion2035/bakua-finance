@@ -557,6 +557,11 @@ export default function DashboardDocuments() {
 
               const stageStatus: StageStatus = isDeploymentComplete ? "completed" : "processing";
               const deployDocs = deploymentGeneratedDocs?.filter(d => ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"].includes(d.stage_key)) || [];
+              const facilityDocs = deployDocs.filter(d => d.stage_key === "facility_doc_creation");
+              const facilitySignedCount = facilityDocs.filter(d => d.status === "signed").length;
+              const statusText = isDeploymentComplete 
+                ? `All stages completed${facilityDocs.length > 0 ? ` · ${facilitySignedCount}/${facilityDocs.length} signed` : ""}` 
+                : "In progress";
 
               return (
                 <StageSection
@@ -565,17 +570,24 @@ export default function DashboardDocuments() {
                   status={stageStatus}
                   defaultOpen={!isDeploymentComplete}
                   docCount={deployDocs.length}
-                  statusSummary={`${deployDocs.length} document${deployDocs.length !== 1 ? "s" : ""} · ${isDeploymentComplete ? "All stages completed" : "In progress"}`}
+                  statusSummary={`${deployDocs.length} document${deployDocs.length !== 1 ? "s" : ""} · ${statusText}`}
                 >
                   {deployDocs.map((doc) => (
                     <GeneratedDocItem
                       key={doc.id}
                       icon={<FileText className="h-5 w-5 text-primary" />}
                       title={doc.document_name}
-                      subtitle={`${doc.document_type} · ${doc.status}`}
+                      subtitle={`${doc.document_type} · ${doc.stage_key === "facility_doc_creation" ? (doc.status === "signed" ? "Signed" : "Awaiting signature") : doc.status}`}
                       onView={() => handleViewGenDoc(doc)}
                       onDownload={() => handleDownloadGenDoc(doc)}
                       signedStatus={doc.status === "signed" ? "signed" : null}
+                      actions={
+                        doc.stage_key === "facility_doc_creation" && doc.status !== "signed" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 px-2">
+                            <Clock className="h-3.5 w-3.5" /> Unsigned
+                          </span>
+                        ) : undefined
+                      }
                     />
                   ))}
                 </StageSection>
