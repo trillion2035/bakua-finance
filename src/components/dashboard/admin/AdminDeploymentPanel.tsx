@@ -21,6 +21,7 @@ import {
   useIsListingComplete,
   useLaunchSCDevelopment,
   useExecuteStep,
+  useDeployContract,
   type DeploymentStage,
   type GeneratedDocument,
 } from "@/hooks/useDeploymentData";
