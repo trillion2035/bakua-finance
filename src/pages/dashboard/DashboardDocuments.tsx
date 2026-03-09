@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown, Lock, Shield, FileSpreadsheet, PenTool } from "lucide-react";
 import { useOwnerSpvs, useSpvDocuments, useUserUploadedDocuments, useDocumentSubmission } from "@/hooks/useSpvData";
+import { useGeneratedDocuments, useIsDeploymentComplete, useDeploymentStages } from "@/hooks/useDeploymentData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 const STAGE_CONFIG = [
   { key: "submission", label: "Document Submission", icon: "📋" },
   { key: "standardization", label: "Asset Standardization", icon: "⚖️" },
-  { key: "spv", label: "SPV Creation", icon: "🏛️" },
+  { key: "spv", label: "SPV Deployment", icon: "🏛️" },
   { key: "listing", label: "Listing", icon: "📋" },
   { key: "funding", label: "Funding", icon: "💰" },
   { key: "disbursement", label: "Capital Disbursement", icon: "💸" },
@@ -264,6 +265,10 @@ export default function DashboardDocuments() {
   const { data: uploadedDocs, isLoading: loadingUploaded } = useUserUploadedDocuments();
   const { data: submission } = useDocumentSubmission();
   const { data: analysisReports } = useUserAnalysisReports();
+  const { data: deploymentGeneratedDocs } = useGeneratedDocuments(submission?.id);
+  const { data: deploymentStages } = useDeploymentStages(submission?.id);
+  const isDeploymentComplete = useIsDeploymentComplete(deploymentStages);
+  const isDeploymentApproved = !!(submission as any)?.deployment_approved;
   const [showSignModal, setShowSignModal] = useState(false);
 
   const isReleased = !!(submission as any)?.released_to_client;
@@ -496,6 +501,88 @@ export default function DashboardDocuments() {
               );
             }
             
+            // SPV Deployment stage - show generated docs if deployment is in progress or complete
+            if (stage.key === "spv") {
+              if (!isDeploymentApproved) {
+                return (
+                  <StageSection 
+                    key={stage.key} 
+                    stage={stage} 
+                    status="locked"
+                    docCount={0}
+                  />
+                );
+              }
+
+              const deployDocCount = deploymentGeneratedDocs?.length || 0;
+              const stageStatus: StageStatus = isDeploymentComplete ? "completed" : "processing";
+
+              return (
+                <StageSection
+                  key={stage.key}
+                  stage={stage}
+                  status={stageStatus}
+                  defaultOpen={!isDeploymentComplete}
+                  docCount={deployDocCount}
+                  statusSummary={`${deployDocCount} document${deployDocCount !== 1 ? "s" : ""} · ${isDeploymentComplete ? "All stages completed" : "In progress"}`}
+                >
+                  {deploymentGeneratedDocs?.map((doc) => (
+                    <GeneratedDocItem
+                      key={doc.id}
+                      icon={<FileText className="h-5 w-5 text-primary" />}
+                      title={doc.document_name}
+                      subtitle={`${doc.document_type} · ${doc.status}`}
+                      onView={() => {
+                        if (doc.file_url) {
+                          supabase.storage
+                            .from("project-documents")
+                            .createSignedUrl(doc.file_url, 3600)
+                            .then(({ data }) => {
+                              if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                            });
+                        } else if (doc.content) {
+                          const blob = new Blob([doc.content], { type: "text/plain" });
+                          window.open(URL.createObjectURL(blob), "_blank");
+                        }
+                      }}
+                      onDownload={() => {
+                        if (doc.file_url) {
+                          supabase.storage
+                            .from("project-documents")
+                            .download(doc.file_url)
+                            .then(({ data }) => {
+                              if (data) {
+                                const url = URL.createObjectURL(data);
+                                const a = document.createElement("a");
+                                a.href = url;
+                                a.download = doc.document_name;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                              }
+                            });
+                        } else if (doc.content) {
+                          const blob = new Blob([doc.content], { type: "text/plain" });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `${doc.document_name}.txt`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        }
+                      }}
+                      actions={
+                        doc.status === "signed" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 px-2">
+                            <Check className="h-3.5 w-3.5" /> Signed
+                          </span>
+                        ) : undefined
+                      }
+                    />
+                  ))}
+                </StageSection>
+              );
+            }
+
             // All other stages are locked
             return (
               <StageSection 
