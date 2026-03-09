@@ -232,6 +232,94 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
         <p className="text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">⚠️ {blocker}</p>
       )}
 
+      {/* SC Development: Launch AI Agent button */}
+      {stage.stage_key === "sc_development" && stage.status === "in_progress" && !stageDocs.some(d => d.document_type === "sc_development_plan") && (
+        <div className="space-y-2 pt-1">
+          <Button size="sm" onClick={onLaunchAgent} disabled={agentLoading} className="gap-2">
+            {agentLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+            {agentLoading ? "AI Agent Working..." : "Launch AI Development Agent"}
+          </Button>
+          {agentLoading && (
+            <p className="text-xs text-muted-foreground animate-pulse">Reading specification and generating development plan...</p>
+          )}
+        </div>
+      )}
+
+      {/* SC Development Plan display */}
+      {stage.stage_key === "sc_development" && stageDocs.some(d => d.document_type === "sc_development_plan") && (() => {
+        const planDoc = stageDocs.find(d => d.document_type === "sc_development_plan");
+        let plan: any = null;
+        try { plan = planDoc?.content ? JSON.parse(planDoc.content) : null; } catch {}
+        if (!plan) return null;
+        return (
+          <div className="space-y-3 pt-2">
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-primary" />
+                <span className="text-sm font-bold text-foreground">Development Plan</span>
+                <Badge variant="secondary" className="text-[10px]">{plan.estimated_duration}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">{plan.summary}</p>
+              {plan.tech_stack && (
+                <div className="flex flex-wrap gap-1">
+                  {plan.tech_stack.map((t: string, i: number) => (
+                    <Badge key={i} variant="outline" className="text-[10px]">{t}</Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {plan.phases?.map((phase: any) => (
+              <div key={phase.phase_number} className="border border-border rounded-lg overflow-hidden">
+                <div className="bg-muted/30 px-3 py-2 flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-muted-foreground">PHASE {phase.phase_number}</span>
+                  <span className="text-xs font-semibold text-foreground">{phase.phase_name}</span>
+                  <Badge variant="outline" className="text-[10px] ml-auto">{phase.duration}</Badge>
+                </div>
+                <div className="p-3 space-y-2">
+                  <p className="text-xs text-muted-foreground">{phase.description}</p>
+                  {phase.steps?.map((step: any) => (
+                    <div key={step.step_number} className="flex gap-2 text-xs bg-background rounded p-2 border border-border">
+                      <span className="text-muted-foreground font-mono shrink-0">{phase.phase_number}.{step.step_number}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">{step.title}</span>
+                          <Badge variant={step.priority === "critical" ? "destructive" : step.priority === "high" ? "default" : "secondary"} className="text-[9px]">{step.priority}</Badge>
+                        </div>
+                        <p className="text-muted-foreground mt-0.5">{step.description}</p>
+                        {step.deliverables?.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {step.deliverables.map((d: string, i: number) => (
+                              <span key={i} className="text-[10px] text-primary/80 bg-primary/5 rounded px-1.5 py-0.5">{d}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {plan.security_considerations && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-xs font-semibold text-amber-800 mb-1">Security Considerations</p>
+                <ul className="text-xs text-amber-700 space-y-0.5 list-disc list-inside">
+                  {plan.security_considerations.map((s: string, i: number) => <li key={i}>{s}</li>)}
+                </ul>
+              </div>
+            )}
+
+            {plan.testing_strategy && (
+              <div className="bg-muted/30 rounded-lg p-3">
+                <p className="text-xs font-semibold text-foreground mb-1">Testing Strategy</p>
+                <p className="text-xs text-muted-foreground">{plan.testing_strategy}</p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {stage.stage_key === "spv_incorporation" && stage.status === "in_progress" && !incorpCertUploaded && (
         <div className="space-y-2 pt-1">
           <p className="text-xs font-medium text-foreground">Upload Incorporation Certificate</p>
