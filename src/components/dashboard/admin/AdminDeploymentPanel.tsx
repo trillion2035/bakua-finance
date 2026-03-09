@@ -564,9 +564,6 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
       { onSuccess: (data) => setDeployResult(data) }
     );
   };
-      { onSettled: () => setExecutingStepRef(null) }
-    );
-  };
 
   const isDeploymentApproved = !!(submission as any).deployment_approved;
   const isDeploymentComplete = useIsDeploymentComplete(stages);
