@@ -763,15 +763,8 @@ Generate a structured development plan in JSON format using tool calling.`;
 
     // ── Execute a specific step from the SC development plan ──
     if (stage_key === "sc_execute_step") {
-      const { phase_number, step_number } = await (async () => {
-        const body = JSON.parse(new TextDecoder().decode(await new Response(req.clone().body).arrayBuffer()));
-        return { phase_number: body.phase_number, step_number: body.step_number };
-      })().catch(() => ({ phase_number: null, step_number: null }));
-
-      // Re-parse from the request body since we already consumed it
-      const reqBody = JSON.parse(new TextDecoder().decode(await new Response(req.clone().body).arrayBuffer()));
-      const phaseNum = reqBody.phase_number;
-      const stepNum = reqBody.step_number;
+      const phaseNum = phase_number;
+      const stepNum = step_number;
 
       if (!phaseNum || !stepNum) {
         return new Response(JSON.stringify({ error: "phase_number and step_number are required" }), {
