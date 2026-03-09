@@ -107,6 +107,7 @@ CRITICAL REQUIREMENTS:
 2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
 3. Do NOT import from external files (no @openzeppelin imports) - inline everything needed
 4. The contract must compile with solc 0.8.28 without errors
+5. Use ONLY ASCII characters in all identifiers, modifiers, function names, and comments. NO Unicode, NO Chinese, NO non-ASCII characters anywhere.
 5. Include a constructor that accepts the SPV name and admin address
 6. Keep it practical but functional - this will be actually deployed
 7. Include basic functions: deposit, withdraw, disburseMilestone, getBalance, getInvestorBalance
