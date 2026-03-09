@@ -613,8 +613,8 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
         );
       })()}
 
-      {/* SC Deployment: Per-network preflight + deploy cards */}
-      {stage.stage_key === "sc_deployment" && stage.status === "in_progress" && onDeployContract && (
+      {/* SC Deployment: Per-network preflight + deploy cards (visible in_progress AND completed) */}
+      {stage.stage_key === "sc_deployment" && (stage.status === "in_progress" || stage.status === "completed") && onDeployContract && (
         <div className="space-y-4 pt-1">
           {/* ── Testnet Card ── */}
           <NetworkDeployCard
@@ -628,6 +628,9 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
             onDeploy={() => onDeployContract("testnet")}
             deploying={deployingNetwork === "testnet"}
             deployingAny={!!deployingContract}
+            onVerify={testnetResult ? () => onVerifyContract?.("testnet", testnetResult.contract_address) : undefined}
+            verifying={verifyingNetwork === "testnet"}
+            verified={verifiedNetworks?.has("testnet")}
           />
           {/* ── Mainnet Card ── */}
           <NetworkDeployCard
@@ -641,15 +644,10 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
             onDeploy={() => onDeployContract("mainnet")}
             deploying={deployingNetwork === "mainnet"}
             deployingAny={!!deployingContract}
+            onVerify={mainnetResult ? () => onVerifyContract?.("mainnet", mainnetResult.contract_address) : undefined}
+            verifying={verifyingNetwork === "mainnet"}
+            verified={verifiedNetworks?.has("mainnet")}
           />
-        </div>
-      )}
-      {/* SC Deployment results shown when stage is completed */}
-      {stage.stage_key === "sc_deployment" && stage.status === "completed" && (testnetResult || mainnetResult) && (
-        <div className="space-y-2 pt-1">
-          {[testnetResult, mainnetResult].filter(Boolean).map((result: any, idx: number) => (
-            <DeployResultCard key={idx} result={result} />
-          ))}
         </div>
       )}
 
