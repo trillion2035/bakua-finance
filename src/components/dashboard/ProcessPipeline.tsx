@@ -99,7 +99,7 @@ function StepCard({ step, isLast }: { step: ProcessStep; isLast: boolean }) {
                 className="gap-1.5 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate("/dashboard/documents");
+                  navigate(`/dashboard/documents?stage=${stage}`);
                 }}
               >
                 <FileText className="h-3.5 w-3.5" />

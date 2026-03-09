@@ -11,6 +11,7 @@ import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
 import { useDeploymentStages, useGeneratedDocuments, useIsDeploymentComplete, useListingStages, useIsListingComplete } from "@/hooks/useDeploymentData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
+import { SPVAssetScore } from "@/components/dashboard/spv/SPVAssetScore";
 import { SignTermSheetModal } from "@/components/dashboard/documents/SignTermSheetModal";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -535,7 +536,10 @@ export default function DashboardNewOverview() {
 
       <EmptyKPICards capitalTarget={capitalTarget} spv={spv} analysisReport={latestReport} termSheet={termSheet} />
       {spv ? (
-        <ProcessPipeline />
+        <>
+          <ProcessPipeline />
+          <SPVAssetScore />
+        </>
       ) : (
         <EmptyProcessPipeline 
           onStartUpload={() => setShowWizard(true)} 
