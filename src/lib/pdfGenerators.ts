@@ -48,11 +48,11 @@ export function generateAssetScorePDF(report: AnalysisReport, profileName: strin
   yPos += 10;
   
   // Score display
-  const scoreColor = report.total_score >= 90 ? SUCCESS_COLOR :
+  const scoreColor: [number, number, number] = report.total_score >= 90 ? SUCCESS_COLOR :
                      report.total_score >= 75 ? PRIMARY_COLOR :
-                     report.total_score >= 60 ? [234, 179, 8] : DANGER_COLOR;
+                     report.total_score >= 60 ? WARNING_COLOR : DANGER_COLOR;
   
-  doc.setFillColor(...scoreColor);
+  doc.setFillColor(scoreColor[0], scoreColor[1], scoreColor[2]);
   doc.roundedRect(20, yPos, 50, 30, 3, 3, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(28);
