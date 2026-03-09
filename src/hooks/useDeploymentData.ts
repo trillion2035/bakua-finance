@@ -253,6 +253,31 @@ export function useCompleteStage() {
   });
 }
 
+// Launch SC Development AI Agent
+export function useLaunchSCDevelopment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ submissionId }: { submissionId: string }) => {
+      const response = await supabase.functions.invoke("generate-spv-documents", {
+        body: { submission_id: submissionId, stage_key: "sc_development" },
+      });
+      if (response.error) throw new Error(response.error.message || "Failed to launch AI agent");
+      const data = response.data as any;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["listing-stages"] });
+      toast.success("AI Agent completed!", { description: "Smart contract development plan has been generated." });
+    },
+    onError: (error) => {
+      toast.error("AI Agent failed", { description: error instanceof Error ? error.message : "Please try again." });
+    },
+  });
+}
+
 // Sign a generated facility document
 export function useSignGeneratedDocument() {
   const queryClient = useQueryClient();
