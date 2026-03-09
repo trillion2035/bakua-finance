@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      document_submissions: {
+        Row: {
+          id: string
+          kyc_signatories: Json | null
+          project_description: string | null
+          reviewed_at: string | null
+          reviewer_notes: string | null
+          spv_id: string | null
+          status: string | null
+          submitted_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          kyc_signatories?: Json | null
+          project_description?: string | null
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          spv_id?: string | null
+          status?: string | null
+          submitted_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          kyc_signatories?: Json | null
+          project_description?: string | null
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          spv_id?: string | null
+          status?: string | null
+          submitted_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_submissions_spv_id_fkey"
+            columns: ["spv_id"]
+            isOneToOne: false
+            referencedRelation: "spvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       harvest_data: {
         Row: {
           cherry_intake: number | null
@@ -460,7 +504,9 @@ export type Database = {
       }
       spv_documents: {
         Row: {
+          category: string | null
           created_at: string
+          doc_type: string | null
           file_url: string | null
           id: string
           name: string
@@ -469,9 +515,12 @@ export type Database = {
           signed_date: string | null
           sort_order: number | null
           spv_id: string
+          uploaded_by: string | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
+          doc_type?: string | null
           file_url?: string | null
           id?: string
           name: string
@@ -480,9 +529,12 @@ export type Database = {
           signed_date?: string | null
           sort_order?: number | null
           spv_id: string
+          uploaded_by?: string | null
         }
         Update: {
+          category?: string | null
           created_at?: string
+          doc_type?: string | null
           file_url?: string | null
           id?: string
           name?: string
@@ -491,6 +543,7 @@ export type Database = {
           signed_date?: string | null
           sort_order?: number | null
           spv_id?: string
+          uploaded_by?: string | null
         }
         Relationships: [
           {
