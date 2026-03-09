@@ -252,16 +252,29 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
       {/* SC Development Plan display */}
       {stage.stage_key === "sc_development" && stageDocs.some(d => d.document_type === "sc_development_plan") && (() => {
         const planDoc = stageDocs.find(d => d.document_type === "sc_development_plan");
+        const stepOutputs = stageDocs.filter(d => d.document_type === "sc_step_output");
+        const completedStepRefs = new Set(stepOutputs.map(d => {
+          const match = d.document_name.match(/^Step (\d+\.\d+)/);
+          return match ? match[1] : null;
+        }).filter(Boolean));
+
         let plan: any = null;
         try { plan = planDoc?.content ? JSON.parse(planDoc.content) : null; } catch {}
         if (!plan) return null;
         return (
           <div className="space-y-3 pt-2">
+            {/* Header with regenerate button */}
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 text-primary" />
                 <span className="text-sm font-bold text-foreground">Development Plan</span>
                 <Badge variant="secondary" className="text-[10px]">{plan.estimated_duration}</Badge>
+                {onRegeneratePlan && (
+                  <Button size="sm" variant="ghost" onClick={onRegeneratePlan} disabled={agentLoading} className="ml-auto gap-1.5 text-xs h-7">
+                    {agentLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Regenerate
+                  </Button>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">{plan.summary}</p>
               {plan.tech_stack && (
@@ -273,6 +286,46 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
               )}
             </div>
 
+            {/* Spec Evaluation */}
+            {plan.spec_evaluation && (
+              <div className={cn("rounded-lg p-3 border", 
+                plan.spec_evaluation.overall_quality === "excellent" || plan.spec_evaluation.overall_quality === "good" 
+                  ? "bg-emerald-50 border-emerald-200" 
+                  : "bg-amber-50 border-amber-200"
+              )}>
+                <div className="flex items-center gap-2 mb-2">
+                  {plan.spec_evaluation.overall_quality === "excellent" || plan.spec_evaluation.overall_quality === "good" 
+                    ? <CheckCircle className="h-4 w-4 text-emerald-600" />
+                    : <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  }
+                  <span className="text-xs font-semibold text-foreground">Specification Evaluation: <span className="capitalize">{plan.spec_evaluation.overall_quality}</span></span>
+                </div>
+                {plan.spec_evaluation.issues_found?.length > 0 && (
+                  <div className="space-y-1 mb-2">
+                    {plan.spec_evaluation.issues_found.map((issue: any, i: number) => (
+                      <div key={i} className="flex gap-2 text-xs">
+                        <Badge variant={issue.severity === "critical" ? "destructive" : issue.severity === "warning" ? "default" : "secondary"} className="text-[9px] shrink-0">{issue.severity}</Badge>
+                        <div>
+                          <span className="font-medium text-foreground">{issue.area}:</span>{" "}
+                          <span className="text-muted-foreground">{issue.description}</span>
+                          <p className="text-primary/80 mt-0.5">→ {issue.recommendation}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {plan.spec_evaluation.corrections_applied?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-foreground mb-1">Corrections Applied:</p>
+                    <ul className="text-xs text-muted-foreground space-y-0.5 list-disc list-inside">
+                      {plan.spec_evaluation.corrections_applied.map((c: string, i: number) => <li key={i}>{c}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Phases with executable steps */}
             {plan.phases?.map((phase: any) => (
               <div key={phase.phase_number} className="border border-border rounded-lg overflow-hidden">
                 <div className="bg-muted/30 px-3 py-2 flex items-center gap-2">
@@ -282,25 +335,73 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
                 </div>
                 <div className="p-3 space-y-2">
                   <p className="text-xs text-muted-foreground">{phase.description}</p>
-                  {phase.steps?.map((step: any) => (
-                    <div key={step.step_number} className="flex gap-2 text-xs bg-background rounded p-2 border border-border">
-                      <span className="text-muted-foreground font-mono shrink-0">{phase.phase_number}.{step.step_number}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-foreground">{step.title}</span>
-                          <Badge variant={step.priority === "critical" ? "destructive" : step.priority === "high" ? "default" : "secondary"} className="text-[9px]">{step.priority}</Badge>
+                  {phase.steps?.map((step: any) => {
+                    const stepRef = `${phase.phase_number}.${step.step_number}`;
+                    const isCompleted = completedStepRefs.has(stepRef);
+                    const isExecuting = executingStep === stepRef;
+                    const stepOutputDoc = stepOutputs.find(d => d.document_name.startsWith(`Step ${stepRef}:`));
+
+                    return (
+                      <div key={step.step_number} className="space-y-0">
+                        <div className={cn("flex gap-2 text-xs rounded p-2 border", isCompleted ? "bg-emerald-50/50 border-emerald-200" : "bg-background border-border")}>
+                          {/* Execute button */}
+                          <div className="shrink-0 flex flex-col items-center gap-1">
+                            <span className="text-muted-foreground font-mono">{stepRef}</span>
+                            {isCompleted ? (
+                              <CheckCircle className="h-4 w-4 text-emerald-600" />
+                            ) : onExecuteStep ? (
+                              <button
+                                onClick={() => onExecuteStep(phase.phase_number, step.step_number)}
+                                disabled={!!executingStep}
+                                className={cn(
+                                  "h-6 w-6 rounded-full flex items-center justify-center transition-colors",
+                                  executingStep ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                                )}
+                                title={`Execute step ${stepRef}`}
+                              >
+                                {isExecuting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+                              </button>
+                            ) : null}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-foreground">{step.title}</span>
+                              <Badge variant={step.priority === "critical" ? "destructive" : step.priority === "high" ? "default" : "secondary"} className="text-[9px]">{step.priority}</Badge>
+                              {isCompleted && <Badge variant="outline" className="text-[9px] bg-emerald-50 text-emerald-700 border-emerald-200">Done</Badge>}
+                            </div>
+                            <p className="text-muted-foreground mt-0.5">{step.description}</p>
+                            {step.deliverables?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {step.deliverables.map((d: string, i: number) => (
+                                  <span key={i} className="text-[10px] text-primary/80 bg-primary/5 rounded px-1.5 py-0.5">{d}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-muted-foreground mt-0.5">{step.description}</p>
-                        {step.deliverables?.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {step.deliverables.map((d: string, i: number) => (
-                              <span key={i} className="text-[10px] text-primary/80 bg-primary/5 rounded px-1.5 py-0.5">{d}</span>
-                            ))}
+
+                        {/* Step output display */}
+                        {isExecuting && (
+                          <div className="ml-8 mt-1 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <span>AI agent executing step {stepRef}...</span>
+                          </div>
+                        )}
+                        {stepOutputDoc && !isExecuting && (
+                          <div className="ml-8 mt-1">
+                            <button
+                              onClick={() => onViewDoc(stepOutputDoc)}
+                              className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors"
+                            >
+                              <Eye className="h-3 w-3" />
+                              <span className="font-medium">View Output</span>
+                              <ChevronRight className="h-3 w-3" />
+                            </button>
                           </div>
                         )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ))}
