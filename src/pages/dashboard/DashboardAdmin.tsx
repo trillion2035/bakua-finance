@@ -274,6 +274,27 @@ function SubmissionRow({ submission }: { submission: any }) {
                   Term Sheet
                 </Button>
               )}
+              {/* Release to client button */}
+              {!submission.released_to_client ? (
+                <Button
+                  size="sm"
+                  onClick={() => releaseToClient.mutate(submission.id)}
+                  disabled={releaseToClient.isPending}
+                  className="gap-2 ml-auto"
+                >
+                  {releaseToClient.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Send className="h-3 w-3" />
+                  )}
+                  Release to Client
+                </Button>
+              ) : (
+                <Badge variant="outline" className="ml-auto bg-emerald-50 text-emerald-700 border-emerald-200">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Released {submission.released_at ? new Date(submission.released_at).toLocaleDateString() : ""}
+                </Badge>
+              )}
             </div>
           )}
 
