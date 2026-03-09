@@ -732,6 +732,18 @@ Generate a structured development plan in JSON format using tool calling.`;
         });
       }
 
+      // Delete any existing plan (for regeneration support)
+      await supabase.from("generated_documents")
+        .delete()
+        .eq("submission_id", submission_id)
+        .eq("document_type", "sc_development_plan");
+
+      // Also delete any existing step outputs (for clean regeneration)
+      await supabase.from("generated_documents")
+        .delete()
+        .eq("submission_id", submission_id)
+        .eq("document_type", "sc_step_output");
+
       // Store the development plan as a generated document with JSON content
       await supabase.from("generated_documents").insert({
         submission_id,
@@ -744,6 +756,156 @@ Generate a structured development plan in JSON format using tool calling.`;
       });
 
       return new Response(JSON.stringify({ success: true, plan: devPlan }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Execute a specific step from the SC development plan ──
+    if (stage_key === "sc_execute_step") {
+      const { phase_number, step_number } = await (async () => {
+        const body = JSON.parse(new TextDecoder().decode(await new Response(req.clone().body).arrayBuffer()));
+        return { phase_number: body.phase_number, step_number: body.step_number };
+      })().catch(() => ({ phase_number: null, step_number: null }));
+
+      // Re-parse from the request body since we already consumed it
+      const reqBody = JSON.parse(new TextDecoder().decode(await new Response(req.clone().body).arrayBuffer()));
+      const phaseNum = reqBody.phase_number;
+      const stepNum = reqBody.step_number;
+
+      if (!phaseNum || !stepNum) {
+        return new Response(JSON.stringify({ error: "phase_number and step_number are required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the development plan
+      const { data: planDocs } = await supabase
+        .from("generated_documents")
+        .select("*")
+        .eq("submission_id", submission_id)
+        .eq("document_type", "sc_development_plan")
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (!planDocs || planDocs.length === 0) {
+        return new Response(JSON.stringify({ error: "No development plan found. Generate one first." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      let plan: any;
+      try { plan = JSON.parse(planDocs[0].content); } catch {
+        return new Response(JSON.stringify({ error: "Failed to parse development plan." }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const phase = plan.phases?.find((p: any) => p.phase_number === phaseNum);
+      const step = phase?.steps?.find((s: any) => s.step_number === stepNum);
+
+      if (!phase || !step) {
+        return new Response(JSON.stringify({ error: `Step ${phaseNum}.${stepNum} not found in development plan.` }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the spec content for context
+      const { data: specDocs2 } = await supabase
+        .from("generated_documents")
+        .select("*")
+        .eq("submission_id", submission_id)
+        .eq("stage_key", "sc_specifications")
+        .order("created_at", { ascending: false });
+
+      let specContent2 = specDocs2?.[0]?.content || "";
+      if (!specContent2 && specDocs2?.[0]?.file_url) {
+        const { data: fileData2 } = await supabase.storage.from("project-documents").download(specDocs2[0].file_url);
+        if (fileData2) specContent2 = await fileData2.text();
+      }
+
+      // Get previous step outputs for continuity
+      const { data: prevOutputs } = await supabase
+        .from("generated_documents")
+        .select("document_name, content")
+        .eq("submission_id", submission_id)
+        .eq("document_type", "sc_step_output")
+        .order("created_at", { ascending: true });
+
+      const previousWork = prevOutputs?.map((o: any) => `### ${o.document_name}\n${(o.content || "").substring(0, 2000)}`).join("\n\n") || "No previous steps completed yet.";
+
+      const stepPrompt = `You are a senior Solidity/blockchain engineer executing step ${phaseNum}.${stepNum} of a smart contract development plan.
+
+STEP TO EXECUTE:
+- Phase: ${phase.phase_name}
+- Step: ${step.title}
+- Description: ${step.description}
+- Priority: ${step.priority}
+- Expected Deliverables: ${step.deliverables?.join(", ")}
+
+PROJECT CONTEXT:
+- SPV: ${ctx.spvName}
+- Borrower: ${ctx.companyName}
+- Industry: ${ctx.industry}
+- Network: Base (Ethereum L2)
+- Facility Amount: ${ctx.facilityAmount}
+- Tech Stack: ${plan.tech_stack?.join(", ")}
+
+SPECIFICATION (excerpt):
+${(specContent2 || "").substring(0, 8000)}
+
+PREVIOUS COMPLETED WORK:
+${previousWork.substring(0, 4000)}
+
+Execute this step and provide concrete output. This should include:
+1. A summary of what was accomplished
+2. Any code produced (Solidity contracts, test files, configuration, deployment scripts)
+3. Any important decisions or trade-offs made
+4. Status of each expected deliverable
+5. Any issues encountered and how they were resolved
+6. Next steps or dependencies for subsequent steps
+
+Be concrete and technical. Produce actual code snippets, configurations, and artifacts where applicable.`;
+
+      const stepResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "You are a senior Solidity smart contract engineer. Execute development steps precisely, producing real code and artifacts. Format your output clearly with markdown." },
+            { role: "user", content: stepPrompt },
+          ],
+        }),
+      });
+
+      if (!stepResponse.ok) {
+        const errText = await stepResponse.text();
+        console.error("AI step execution error:", stepResponse.status, errText);
+        const status = stepResponse.status === 429 ? 429 : stepResponse.status === 402 ? 402 : 500;
+        return new Response(JSON.stringify({ error: status === 429 ? "Rate limit exceeded" : status === 402 ? "Payment required" : "AI step execution failed" }), {
+          status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const stepResult = await stepResponse.json();
+      const stepOutput = stepResult.choices?.[0]?.message?.content || "No output generated.";
+
+      // Store the step output
+      const stepRef = `${phaseNum}.${stepNum}`;
+      await supabase.from("generated_documents").insert({
+        submission_id,
+        user_id: submission.user_id,
+        stage_key: "sc_development",
+        document_name: `Step ${stepRef}: ${step.title}`,
+        document_type: "sc_step_output",
+        content: stepOutput,
+        status: "completed",
+      });
+
+      return new Response(JSON.stringify({ success: true, step_ref: stepRef, output: stepOutput }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
