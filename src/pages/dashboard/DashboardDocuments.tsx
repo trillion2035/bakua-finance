@@ -557,6 +557,11 @@ export default function DashboardDocuments() {
 
               const stageStatus: StageStatus = isDeploymentComplete ? "completed" : "processing";
               const deployDocs = deploymentGeneratedDocs?.filter(d => ["spv_doc_creation", "spv_incorporation", "facility_doc_creation", "legal_close"].includes(d.stage_key)) || [];
+              const facilityDocs = deployDocs.filter(d => d.stage_key === "facility_doc_creation");
+              const facilitySignedCount = facilityDocs.filter(d => d.status === "signed").length;
+              const statusText = isDeploymentComplete 
+                ? `All stages completed${facilityDocs.length > 0 ? ` · ${facilitySignedCount}/${facilityDocs.length} signed` : ""}` 
+                : "In progress";
 
               return (
                 <StageSection
@@ -565,12 +570,7 @@ export default function DashboardDocuments() {
                   status={stageStatus}
                   defaultOpen={!isDeploymentComplete}
                   docCount={deployDocs.length}
-                  const signedCount = deployDocs.filter(d => d.status === "signed").length;
-                  const facilityDocs = deployDocs.filter(d => d.stage_key === "facility_doc_creation");
-                  const facilitySignedCount = facilityDocs.filter(d => d.status === "signed").length;
-                  const statusText = isDeploymentComplete 
-                    ? `All stages completed${facilityDocs.length > 0 ? ` · ${facilitySignedCount}/${facilityDocs.length} signed` : ""}` 
-                    : "In progress";
+                  statusSummary={`${deployDocs.length} document${deployDocs.length !== 1 ? "s" : ""} · ${statusText}`}
                 >
                   {deployDocs.map((doc) => (
                     <GeneratedDocItem
