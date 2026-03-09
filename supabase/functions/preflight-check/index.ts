@@ -223,13 +223,15 @@ ${allStepCode.substring(0, 20000)}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY valid Solidity code - no markdown, no explanations, no code fences
-2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
+2. Use EXACTLY: pragma solidity 0.8.28;
 3. Do NOT import from external files - inline everything needed
-4. Must compile without errors
-5. Use ONLY ASCII characters in all identifiers, modifiers, function names, and comments. NO Unicode, NO Chinese characters.
-5. Include constructor, deposit, withdraw, disburseMilestone, getBalance functions
-6. Add events for all state changes
-7. Start with: // SPDX-License-Identifier: MIT
+4. Must compile without errors with solc 0.8.28
+5. Use ONLY ASCII characters everywhere. NO Unicode, NO Chinese.
+6. Use ONLY standard Solidity syntax. Use .length for arrays, NOT .size(). Do NOT define helper libraries.
+7. Use standard modifier names like onlyAdmin, onlyManager - plain English camelCase.
+8. Include constructor, deposit, withdraw, disburseMilestone, getBalance functions
+9. Add events for all state changes
+10. Start with: // SPDX-License-Identifier: MIT
 
 Output the complete fixed Solidity source code only.`
           : `You are a senior Solidity engineer. Produce a SINGLE, COMPILABLE Solidity smart contract for an SPV called "${spvName}".
@@ -239,12 +241,14 @@ ${allStepCode.substring(0, 20000)}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY valid Solidity code - no markdown, no explanations, no code fences
-2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
+2. Use EXACTLY: pragma solidity 0.8.28;
 3. Do NOT import from external files - inline everything
 4. Must compile with solc 0.8.28 without errors
-5. Use ONLY ASCII characters in all identifiers, modifiers, function names, and comments. NO Unicode, NO Chinese characters.
-5. Include constructor, deposit, withdraw, disburseMilestone, getBalance
-6. Start with: // SPDX-License-Identifier: MIT
+5. Use ONLY ASCII characters everywhere. NO Unicode, NO Chinese.
+6. Use ONLY standard Solidity syntax. Use .length for arrays, NOT .size(). Do NOT define helper libraries.
+7. Use standard modifier names like onlyAdmin, onlyManager - plain English camelCase.
+8. Include constructor, deposit, withdraw, disburseMilestone, getBalance
+9. Start with: // SPDX-License-Identifier: MIT
 
 Output the complete Solidity source code only.`;
 
