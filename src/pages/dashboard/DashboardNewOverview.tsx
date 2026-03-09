@@ -2,18 +2,20 @@ import { useState } from "react";
 import {
   ArrowRight, Clock, Check, Loader2, FileUp, Eye,
   DollarSign, TrendingUp, Shield, Percent,
-  PenTool,
+  PenTool, ChevronDown, ChevronUp, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerSpvs, useDocumentSubmission, useUserUploadedDocuments } from "@/hooks/useSpvData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
+import { useDeploymentStages, useGeneratedDocuments } from "@/hooks/useDeploymentData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import { SignTermSheetModal } from "@/components/dashboard/documents/SignTermSheetModal";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import type { ProcessStepStatus } from "@/data/mockDashboardData";
 
 function formatCurrency(amount: number | string | null, currency?: string | null): string {
