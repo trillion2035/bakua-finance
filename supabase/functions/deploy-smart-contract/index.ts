@@ -104,7 +104,7 @@ ${(specContent || "").substring(0, 5000)}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY valid Solidity code - no markdown, no explanations, no code fences
-2. Use Solidity ^0.8.20
+2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
 3. Do NOT import from external files (no @openzeppelin imports) - inline everything needed
 4. The contract must compile with solc 0.8.28 without errors
 5. Include a constructor that accepts the SPV name and admin address

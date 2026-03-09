@@ -216,14 +216,14 @@ serve(async (req) => {
 PREVIOUS ATTEMPT FAILED with these errors:
 ${previousErrors}
 
-FIX all compilation errors. The contract must compile with solc ^0.8.20.
+FIX all compilation errors. The contract must compile with solc 0.8.28. Use EXACTLY: pragma solidity 0.8.28;
 
 DEVELOPMENT WORK:
 ${allStepCode.substring(0, 20000)}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY valid Solidity code - no markdown, no explanations, no code fences
-2. Use Solidity ^0.8.20
+2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
 3. Do NOT import from external files - inline everything needed
 4. Must compile without errors
 5. Include constructor, deposit, withdraw, disburseMilestone, getBalance functions
@@ -238,7 +238,7 @@ ${allStepCode.substring(0, 20000)}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY valid Solidity code - no markdown, no explanations, no code fences
-2. Use Solidity ^0.8.20
+2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
 3. Do NOT import from external files - inline everything
 4. Must compile with solc 0.8.28 without errors
 5. Include constructor, deposit, withdraw, disburseMilestone, getBalance
