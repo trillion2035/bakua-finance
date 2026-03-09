@@ -992,7 +992,9 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         executingStep={stage.stage_key === "sc_development" ? executingStepRef : null}
                         onDeployContract={stage.stage_key === "sc_deployment" ? handleDeployContract : undefined}
                         deployingContract={stage.stage_key === "sc_deployment" ? deployContract.isPending : false}
-                        deployResult={stage.stage_key === "sc_deployment" ? deployResult : undefined}
+                        deployingNetwork={stage.stage_key === "sc_deployment" ? deployingNetwork : null}
+                        testnetResult={stage.stage_key === "sc_deployment" ? effectiveTestnet : undefined}
+                        mainnetResult={stage.stage_key === "sc_deployment" ? effectiveMainnet : undefined}
                         onPreflightCheck={stage.stage_key === "sc_deployment" ? handlePreflightCheck : undefined}
                         preflightLoading={stage.stage_key === "sc_deployment" ? preflightCheck.isPending : false}
                         preflightResult={stage.stage_key === "sc_deployment" ? preflightResult : undefined}
