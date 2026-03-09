@@ -412,7 +412,6 @@ function EmptyProcessPipeline({
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Setting up deployment stages...
                     </div>
-                    </div>
                   )}
                 </div>
               )}
