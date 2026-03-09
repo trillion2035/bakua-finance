@@ -255,9 +255,9 @@ export function SignTermSheetModal({ open, onOpenChange, submissionId, analysisR
   if (signed) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-white text-gray-900">
           <div className="flex flex-col items-center gap-4 py-6">
-            <div className="w-16 h-16 rounded-full bg-green/20 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
               <CheckCircle2 className="h-8 w-8 text-green" />
             </div>
             <h3 className="text-lg font-bold text-foreground">Term Sheet Signed</h3>
