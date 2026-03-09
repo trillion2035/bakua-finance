@@ -346,7 +346,7 @@ function NetworkDeployCard({ label, network, result, preflightResult, preflightL
 }
 
 /* ── Stage Row ── */
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix, onMainnetPreflightCheck, mainnetPreflightLoading, mainnetPreflightResult, onMainnetPreflightFix }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix, onMainnetPreflightCheck, mainnetPreflightLoading, mainnetPreflightResult, onMainnetPreflightFix, onVerifyContract, verifyingNetwork, verifiedNetworks }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -377,6 +377,9 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   mainnetPreflightLoading?: boolean;
   mainnetPreflightResult?: any;
   onMainnetPreflightFix?: () => void;
+  onVerifyContract?: (network: "testnet" | "mainnet", contractAddress: string) => void;
+  verifyingNetwork?: "testnet" | "mainnet" | null;
+  verifiedNetworks?: Set<string>;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingCert, setUploadingCert] = useState(false);
