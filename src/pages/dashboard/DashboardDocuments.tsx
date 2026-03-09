@@ -265,6 +265,10 @@ export default function DashboardDocuments() {
   const { data: uploadedDocs, isLoading: loadingUploaded } = useUserUploadedDocuments();
   const { data: submission } = useDocumentSubmission();
   const { data: analysisReports } = useUserAnalysisReports();
+  const { data: deploymentGeneratedDocs } = useGeneratedDocuments(submission?.id);
+  const { data: deploymentStages } = useDeploymentStages(submission?.id);
+  const isDeploymentComplete = useIsDeploymentComplete(deploymentStages);
+  const isDeploymentApproved = !!(submission as any)?.deployment_approved;
   const [showSignModal, setShowSignModal] = useState(false);
 
   const isReleased = !!(submission as any)?.released_to_client;
