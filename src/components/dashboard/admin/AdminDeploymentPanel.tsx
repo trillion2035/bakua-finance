@@ -545,7 +545,9 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const completeStage = useCompleteStage();
   const launchSCDev = useLaunchSCDevelopment();
   const executeStep = useExecuteStep();
+  const deployContract = useDeployContract();
   const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
+  const [deployResult, setDeployResult] = useState<any>(null);
 
   const handleExecuteStep = (phaseNumber: number, stepNumber: number) => {
     const ref = `${phaseNumber}.${stepNumber}`;
