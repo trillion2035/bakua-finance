@@ -273,7 +273,7 @@ export function SignTermSheetModal({ open, onOpenChange, submissionId, analysisR
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-white text-gray-900 [&_*]:text-gray-900 [&_.text-muted-foreground]:!text-gray-500 [&_.text-foreground]:!text-gray-900 [&_.border-border]:!border-gray-200 [&_.bg-muted\/50]:!bg-gray-100 [&_.bg-background]:!bg-white [&_.border-muted-foreground\/30]:!border-gray-300" data-theme="light">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <PenTool className="h-5 w-5 text-primary" />
