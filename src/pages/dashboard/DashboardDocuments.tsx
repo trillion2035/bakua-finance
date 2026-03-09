@@ -1,5 +1,8 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Upload, FileText, FolderOpen, Download, Eye, Check, Clock, AlertCircle, ChevronUp, ChevronDown, Lock, Shield, FileSpreadsheet, PenTool } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { mockDocuments, type ProcessStage, stageLabels, stageIcons, getDocsByStage, getDocsBySubPhase, stepIdToStage } from "@/data/mockDocumentsData";
+import { mockSPV } from "@/data/mockDashboardData";
 import { useOwnerSpvs, useSpvDocuments, useUserUploadedDocuments, useDocumentSubmission } from "@/hooks/useSpvData";
 import { useGeneratedDocuments, useIsDeploymentComplete, useDeploymentStages, useListingStages, useIsListingComplete } from "@/hooks/useDeploymentData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
