@@ -226,6 +226,7 @@ CRITICAL REQUIREMENTS:
 2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
 3. Do NOT import from external files - inline everything needed
 4. Must compile without errors
+5. Use ONLY ASCII characters in all identifiers, modifiers, function names, and comments. NO Unicode, NO Chinese characters.
 5. Include constructor, deposit, withdraw, disburseMilestone, getBalance functions
 6. Add events for all state changes
 7. Start with: // SPDX-License-Identifier: MIT
