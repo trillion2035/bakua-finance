@@ -329,7 +329,8 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { submission_id, stage_key } = await req.json();
+    const reqBody = await req.json();
+    const { submission_id, stage_key, phase_number, step_number } = reqBody;
     if (!submission_id) throw new Error("submission_id is required");
     if (!stage_key) throw new Error("stage_key is required");
 
