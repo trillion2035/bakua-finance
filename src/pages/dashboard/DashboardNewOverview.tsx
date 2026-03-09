@@ -91,14 +91,18 @@ interface ProcessStep {
   actionable: boolean;
 }
 
-function getProcessSteps(hasSubmission: boolean, isReleased: boolean, isSigned: boolean, isDeploymentApproved: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
-  const spvDeploymentStatus: ProcessStepStatus = isDeploymentApproved ? "in_progress" : isSigned ? "in_progress" : isReleased ? "in_progress" : "pending";
-  const spvDeploymentDesc = isDeploymentApproved
+function getProcessSteps(hasSubmission: boolean, isReleased: boolean, isSigned: boolean, isDeploymentApproved: boolean, isDeploymentComplete: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
+  const spvDeploymentStatus: ProcessStepStatus = isDeploymentComplete ? "completed" : isDeploymentApproved ? "in_progress" : isSigned ? "in_progress" : isReleased ? "in_progress" : "pending";
+  const spvDeploymentDesc = isDeploymentComplete
+    ? "SPV incorporation and legal close completed. All documents finalized."
+    : isDeploymentApproved
     ? "SPV incorporation and legal close in progress."
     : isSigned
     ? "Term sheet signed. Awaiting admin approval to begin SPV deployment."
     : "Sign the term sheet to begin the SPV incorporation and legal close process.";
-  const spvDeploymentDate = isDeploymentApproved
+  const spvDeploymentDate = isDeploymentComplete
+    ? "Completed"
+    : isDeploymentApproved
     ? "In progress"
     : isSigned
     ? "Awaiting admin approval"
