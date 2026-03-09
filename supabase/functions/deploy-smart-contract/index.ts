@@ -104,16 +104,17 @@ ${(specContent || "").substring(0, 5000)}
 
 CRITICAL REQUIREMENTS:
 1. Output ONLY valid Solidity code - no markdown, no explanations, no code fences
-2. Use EXACTLY this pragma: pragma solidity 0.8.28;  (DO NOT use 0.8.20 or ^0.8.20)
+2. Use EXACTLY this pragma: pragma solidity 0.8.28;
 3. Do NOT import from external files (no @openzeppelin imports) - inline everything needed
 4. The contract must compile with solc 0.8.28 without errors
-5. Use ONLY ASCII characters in all identifiers, modifiers, function names, and comments. NO Unicode, NO Chinese, NO non-ASCII characters anywhere.
-5. Include a constructor that accepts the SPV name and admin address
-6. Keep it practical but functional - this will be actually deployed
-7. Include basic functions: deposit, withdraw, disburseMilestone, getBalance, getInvestorBalance
-8. Use USDC address for Base Sepolia: 0x036CbD53842c5426634e7929541eC2318f3dCF7e (or accept as constructor param)
-9. Add events for all state changes
-10. Start with: // SPDX-License-Identifier: MIT
+5. Use ONLY ASCII characters everywhere. NO Unicode, NO Chinese characters, NO non-ASCII.
+6. Use ONLY standard Solidity syntax. Use .length for arrays, NOT .size(). Do NOT define helper libraries.
+7. Use standard modifier names like onlyAdmin, onlyManager - plain English camelCase.
+8. Include a constructor that accepts (string memory _name, address _admin)
+9. Include basic functions: deposit, withdraw, disburseMilestone, getBalance, getInvestorBalance
+10. Use USDC address for Base Sepolia: 0x036CbD53842c5426634e7929541eC2318f3dCF7e (or accept as constructor param)
+11. Add events for all state changes
+12. Start with: // SPDX-License-Identifier: MIT
 
 Output the complete Solidity source code only.`;
 
