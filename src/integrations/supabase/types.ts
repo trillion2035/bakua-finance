@@ -631,6 +631,7 @@ export type Database = {
           deployed_date: string | null
           id: string
           name: string
+          network: string | null
           spv_id: string
         }
         Insert: {
@@ -639,6 +640,7 @@ export type Database = {
           deployed_date?: string | null
           id?: string
           name: string
+          network?: string | null
           spv_id: string
         }
         Update: {
@@ -647,6 +649,7 @@ export type Database = {
           deployed_date?: string | null
           id?: string
           name?: string
+          network?: string | null
           spv_id?: string
         }
         Relationships: [

@@ -1,5 +1,6 @@
-import { Building2, Shield, ChevronDown } from "lucide-react";
+import { Building2, Shield, ChevronDown, ExternalLink, Eye, Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -7,7 +8,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useOwnerSpvs, useSpvScoreDimensions, useSpvDocuments, useSpvContracts } from "@/hooks/useSpvData";
+import { useOwnerSpvs, useSpvScoreDimensions, useSpvDocuments, useSpvContracts, useDocumentSubmission } from "@/hooks/useSpvData";
+import { useGeneratedDocuments } from "@/hooks/useDeploymentData";
 import { ScoreBar } from "@/components/dashboard/spv/ScoreBar";
 import { CopyButton } from "@/components/dashboard/spv/CopyButton";
 
@@ -15,10 +17,18 @@ export default function DashboardSPV() {
   const { data: spvs, isLoading } = useOwnerSpvs();
   const spv = spvs?.[0];
   const [openSPV, setOpenSPV] = useState<string | null>(null);
+  const [showAllDocs, setShowAllDocs] = useState(false);
 
   const { data: scoreDimensions } = useSpvScoreDimensions(spv?.id);
   const { data: legalDocs } = useSpvDocuments(spv?.id);
   const { data: contracts } = useSpvContracts(spv?.id);
+  const { data: submission } = useDocumentSubmission();
+  const { data: generatedDocs } = useGeneratedDocuments(submission?.id);
+
+  // Facility documents from generated_documents
+  const facilityDocs = generatedDocs?.filter(d =>
+    d.stage_key === "facility_doc_creation" && d.status === "signed"
+  ) || [];
 
   // Auto-open first SPV
   if (spv && openSPV === null) {
@@ -37,6 +47,13 @@ export default function DashboardSPV() {
       </div>
     );
   }
+
+  // Combine spv_documents + facility generated docs for the legal docs section
+  const allLegalDocs = [
+    ...(legalDocs || []).map((d, i) => ({ id: d.id, name: d.name, purpose: d.purpose || "", parties: d.parties || "", signedDate: d.signed_date || "", sortOrder: d.sort_order || i })),
+    ...facilityDocs.map((d, i) => ({ id: d.id, name: d.document_name, purpose: d.document_type, parties: "", signedDate: d.signed_at ? new Date(d.signed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "", sortOrder: 100 + i })),
+  ];
+  const visibleDocs = showAllDocs ? allLegalDocs : allLegalDocs.slice(0, 4);
 
   return (
     <div className="p-6 md:p-8 max-w-[1200px] mx-auto space-y-6">
@@ -60,13 +77,16 @@ export default function DashboardSPV() {
         </CollapsibleTrigger>
 
         <CollapsibleContent className="space-y-6 mt-4">
-          {/* Entity Info */}
+          {/* Entity Info + Asset Score */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Entity Information</h3>
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Entity Information</h3>
+              </div>
+              <div className="space-y-3">
                 {[
-                  ["Full Legal Name", spv.full_legal_name],
+                  ["Legal Name", spv.full_legal_name],
                   ["Registration No.", spv.registration_no],
                   ["Jurisdiction", spv.jurisdiction],
                   ["Company Type", spv.company_type],
@@ -74,53 +94,115 @@ export default function DashboardSPV() {
                   ["Incorporation Date", spv.incorporation_date],
                   ["Capital Social", spv.capital_social],
                   ["Shareholder", spv.shareholder],
-                  ["Network", spv.network],
-                  ["Auditor", spv.auditor],
                 ].map(([label, value]) => (
-                  <div key={label as string}>
-                    <div className="text-muted-foreground">{label}</div>
-                    <div className="font-medium text-foreground mt-0.5">{value || "—"}</div>
+                  <div key={label as string} className="flex justify-between gap-4">
+                    <span className="text-xs text-muted-foreground shrink-0">{label}</span>
+                    <span className="text-xs font-medium text-foreground text-right">{value || "—"}</span>
                   </div>
                 ))}
               </div>
+              <Badge variant="outline" className="text-xs mt-2">
+                <Shield className="h-3 w-3 mr-1" /> {spv.status}
+              </Badge>
             </div>
 
             {/* Asset Score */}
-            <div className="bg-card border border-border rounded-lg p-6 space-y-4">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Asset Score™</h3>
-              {scoreDimensions?.map((dim) => (
-                <ScoreBar key={dim.id} label={dim.name} score={dim.score} weight={dim.weight || ""} />
-              ))}
-            </div>
+            {scoreDimensions && scoreDimensions.length > 0 && (
+              <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Asset Score™</h3>
+                {scoreDimensions.map((dim) => (
+                  <ScoreBar key={dim.id} label={dim.name} score={dim.score} weight={dim.weight || ""} />
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Contracts */}
+          {/* Smart Contracts */}
           {contracts && contracts.length > 0 && (
-            <div className="bg-card border border-border rounded-lg p-6 space-y-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Smart Contracts</h3>
-              {contracts.map((c) => (
-                <div key={c.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div>
-                    <div className="text-sm font-medium text-foreground">{c.name}</div>
-                    <div className="text-[11px] text-muted-foreground">Deployed: {c.deployed_date}</div>
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ExternalLink className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                  Smart Contracts — {spv.network || "Base (Coinbase L2)"}
+                </h3>
+              </div>
+              <div className="space-y-3">
+                {contracts.map((c) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0">
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-foreground block">{c.name}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground">{c.deployed_date}</span>
+                        {(c as any).network && (
+                          <Badge variant="outline" className="text-[10px]">
+                            {(c as any).network === "mainnet" ? "Mainnet" : "Testnet"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs text-muted-foreground font-mono hidden sm:block">
+                        {c.address.slice(0, 6)}...{c.address.slice(-4)}
+                      </code>
+                      <CopyButton text={c.address} />
+                      <a
+                        href={`https://${(c as any).network === "mainnet" ? "basescan.org" : "sepolia.basescan.org"}/address/${c.address}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className="text-primary hover:text-primary/80"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
                   </div>
-                  <CopyButton text={c.address} />
-                </div>
-              ))}
+                ))}
+              </div>
+              {spv.auditor && (
+                <p className="text-[11px] text-muted-foreground mt-3">Audited by {spv.auditor}</p>
+              )}
             </div>
           )}
 
-          {/* Legal Docs */}
-          {legalDocs && legalDocs.length > 0 && (
-            <div className="bg-card border border-border rounded-lg p-6 space-y-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">Legal Documents</h3>
-              {legalDocs.map((doc) => (
-                <div key={doc.id} className="py-2 border-b border-border last:border-0">
-                  <div className="text-sm font-medium text-foreground">{doc.name}</div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{doc.purpose}</div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">{doc.parties} · {doc.signed_date}</div>
-                </div>
-              ))}
+          {/* Legal Documents */}
+          {allLegalDocs.length > 0 && (
+            <div className="bg-card border border-border rounded-lg p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ExternalLink className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                  Legal Documents ({allLegalDocs.length})
+                </h3>
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 text-muted-foreground font-medium w-8">#</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium">Document</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium hidden md:table-cell">Purpose</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium hidden lg:table-cell">Parties</th>
+                    <th className="text-left py-2 text-muted-foreground font-medium">Signed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleDocs.map((doc, idx) => (
+                    <tr key={doc.id} className="border-b border-border last:border-0">
+                      <td className="py-3 text-muted-foreground">{idx + 1}</td>
+                      <td className="py-3 font-medium text-foreground">{doc.name}</td>
+                      <td className="py-3 text-muted-foreground hidden md:table-cell">{doc.purpose}</td>
+                      <td className="py-3 text-muted-foreground hidden lg:table-cell">{doc.parties}</td>
+                      <td className="py-3">
+                        {doc.signedDate && (
+                          <span className="text-emerald-600 font-medium">✓ {doc.signedDate}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {allLegalDocs.length > 4 && (
+                <button onClick={() => setShowAllDocs(!showAllDocs)} className="text-xs text-muted-foreground hover:text-foreground mt-3 flex items-center gap-1">
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", showAllDocs && "rotate-180")} />
+                  {showAllDocs ? "Show fewer" : `Show all ${allLegalDocs.length} documents`}
+                </button>
+              )}
             </div>
           )}
         </CollapsibleContent>
