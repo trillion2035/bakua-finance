@@ -726,6 +726,8 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const [preflightResult, setPreflightResult] = useState<any>(null);
   const [mainnetPreflightResult, setMainnetPreflightResult] = useState<any>(null);
   const [deployingNetwork, setDeployingNetwork] = useState<"testnet" | "mainnet" | null>(null);
+  const [verifyingNetwork, setVerifyingNetwork] = useState<"testnet" | "mainnet" | null>(null);
+  const [verifiedNetworks, setVerifiedNetworks] = useState<Set<string>>(new Set());
 
   // Load persisted deployment results from generated_documents on mount
   const deploymentRecords = generatedDocs?.filter(d => d.document_type === "sc_deployment_record" && d.status === "verified") || [];
