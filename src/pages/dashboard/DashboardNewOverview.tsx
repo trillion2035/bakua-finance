@@ -535,7 +535,10 @@ export default function DashboardNewOverview() {
 
       <EmptyKPICards capitalTarget={capitalTarget} spv={spv} analysisReport={latestReport} termSheet={termSheet} />
       {spv ? (
-        <ProcessPipeline />
+        <>
+          <ProcessPipeline />
+          <SPVAssetScore />
+        </>
       ) : (
         <EmptyProcessPipeline 
           onStartUpload={() => setShowWizard(true)} 
