@@ -94,7 +94,7 @@ export function useAnalysisReport(submissionId: string | undefined) {
         .maybeSingle();
       
       if (error) throw error;
-      return data as AnalysisReport | null;
+      return data as unknown as AnalysisReport | null;
     },
     enabled: !!submissionId,
   });
