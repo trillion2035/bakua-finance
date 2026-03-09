@@ -1,0 +1,1 @@
+ALTER TABLE public.spv_contracts ADD COLUMN IF NOT EXISTS network text DEFAULT 'testnet';
