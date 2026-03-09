@@ -429,6 +429,56 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
         );
       })()}
 
+      {/* SC Deployment: Deploy to blockchain button */}
+      {stage.stage_key === "sc_deployment" && stage.status === "in_progress" && onDeployContract && (
+        <div className="space-y-3 pt-1">
+          {!deployResult && (
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => onDeployContract("testnet")} disabled={deployingContract} className="gap-2">
+                {deployingContract ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                {deployingContract ? "Deploying to Base Sepolia..." : "Deploy to Base Sepolia (Testnet)"}
+              </Button>
+            </div>
+          )}
+          {deployingContract && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>AI is consolidating code, compiling Solidity, and deploying to Base Sepolia...</span>
+            </div>
+          )}
+          {deployResult && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-bold text-emerald-700">Contract Deployed!</span>
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-medium w-28">Contract:</span>
+                  <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px]">{deployResult.contract_address}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-medium w-28">Network:</span>
+                  <span className="text-foreground">{deployResult.network}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-medium w-28">Tx Hash:</span>
+                  <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px] truncate max-w-[200px]">{deployResult.tx_hash}</code>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <a href={deployResult.explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+                  <ExternalLink className="h-3 w-3" /> View Contract
+                </a>
+                <a href={deployResult.tx_explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+                  <ExternalLink className="h-3 w-3" /> View Transaction
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {stage.stage_key === "spv_incorporation" && stage.status === "in_progress" && !incorpCertUploaded && (
         <div className="space-y-2 pt-1">
           <p className="text-xs font-medium text-foreground">Upload Incorporation Certificate</p>
