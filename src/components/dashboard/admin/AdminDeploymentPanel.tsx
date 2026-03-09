@@ -176,7 +176,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 /* ── Stage Row ── */
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployingNetwork, testnetResult, mainnetResult, onPreflightCheck, preflightLoading, preflightResult, onPreflightFix, onMainnetPreflightCheck, mainnetPreflightLoading, mainnetPreflightResult, onMainnetPreflightFix }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -203,6 +203,10 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   preflightLoading?: boolean;
   preflightResult?: any;
   onPreflightFix?: () => void;
+  onMainnetPreflightCheck?: () => void;
+  mainnetPreflightLoading?: boolean;
+  mainnetPreflightResult?: any;
+  onMainnetPreflightFix?: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingCert, setUploadingCert] = useState(false);
