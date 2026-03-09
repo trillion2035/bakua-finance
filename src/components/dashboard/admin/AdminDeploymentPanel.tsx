@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Check, Loader2, ChevronDown, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, Bot, Zap, RefreshCw, AlertTriangle, Info, ChevronRight } from "lucide-react";
+import { Check, Loader2, ChevronDown, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, Bot, Zap, RefreshCw, AlertTriangle, Info, ChevronRight, Rocket, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -21,6 +21,7 @@ import {
   useIsListingComplete,
   useLaunchSCDevelopment,
   useExecuteStep,
+  useDeployContract,
   type DeploymentStage,
   type GeneratedDocument,
 } from "@/hooks/useDeploymentData";
@@ -174,7 +175,7 @@ function SignFacilityDocModal({ doc, open, onOpenChange }: { doc: GeneratedDocum
 }
 
 /* ── Stage Row ── */
-function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep }: {
+function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onViewDoc, onDownloadDoc, onSignDoc, onDeleteDoc, onUploadDoc, submission, showDocActions, onLaunchAgent, agentLoading, onRegeneratePlan, onExecuteStep, executingStep, onDeployContract, deployingContract, deployResult }: {
   stage: DeploymentStage;
   stageDocs: GeneratedDocument[];
   completeStage: any;
@@ -192,6 +193,9 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
   onRegeneratePlan?: () => void;
   onExecuteStep?: (phaseNumber: number, stepNumber: number) => void;
   executingStep?: string | null;
+  onDeployContract?: (network: "testnet" | "mainnet") => void;
+  deployingContract?: boolean;
+  deployResult?: any;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingCert, setUploadingCert] = useState(false);
@@ -425,6 +429,56 @@ function StageRow({ stage, stageDocs, completeStage, canComplete, blocker, onVie
         );
       })()}
 
+      {/* SC Deployment: Deploy to blockchain button */}
+      {stage.stage_key === "sc_deployment" && stage.status === "in_progress" && onDeployContract && (
+        <div className="space-y-3 pt-1">
+          {!deployResult && (
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => onDeployContract("testnet")} disabled={deployingContract} className="gap-2">
+                {deployingContract ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                {deployingContract ? "Deploying to Base Sepolia..." : "Deploy to Base Sepolia (Testnet)"}
+              </Button>
+            </div>
+          )}
+          {deployingContract && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 rounded p-2 border border-amber-200">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>AI is consolidating code, compiling Solidity, and deploying to Base Sepolia...</span>
+            </div>
+          )}
+          {deployResult && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-bold text-emerald-700">Contract Deployed!</span>
+              </div>
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-medium w-28">Contract:</span>
+                  <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px]">{deployResult.contract_address}</code>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-medium w-28">Network:</span>
+                  <span className="text-foreground">{deployResult.network}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground font-medium w-28">Tx Hash:</span>
+                  <code className="bg-background px-2 py-0.5 rounded text-foreground font-mono text-[11px] truncate max-w-[200px]">{deployResult.tx_hash}</code>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <a href={deployResult.explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+                  <ExternalLink className="h-3 w-3" /> View Contract
+                </a>
+                <a href={deployResult.tx_explorer_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium">
+                  <ExternalLink className="h-3 w-3" /> View Transaction
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {stage.stage_key === "spv_incorporation" && stage.status === "in_progress" && !incorpCertUploaded && (
         <div className="space-y-2 pt-1">
           <p className="text-xs font-medium text-foreground">Upload Incorporation Certificate</p>
@@ -491,7 +545,9 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const completeStage = useCompleteStage();
   const launchSCDev = useLaunchSCDevelopment();
   const executeStep = useExecuteStep();
+  const deployContract = useDeployContract();
   const [executingStepRef, setExecutingStepRef] = useState<string | null>(null);
+  const [deployResult, setDeployResult] = useState<any>(null);
 
   const handleExecuteStep = (phaseNumber: number, stepNumber: number) => {
     const ref = `${phaseNumber}.${stepNumber}`;
@@ -499,6 +555,13 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     executeStep.mutate(
       { submissionId: submission.id, phaseNumber, stepNumber },
       { onSettled: () => setExecutingStepRef(null) }
+    );
+  };
+
+  const handleDeployContract = (network: "testnet" | "mainnet") => {
+    deployContract.mutate(
+      { submissionId: submission.id, network },
+      { onSuccess: (data) => setDeployResult(data) }
     );
   };
 
@@ -787,7 +850,10 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
                         agentLoading={stage.stage_key === "sc_development" ? launchSCDev.isPending : false}
                         onRegeneratePlan={stage.stage_key === "sc_development" ? () => launchSCDev.mutate({ submissionId: submission.id }) : undefined}
                         onExecuteStep={stage.stage_key === "sc_development" ? handleExecuteStep : undefined}
-                        executingStep={stage.stage_key === "sc_development" ? executingStepRef : null} />
+                        executingStep={stage.stage_key === "sc_development" ? executingStepRef : null}
+                        onDeployContract={stage.stage_key === "sc_deployment" ? handleDeployContract : undefined}
+                        deployingContract={stage.stage_key === "sc_deployment" ? deployContract.isPending : false}
+                        deployResult={stage.stage_key === "sc_deployment" ? deployResult : undefined} />
                     );
                   })}
 

@@ -302,6 +302,35 @@ export function useExecuteStep() {
   });
 }
 
+// Deploy smart contract to Base network
+export function useDeployContract() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ submissionId, network = "testnet" }: { submissionId: string; network?: "testnet" | "mainnet" }) => {
+      const response = await supabase.functions.invoke("deploy-smart-contract", {
+        body: { submission_id: submissionId, network },
+      });
+      if (response.error) throw new Error(response.error.message || "Deployment failed");
+      const data = response.data as any;
+      if (!data?.success) throw new Error(data?.error || "Deployment failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["listing-stages"] });
+      toast.success("Smart contract deployed!", {
+        description: `Contract: ${data.contract_address?.slice(0, 10)}... on ${data.network}`,
+      });
+    },
+    onError: (error) => {
+      toast.error("Deployment failed", {
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    },
+  });
+}
+
 // Sign a generated facility document
 export function useSignGeneratedDocument() {
   const queryClient = useQueryClient();
