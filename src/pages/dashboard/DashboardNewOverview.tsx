@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useOwnerSpvs, useDocumentSubmission, useUserUploadedDocuments } from "@/hooks/useSpvData";
 import { useUserAnalysisReports, useTermSheet } from "@/hooks/useAnalysisData";
-import { useDeploymentStages, useGeneratedDocuments } from "@/hooks/useDeploymentData";
+import { useDeploymentStages, useGeneratedDocuments, useIsDeploymentComplete } from "@/hooks/useDeploymentData";
 import { DocumentWizard } from "@/components/dashboard/DocumentWizard";
 import { ProcessPipeline } from "@/components/dashboard/ProcessPipeline";
 import { SignTermSheetModal } from "@/components/dashboard/documents/SignTermSheetModal";
