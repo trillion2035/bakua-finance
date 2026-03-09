@@ -676,9 +676,17 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   };
 
   const handleDeployContract = (network: "testnet" | "mainnet") => {
+    setDeployingNetwork(network);
     deployContract.mutate(
       { submissionId: submission.id, network },
-      { onSuccess: (data) => setDeployResult(data) }
+      {
+        onSuccess: (data) => {
+          if (network === "mainnet") setMainnetResult(data);
+          else setTestnetResult(data);
+          setDeployingNetwork(null);
+        },
+        onError: () => setDeployingNetwork(null),
+      }
     );
   };
 
