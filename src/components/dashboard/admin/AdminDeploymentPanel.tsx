@@ -824,6 +824,7 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
     );
   };
 
+  const isDeploymentApproved = !!(submission as any).deployment_approved;
   const isDeploymentComplete = useIsDeploymentComplete(stages);
   const isListingComplete = useIsListingComplete(listingStages);
   const hasSignatures = signatures && signatures.length > 0;
