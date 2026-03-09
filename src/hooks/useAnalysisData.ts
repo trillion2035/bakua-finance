@@ -225,6 +225,14 @@ export function useTriggerAnalysis() {
         toast.warning(`Analysis complete: ${data.grade} - ${data.grade_label}`, {
           description: "Project did not meet the minimum threshold.",
         });
+      }
+    },
+    onError: (error) => {
+      toast.error("Analysis failed", {
+        description: error instanceof Error ? error.message : "Please try again later.",
+      });
+    },
+  });
 }
 
 // Release analysis results to client
@@ -253,14 +261,6 @@ export function useReleaseToClient() {
     onError: (error) => {
       toast.error("Failed to release results", {
         description: error instanceof Error ? error.message : "Please try again.",
-      });
-    },
-  });
-}
-    },
-    onError: (error) => {
-      toast.error("Analysis failed", {
-        description: error instanceof Error ? error.message : "Please try again later.",
       });
     },
   });
