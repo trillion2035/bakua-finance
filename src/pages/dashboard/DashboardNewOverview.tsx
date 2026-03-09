@@ -91,7 +91,21 @@ interface ProcessStep {
   actionable: boolean;
 }
 
-function getProcessSteps(hasSubmission: boolean, isReleased: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
+function getProcessSteps(hasSubmission: boolean, isReleased: boolean, isSigned: boolean, isDeploymentApproved: boolean, submissionDate?: string, releasedDate?: string): ProcessStep[] {
+  const spvDeploymentStatus: ProcessStepStatus = isDeploymentApproved ? "in_progress" : isSigned ? "in_progress" : isReleased ? "in_progress" : "pending";
+  const spvDeploymentDesc = isDeploymentApproved
+    ? "SPV incorporation and legal close in progress."
+    : isSigned
+    ? "Term sheet signed. Awaiting admin approval to begin SPV deployment."
+    : "Sign the term sheet to begin the SPV incorporation and legal close process.";
+  const spvDeploymentDate = isDeploymentApproved
+    ? "In progress"
+    : isSigned
+    ? "Awaiting admin approval"
+    : isReleased
+    ? "Awaiting term sheet signing"
+    : "Awaiting standardization";
+
   if (hasSubmission && isReleased) {
     const formattedDate = submissionDate 
       ? new Date(submissionDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -102,8 +116,8 @@ function getProcessSteps(hasSubmission: boolean, isReleased: boolean, submission
     return [
       { id: 1, title: "Document Submission", description: "Your documents have been submitted and processed.", status: "completed", dateRange: `Submitted ${formattedDate}`, actionable: false },
       { id: 2, title: "Asset Standardization", description: "AI analysis complete. Your Asset Score™ and project documents are ready.", status: "completed", dateRange: `Completed ${formattedRelease}`, actionable: false },
-      { id: 3, title: "SPV Deployment", description: "Legal entity incorporated, contracts executed, smart contract deployed on-chain.", status: "in_progress", dateRange: "Awaiting term sheet signing", actionable: false },
-      { id: 4, title: "Listing", description: "Smart contract deployed, audited, and SPV listed on the investor marketplace.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
+      { id: 3, title: "SPV Deployment", description: spvDeploymentDesc, status: spvDeploymentStatus, dateRange: spvDeploymentDate, actionable: false },
+      { id: 4, title: "Listing", description: "SPV listed on the investor marketplace for funding.", status: "pending", dateRange: "Awaiting deployment", actionable: false },
       { id: 5, title: "Funding", description: "Investors deposit capital until the SPV target is fully met.", status: "pending", dateRange: "Awaiting listing", actionable: false },
       { id: 6, title: "Capital Disbursement", description: "Funds released in milestones, verified by IoT oracles and smart contracts.", status: "pending", dateRange: "Awaiting funding", actionable: false },
     ];
