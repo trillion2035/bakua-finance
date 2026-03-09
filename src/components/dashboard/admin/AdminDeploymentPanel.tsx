@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Check, Loader2, ChevronDown, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, Bot, Zap } from "lucide-react";
+import { Check, Loader2, ChevronDown, Play, FileText, Clock, CheckCircle, Upload, Eye, Download, PenTool, Trash2, Bot, Zap, RefreshCw, AlertTriangle, Info, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -20,6 +20,7 @@ import {
   useIsDeploymentComplete,
   useIsListingComplete,
   useLaunchSCDevelopment,
+  useExecuteStep,
   type DeploymentStage,
   type GeneratedDocument,
 } from "@/hooks/useDeploymentData";
