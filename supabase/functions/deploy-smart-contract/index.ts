@@ -6,16 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/**
- * Smart Contract Deployment Edge Function
- * 
- * 1. Collects all Solidity code from sc_step_output documents
- * 2. Sends to AI to produce a single, deployable, flattened Solidity contract
- * 3. Compiles using solc (loaded from CDN)
- * 4. Deploys to Base Sepolia (or mainnet) using ethers.js
- * 5. Stores contract address in spv_contracts + generated_documents
- */
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -34,9 +24,22 @@ serve(async (req) => {
     const { submission_id, network } = await req.json();
     if (!submission_id) throw new Error("submission_id is required");
 
-    const rpcUrl = network === "mainnet" ? (BASE_RPC_URL.includes("sepolia") ? "https://mainnet.base.org" : BASE_RPC_URL) : BASE_RPC_URL;
+    // Derive mainnet RPC from Alchemy key in BASE_RPC_URL
+    let rpcUrl: string;
+    if (network === "mainnet") {
+      // Extract Alchemy API key from the testnet URL and build mainnet URL
+      const alchemyKeyMatch = BASE_RPC_URL.match(/\/v2\/(.+)$/);
+      if (alchemyKeyMatch) {
+        rpcUrl = `https://base-mainnet.g.alchemy.com/v2/${alchemyKeyMatch[1]}`;
+      } else {
+        rpcUrl = "https://mainnet.base.org";
+      }
+    } else {
+      rpcUrl = BASE_RPC_URL;
+    }
     const chainId = network === "mainnet" ? 8453 : 84532;
     const networkName = network === "mainnet" ? "Base Mainnet" : "Base Sepolia";
+    const networkLabel = network === "mainnet" ? "mainnet" : "testnet";
 
     console.log(`Deploying to ${networkName} (chainId: ${chainId}, rpc: ${rpcUrl})`);
 
@@ -76,8 +79,6 @@ serve(async (req) => {
 
     const allStepCode = stepOutputs?.map((o: any) => `### ${o.document_name}\n${o.content || ""}`).join("\n\n---\n\n") || "";
     const specContent = specDocs?.[0]?.content || "";
-    let planData: any = null;
-    try { planData = planDocs?.[0]?.content ? JSON.parse(planDocs[0].content) : null; } catch {}
 
     // Get profile for SPV naming
     const { data: profile } = await supabase.from("profiles").select("*").eq("user_id", submission.user_id).single();
@@ -86,10 +87,36 @@ serve(async (req) => {
     const spvName = profile?.company_name || "Bakua SPV";
     const industry = report?.industry || "agriculture";
 
-    // 3. Ask AI to produce a single, compilable, flattened Solidity contract
-    console.log("Asking AI to produce deployment-ready Solidity code...");
+    // For mainnet, check if there's a successful testnet deployment to reuse the same source code
+    let soliditySource = "";
+    if (network === "mainnet") {
+      const { data: testnetRecord } = await supabase
+        .from("generated_documents")
+        .select("content")
+        .eq("submission_id", submission_id)
+        .eq("document_type", "sc_deployment_record")
+        .order("created_at", { ascending: false })
+        .limit(1);
 
-    const consolidationPrompt = `You are a senior Solidity engineer. Your task is to produce a SINGLE, COMPILABLE, SELF-CONTAINED Solidity smart contract that can be deployed directly.
+      if (testnetRecord?.[0]?.content) {
+        // Extract source code from existing deployment record
+        const sourceMatch = testnetRecord[0].content.match(/## Source Code\s*```solidity\s*([\s\S]*?)```/);
+        if (sourceMatch) {
+          soliditySource = sourceMatch[1].trim();
+          console.log(`Reusing verified source code from previous deployment (${soliditySource.length} chars)`);
+        }
+      }
+    }
+
+    // If no existing source (or testnet deployment), generate fresh
+    if (!soliditySource) {
+      console.log("Asking AI to produce deployment-ready Solidity code...");
+
+      const usdcAddress = network === "mainnet"
+        ? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  // USDC on Base Mainnet
+        : "0x036CbD53842c5426634e7929541eC2318f3dCF7e";  // USDC on Base Sepolia
+
+      const consolidationPrompt = `You are a senior Solidity engineer. Your task is to produce a SINGLE, COMPILABLE, SELF-CONTAINED Solidity smart contract that can be deployed directly.
 
 CONTEXT:
 - This is for an SPV (Special Purpose Vehicle) called "${spvName}" in the ${industry} industry.
@@ -112,102 +139,83 @@ CRITICAL REQUIREMENTS:
 7. Use standard modifier names like onlyAdmin, onlyManager - plain English camelCase.
 8. Include a constructor that accepts (string memory _name, address _admin)
 9. Include basic functions: deposit, withdraw, disburseMilestone, getBalance, getInvestorBalance
-10. Use USDC address for Base Sepolia: 0x036CbD53842c5426634e7929541eC2318f3dCF7e (or accept as constructor param)
+10. Use USDC address: ${usdcAddress} (or accept as constructor param)
 11. Add events for all state changes
 12. Start with: // SPDX-License-Identifier: MIT
 
 Output the complete Solidity source code only.`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: "You are a Solidity compiler. Output ONLY valid Solidity code. No markdown, no explanations, no code fences. Start directly with // SPDX-License-Identifier: MIT" },
-          { role: "user", content: consolidationPrompt },
-        ],
-      }),
-    });
+      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "You are a Solidity compiler. Output ONLY valid Solidity code. No markdown, no explanations, no code fences. Start directly with // SPDX-License-Identifier: MIT" },
+            { role: "user", content: consolidationPrompt },
+          ],
+        }),
+      });
 
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      console.error("AI consolidation error:", aiResponse.status, errText);
-      throw new Error(`AI failed to generate contract code: ${aiResponse.status}`);
-    }
+      if (!aiResponse.ok) {
+        const errText = await aiResponse.text();
+        console.error("AI consolidation error:", aiResponse.status, errText);
+        throw new Error(`AI failed to generate contract code: ${aiResponse.status}`);
+      }
 
-    const aiResult = await aiResponse.json();
-    let soliditySource = aiResult.choices?.[0]?.message?.content || "";
+      const aiResult = await aiResponse.json();
+      soliditySource = aiResult.choices?.[0]?.message?.content || "";
 
-    // Clean up any markdown fences the AI might have included
-    soliditySource = soliditySource
-      .replace(/^```solidity\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
+      soliditySource = soliditySource
+        .replace(/^```solidity\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
 
-    if (!soliditySource.includes("pragma solidity")) {
-      throw new Error("AI did not produce valid Solidity code");
+      if (!soliditySource.includes("pragma solidity")) {
+        throw new Error("AI did not produce valid Solidity code");
+      }
     }
 
     console.log(`Generated Solidity contract (${soliditySource.length} chars)`);
 
-    // 4. Compile using solc via JSON input
+    // Compile using solc
     console.log("Compiling Solidity...");
-    
-    // Import solc dynamically
     const solcModule = await import("https://esm.sh/solc@0.8.28");
     const solc = solcModule.default || solcModule;
 
     const solcInput = JSON.stringify({
       language: "Solidity",
-      sources: {
-        "SPVContract.sol": { content: soliditySource },
-      },
+      sources: { "SPVContract.sol": { content: soliditySource } },
       settings: {
-        outputSelection: {
-          "*": {
-            "*": ["abi", "evm.bytecode.object"],
-          },
-        },
+        outputSelection: { "*": { "*": ["abi", "evm.bytecode.object"] } },
         optimizer: { enabled: true, runs: 200 },
       },
     });
 
     const solcOutput = JSON.parse(solc.compile(solcInput));
 
-    // Check for compilation errors
     const errors = solcOutput.errors?.filter((e: any) => e.severity === "error") || [];
     if (errors.length > 0) {
       const errorMessages = errors.map((e: any) => e.formattedMessage || e.message).join("\n");
       console.error("Solidity compilation errors:", errorMessages);
 
-      // Store the error and source code for debugging
       await supabase.from("generated_documents").insert({
-        submission_id,
-        user_id: submission.user_id,
-        stage_key: "sc_deployment",
-        document_name: "Deployment Attempt - Compilation Failed",
-        document_type: "sc_deployment_log",
+        submission_id, user_id: submission.user_id, stage_key: "sc_deployment",
+        document_name: `Deployment Attempt (${networkLabel}) - Compilation Failed`,
+        document_type: "sc_deployment_log", status: "failed",
         content: `## Compilation Errors\n\n${errorMessages}\n\n## Source Code\n\n\`\`\`solidity\n${soliditySource}\n\`\`\``,
-        status: "failed",
       });
 
       return new Response(JSON.stringify({
-        success: false,
-        error: "Solidity compilation failed",
-        compilation_errors: errorMessages,
-        source_code: soliditySource,
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+        success: false, error: "Solidity compilation failed",
+        compilation_errors: errorMessages, source_code: soliditySource,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Get the compiled contract (first contract found)
     const contracts = solcOutput.contracts?.["SPVContract.sol"];
     if (!contracts) throw new Error("No contracts found in compilation output");
 
@@ -216,20 +224,16 @@ Output the complete Solidity source code only.`;
     const abi = compiledContract.abi;
     const bytecode = "0x" + compiledContract.evm.bytecode.object;
 
-    if (!bytecode || bytecode === "0x") {
-      throw new Error("Compilation produced empty bytecode");
-    }
+    if (!bytecode || bytecode === "0x") throw new Error("Compilation produced empty bytecode");
 
     console.log(`Compiled ${contractName}: ABI has ${abi.length} entries, bytecode ${bytecode.length} chars`);
 
-    // 5. Deploy using ethers.js
+    // Deploy using ethers.js
     console.log(`Deploying ${contractName} to ${networkName}...`);
 
     const { ethers } = await import("https://esm.sh/ethers@6.13.4");
-
     const provider = new ethers.JsonRpcProvider(rpcUrl, chainId);
     const wallet = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, provider);
-
     const deployerAddress = wallet.address;
     const balance = await provider.getBalance(deployerAddress);
     console.log(`Deployer: ${deployerAddress}, Balance: ${ethers.formatEther(balance)} ETH`);
@@ -238,7 +242,6 @@ Output the complete Solidity source code only.`;
       throw new Error(`Deployer wallet ${deployerAddress} has no ETH on ${networkName}. Please fund it first.`);
     }
 
-    // Deploy the contract
     const factory = new ethers.ContractFactory(abi, bytecode, wallet);
 
     // Dynamically build constructor arguments based on ABI
@@ -246,8 +249,10 @@ Output the complete Solidity source code only.`;
     const constructorArgs: any[] = [];
 
     if (constructorAbi && constructorAbi.inputs) {
-      const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-      
+      const USDC_ADDRESS = network === "mainnet"
+        ? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+        : "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
+
       for (const input of constructorAbi.inputs) {
         const name = (input.name || "").toLowerCase();
         const type = input.type;
@@ -256,13 +261,9 @@ Output the complete Solidity source code only.`;
           constructorArgs.push(spvName);
         } else if (type === "address") {
           if (name.includes("usdc") || name.includes("token") || name.includes("erc20")) {
-            constructorArgs.push(USDC_BASE_SEPOLIA);
-          } else if (name.includes("borrower")) {
-            constructorArgs.push(deployerAddress); // placeholder
-          } else if (name.includes("manager")) {
-            constructorArgs.push(deployerAddress);
+            constructorArgs.push(USDC_ADDRESS);
           } else {
-            constructorArgs.push(deployerAddress); // admin or unknown address
+            constructorArgs.push(deployerAddress);
           }
         } else if (type.startsWith("uint")) {
           constructorArgs.push(0);
@@ -286,46 +287,34 @@ Output the complete Solidity source code only.`;
 
     console.log(`Transaction sent: ${deployTx.deploymentTransaction()?.hash}`);
 
-    // Wait for deployment
-    const receipt = await deployTx.waitForDeployment();
+    await deployTx.waitForDeployment();
     const contractAddress = await deployTx.getAddress();
     const txHash = deployTx.deploymentTransaction()?.hash;
 
-    console.log(`✅ Contract deployed at: ${contractAddress} (tx: ${txHash})`);
+    console.log(`Contract deployed at: ${contractAddress} (tx: ${txHash})`);
 
-    // 6. Store in database
-    // Get or create SPV record
+    // Store in database
     let spvId = submission.spv_id;
     if (!spvId) {
-      // Try to find an existing SPV for this owner
       const { data: existingSpv } = await supabase
-        .from("spvs")
-        .select("id")
-        .eq("owner_id", submission.user_id)
-        .limit(1)
-        .single();
+        .from("spvs").select("id").eq("owner_id", submission.user_id).limit(1).single();
       spvId = existingSpv?.id;
     }
 
     if (spvId) {
-      // Store contract in spv_contracts
       await supabase.from("spv_contracts").insert({
         spv_id: spvId,
         name: contractName,
         address: contractAddress,
         deployed_date: new Date().toISOString().split("T")[0],
+        network: networkLabel,
       });
     }
 
-    const explorerUrl = network === "mainnet"
-      ? `https://basescan.org/address/${contractAddress}`
-      : `https://sepolia.basescan.org/address/${contractAddress}`;
+    const explorerBase = network === "mainnet" ? "https://basescan.org" : "https://sepolia.basescan.org";
+    const explorerUrl = `${explorerBase}/address/${contractAddress}`;
+    const txExplorerUrl = `${explorerBase}/tx/${txHash}`;
 
-    const txExplorerUrl = network === "mainnet"
-      ? `https://basescan.org/tx/${txHash}`
-      : `https://sepolia.basescan.org/tx/${txHash}`;
-
-    // Store deployment record as generated document
     const deploymentRecord = `# Smart Contract Deployment Record
 
 ## Deployment Summary
@@ -356,10 +345,8 @@ ${soliditySource}
 `;
 
     await supabase.from("generated_documents").insert({
-      submission_id,
-      user_id: submission.user_id,
-      stage_key: "sc_deployment",
-      document_name: `Deployed: ${contractName}`,
+      submission_id, user_id: submission.user_id, stage_key: "sc_deployment",
+      document_name: `Deployed (${networkName}): ${contractName}`,
       document_type: "sc_deployment_record",
       content: deploymentRecord,
       status: "verified",
@@ -371,22 +358,18 @@ ${soliditySource}
       contract_address: contractAddress,
       tx_hash: txHash,
       network: networkName,
+      network_label: networkLabel,
       chain_id: chainId,
       deployer: deployerAddress,
       explorer_url: explorerUrl,
       tx_explorer_url: txExplorerUrl,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
   } catch (e) {
     console.error("deploy-smart-contract error:", e);
     return new Response(JSON.stringify({
       success: false,
       error: e instanceof Error ? e.message : "Unknown deployment error",
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
