@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { FileSearch, Play, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-import { useAllSubmissionsWithAnalysis, useTriggerAnalysis } from "@/hooks/useAnalysisData";
+import { FileSearch, Play, CheckCircle, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, Loader2, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { useAllSubmissionsWithAnalysis, useTriggerAnalysis, useTermSheet } from "@/hooks/useAnalysisData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { generateAssetScorePDF, generateProjectDossierPDF, generateTermSheetPDF } from "@/lib/pdfGenerators";
+import { toast } from "sonner";
 
 const INDUSTRIES = [
   { value: "agriculture", label: "Agriculture" },
@@ -22,11 +24,49 @@ function SubmissionRow({ submission }: { submission: any }) {
   const report = submission.analysis_report;
   const profile = submission.profiles;
 
+  // Fetch term sheet if report exists and passed
+  const { data: termSheet } = useTermSheet(report?.id);
+
   const handleRunAnalysis = () => {
     triggerAnalysis.mutate({
       submissionId: submission.id,
       industry: selectedIndustry,
     });
+  };
+
+  const profileName = profile?.company_name || profile?.full_name || "Unknown";
+
+  const handleDownloadAssetScore = () => {
+    if (!report) return;
+    try {
+      const pdf = generateAssetScorePDF(report, profileName);
+      pdf.save(`Asset-Score-${report.grade}-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success("Asset Score PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  const handleDownloadDossier = () => {
+    if (!report) return;
+    try {
+      const pdf = generateProjectDossierPDF(report, submission, profileName);
+      pdf.save(`Project-Dossier-${profileName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success("Project Dossier PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to generate PDF");
+    }
+  };
+
+  const handleDownloadTermSheet = () => {
+    if (!report || !termSheet) return;
+    try {
+      const pdf = generateTermSheetPDF(termSheet, report, profileName);
+      pdf.save(`Term-Sheet-${termSheet.reference_code}.pdf`);
+      toast.success("Term Sheet PDF downloaded");
+    } catch (error) {
+      toast.error("Failed to generate PDF");
+    }
   };
 
   const getStatusBadge = () => {
@@ -196,6 +236,42 @@ function SubmissionRow({ submission }: { submission: any }) {
                   </p>
                   <p className="text-sm text-foreground line-clamp-3">{report.project_summary}</p>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* PDF Download Buttons */}
+          {report?.analysis_status === "completed" && (
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
+              <span className="text-xs font-medium text-muted-foreground mr-2">Download Reports:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadAssetScore}
+                className="gap-2"
+              >
+                <Download className="h-3 w-3" />
+                Asset Score
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadDossier}
+                className="gap-2"
+              >
+                <FileText className="h-3 w-3" />
+                Project Dossier
+              </Button>
+              {termSheet && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadTermSheet}
+                  className="gap-2"
+                >
+                  <FileSpreadsheet className="h-3 w-3" />
+                  Term Sheet
+                </Button>
               )}
             </div>
           )}
