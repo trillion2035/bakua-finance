@@ -637,37 +637,34 @@ export function AdminDeploymentPanel({ submission }: AdminDeploymentPanelProps) 
   const [preflightResult, setPreflightResult] = useState<any>(null);
   const [deployingNetwork, setDeployingNetwork] = useState<"testnet" | "mainnet" | null>(null);
 
-  // Load persisted deployment results from generated_documents
+  // Load persisted deployment results from generated_documents on mount
   const deploymentRecords = generatedDocs?.filter(d => d.document_type === "sc_deployment_record" && d.status === "verified") || [];
+  
+  // Sync persisted results into state (only when not already set via live deploy)
+  const persistedTestnet = !testnetResult ? deploymentRecords.find(r => !r.document_name.includes("Mainnet")) : null;
+  const persistedMainnet = !mainnetResult ? deploymentRecords.find(r => r.document_name.includes("Mainnet")) : null;
 
-  // Parse persisted results on mount
-  useState(() => {
-    for (const rec of deploymentRecords) {
-      const content = rec.content || "";
-      const addressMatch = content.match(/\*\*Contract Address:\*\*\s*`([^`]+)`/);
-      const txMatch = content.match(/\*\*Transaction Hash:\*\*\s*`([^`]+)`/);
-      const networkMatch = content.match(/\*\*Network:\*\*\s*(.+)/);
-      const contractNameMatch = content.match(/\*\*Contract Name:\*\*\s*(.+)/);
-      const explorerMatch = content.match(/\[View Contract\]\(([^)]+)\)/);
-      const txExplorerMatch = content.match(/\[View Transaction\]\(([^)]+)\)/);
+  const parseDeployRecord = (rec: GeneratedDocument) => {
+    const content = rec.content || "";
+    const addressMatch = content.match(/\*\*Contract Address:\*\*\s*`([^`]+)`/);
+    const txMatch = content.match(/\*\*Transaction Hash:\*\*\s*`([^`]+)`/);
+    const networkMatch = content.match(/\*\*Network:\*\*\s*(.+)/);
+    const contractNameMatch = content.match(/\*\*Contract Name:\*\*\s*(.+)/);
+    const explorerMatch = content.match(/\[View Contract\]\(([^)]+)\)/);
+    const txExplorerMatch = content.match(/\[View Transaction\]\(([^)]+)\)/);
+    if (!addressMatch) return null;
+    return {
+      contract_address: addressMatch[1],
+      tx_hash: txMatch?.[1] || "",
+      network: networkMatch?.[1]?.trim() || "Base Sepolia",
+      contract_name: contractNameMatch?.[1]?.trim() || "Contract",
+      explorer_url: explorerMatch?.[1] || "",
+      tx_explorer_url: txExplorerMatch?.[1] || "",
+    };
+  };
 
-      if (addressMatch) {
-        const parsed = {
-          contract_address: addressMatch[1],
-          tx_hash: txMatch?.[1] || "",
-          network: networkMatch?.[1]?.trim() || "Base Sepolia",
-          contract_name: contractNameMatch?.[1]?.trim() || "Contract",
-          explorer_url: explorerMatch?.[1] || "",
-          tx_explorer_url: txExplorerMatch?.[1] || "",
-        };
-        if (parsed.network.includes("Mainnet")) {
-          setMainnetResult(parsed);
-        } else {
-          setTestnetResult(parsed);
-        }
-      }
-    }
-  });
+  const effectiveTestnet = testnetResult || (persistedTestnet ? parseDeployRecord(persistedTestnet) : null);
+  const effectiveMainnet = mainnetResult || (persistedMainnet ? parseDeployRecord(persistedMainnet) : null);
 
   const handleExecuteStep = (phaseNumber: number, stepNumber: number) => {
     const ref = `${phaseNumber}.${stepNumber}`;
