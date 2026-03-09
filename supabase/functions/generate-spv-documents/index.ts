@@ -545,6 +545,177 @@ Include realistic parameter values based on the project data.`;
       });
     }
 
+    // ── Smart Contract Development: AI reads spec and generates development plan ──
+    if (stage_key === "sc_development") {
+      // 1. Find the SC specification document (uploaded or AI-generated)
+      const { data: specDocs, error: specErr } = await supabase
+        .from("generated_documents")
+        .select("*")
+        .eq("submission_id", submission_id)
+        .eq("stage_key", "sc_specifications")
+        .order("created_at", { ascending: false });
+
+      if (specErr || !specDocs || specDocs.length === 0) {
+        return new Response(JSON.stringify({ error: "No smart contract specification document found. Please upload or generate one first." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prefer the latest doc. If it's an uploaded file, try to read from storage
+      const specDoc = specDocs[0];
+      let specContent = specDoc.content || "";
+
+      if (!specContent && specDoc.file_url) {
+        // Download from storage
+        const { data: fileData, error: dlErr } = await supabase.storage
+          .from("project-documents")
+          .download(specDoc.file_url);
+        if (dlErr) {
+          console.error("Failed to download spec file:", dlErr);
+          return new Response(JSON.stringify({ error: "Failed to read the specification document from storage." }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        // Convert to text
+        specContent = await fileData.text();
+      }
+
+      if (!specContent || specContent.trim().length < 50) {
+        return new Response(JSON.stringify({ error: "Specification document content is empty or too short to generate a development plan." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const devPlanPrompt = `You are a senior Solidity/blockchain engineer. Based on the following Smart Contract Technical Specification document, create a detailed development plan with concrete implementation steps.
+
+SMART CONTRACT SPECIFICATION:
+${specContent.substring(0, 15000)}
+
+PROJECT CONTEXT:
+- SPV: ${ctx.spvName}
+- Borrower: ${ctx.companyName}
+- Industry: ${ctx.industry}
+- Network: Base (Ethereum L2)
+- Facility Amount: ${ctx.facilityAmount}
+
+Generate a structured development plan in JSON format using tool calling.`;
+
+      // Use tool calling for structured output
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "You are a senior Solidity smart contract architect specializing in DeFi and structured finance on EVM chains. Generate precise, actionable development plans." },
+            { role: "user", content: devPlanPrompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "create_development_plan",
+                description: "Create a structured smart contract development plan with phases and steps.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    summary: { type: "string", description: "Brief overview of the development approach (2-3 sentences)" },
+                    estimated_duration: { type: "string", description: "Estimated total development time, e.g. '6-8 weeks'" },
+                    tech_stack: {
+                      type: "array",
+                      items: { type: "string" },
+                      description: "Key technologies and frameworks, e.g. ['Solidity 0.8.x', 'Hardhat', 'OpenZeppelin', 'Chainlink']"
+                    },
+                    phases: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          phase_number: { type: "number" },
+                          phase_name: { type: "string" },
+                          duration: { type: "string", description: "e.g. '1-2 weeks'" },
+                          description: { type: "string" },
+                          steps: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                step_number: { type: "number" },
+                                title: { type: "string" },
+                                description: { type: "string" },
+                                deliverables: { type: "array", items: { type: "string" } },
+                                priority: { type: "string", enum: ["critical", "high", "medium"] }
+                              },
+                              required: ["step_number", "title", "description", "deliverables", "priority"]
+                            }
+                          }
+                        },
+                        required: ["phase_number", "phase_name", "duration", "description", "steps"]
+                      }
+                    },
+                    security_considerations: {
+                      type: "array",
+                      items: { type: "string" },
+                      description: "Key security considerations for development"
+                    },
+                    testing_strategy: { type: "string", description: "Overview of testing approach" }
+                  },
+                  required: ["summary", "estimated_duration", "tech_stack", "phases", "security_considerations", "testing_strategy"]
+                }
+              }
+            }
+          ],
+          tool_choice: { type: "function", function: { name: "create_development_plan" } },
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("AI gateway error:", response.status, errText);
+        const status = response.status === 429 ? 429 : response.status === 402 ? 402 : 500;
+        return new Response(JSON.stringify({ error: status === 429 ? "Rate limit exceeded" : status === 402 ? "Payment required" : "AI generation failed" }), {
+          status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const aiResult = await response.json();
+      let devPlan: any = null;
+
+      // Extract from tool call
+      const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
+      if (toolCall?.function?.arguments) {
+        try {
+          devPlan = JSON.parse(toolCall.function.arguments);
+        } catch (e) {
+          console.error("Failed to parse dev plan:", e);
+        }
+      }
+
+      if (!devPlan) {
+        return new Response(JSON.stringify({ error: "AI failed to generate a structured development plan." }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Store the development plan as a generated document with JSON content
+      await supabase.from("generated_documents").insert({
+        submission_id,
+        user_id: submission.user_id,
+        stage_key: "sc_development",
+        document_name: "Smart Contract Development Plan",
+        document_type: "sc_development_plan",
+        content: JSON.stringify(devPlan),
+        status: "draft",
+      });
+
+      return new Response(JSON.stringify({ success: true, plan: devPlan }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── SC Auditing Complete: Generate Deployment Record + IPFS Anchoring Certificate ──
     if (stage_key === "sc_auditing_complete") {
       const results: any[] = [];
