@@ -572,10 +572,17 @@ export default function DashboardDocuments() {
                       key={doc.id}
                       icon={<FileText className="h-5 w-5 text-primary" />}
                       title={doc.document_name}
-                      subtitle={`${doc.document_type} · ${doc.status}`}
+                      subtitle={`${doc.document_type} · ${doc.stage_key === "facility_doc_creation" ? (doc.status === "signed" ? "Signed" : "Awaiting signature") : doc.status}`}
                       onView={() => handleViewGenDoc(doc)}
                       onDownload={() => handleDownloadGenDoc(doc)}
                       signedStatus={doc.status === "signed" ? "signed" : null}
+                      actions={
+                        doc.stage_key === "facility_doc_creation" && doc.status !== "signed" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 px-2">
+                            <Clock className="h-3.5 w-3.5" /> Unsigned
+                          </span>
+                        ) : undefined
+                      }
                     />
                   ))}
                 </StageSection>
