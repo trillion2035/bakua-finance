@@ -119,10 +119,10 @@ Executes pro-rata yield and principal distributions to token holders following a
 
 | Contract                | Address | Basescan |
 | ----------------------- | ------- | -------- |
-| InvestorPositionToken   | `0x31d6EfD454607aa52961A61CB2eE560B3F1a886A` | [View](https://basescan.org/address/0x31d6EfD454607aa52961A61CB2eE560B3F1a886A) |
-| SPVVault                | `0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6` | [View](https://basescan.org/address/0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6) |
-| OracleAdapter           | `0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6` | [View](https://basescan.org/address/0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6) |
-| DistributionWaterfall   | `0xd2E3481cf9B8769a081B1F1212E8CBcB4dCc4635` | [View](https://basescan.org/address/0xd2E3481cf9B8769a081B1F1212E8CBcB4dCc4635) |
+| InvestorPositionToken   | `0x31d6EfD454607aa52961A61CB2eE560B3F1a886A` | [View](https://basescan.org/address/0x31d6EfD454607aa52961A61CB2eE560B3F1a886A#code) |
+| SPVVault                | `0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6` | [View](https://basescan.org/address/0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6#code) |
+| OracleAdapter           | `0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6` | [View](https://basescan.org/address/0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6#code) |
+| DistributionWaterfall   | `0xd2E3481cf9B8769a081B1F1212E8CBcB4dCc4635` | [View](https://basescan.org/address/0xd2E3481cf9B8769a081B1F1212E8CBcB4dCc4635#code) |
 
 ---
 
