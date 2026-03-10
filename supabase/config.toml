@@ -17,3 +17,5 @@ project_id = "pyngcobhnvzerpiuxwaa"
     verify_jwt = false
   [functions.wire-contracts]
     verify_jwt = false
+  [functions.verify-suite]
+    verify_jwt = false
