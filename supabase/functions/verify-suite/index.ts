@@ -156,9 +156,8 @@ serve(async (req) => {
     if (!entry) throw new Error(`Unknown contract: ${contract_name}`);
 
     const isMainnet = network === "mainnet";
-    const apiBase = isMainnet
-      ? "https://api.basescan.org/api"
-      : "https://api-sepolia.basescan.org/api";
+    const chainId = isMainnet ? 8453 : 84532;
+    const apiBase = `https://api.etherscan.io/v2/api?chainid=${chainId}`;
     const explorerBase = isMainnet ? "https://basescan.org" : "https://sepolia.basescan.org";
 
     // For multi-contract files (SPVVault, DistributionWaterfall), the contractname format matters
