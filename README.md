@@ -110,21 +110,19 @@ Executes pro-rata yield and principal distributions to token holders following a
 
 | Contract                | Address | Basescan |
 | ----------------------- | ------- | -------- |
-| InvestorPositionToken   | `TBD`   | [View](https://sepolia.basescan.org/address/TBD) |
-| SPVVault                | `TBD`   | [View](https://sepolia.basescan.org/address/TBD) |
-| OracleAdapter           | `TBD`   | [View](https://sepolia.basescan.org/address/TBD) |
-| DistributionWaterfall   | `TBD`   | [View](https://sepolia.basescan.org/address/TBD) |
+| InvestorPositionToken   | `0x4D31B6470dbd2fEb616D7CF9A9b9800Dd809C184` | [View](https://sepolia.basescan.org/address/0x4D31B6470dbd2fEb616D7CF9A9b9800Dd809C184) |
+| SPVVault                | `0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6` | [View](https://sepolia.basescan.org/address/0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6) |
+| OracleAdapter           | `0x31d6EfD454607aa52961A61CB2eE560B3F1a886A` | [View](https://sepolia.basescan.org/address/0x31d6EfD454607aa52961A61CB2eE560B3F1a886A) |
+| DistributionWaterfall   | `0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6` | [View](https://sepolia.basescan.org/address/0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6) |
 
 #### Base Mainnet (Chain ID: 8453)
 
 | Contract                | Address | Basescan |
 | ----------------------- | ------- | -------- |
-| InvestorPositionToken   | `TBD`   | [View](https://basescan.org/address/TBD) |
-| SPVVault                | `TBD`   | [View](https://basescan.org/address/TBD) |
-| OracleAdapter           | `TBD`   | [View](https://basescan.org/address/TBD) |
-| DistributionWaterfall   | `TBD`   | [View](https://basescan.org/address/TBD) |
-
-> Contract addresses will be populated after deployment. Run pre-flight checks and deploy via the admin dashboard.
+| InvestorPositionToken   | `0x31d6EfD454607aa52961A61CB2eE560B3F1a886A` | [View](https://basescan.org/address/0x31d6EfD454607aa52961A61CB2eE560B3F1a886A) |
+| SPVVault                | `0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6` | [View](https://basescan.org/address/0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6) |
+| OracleAdapter           | `0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6` | [View](https://basescan.org/address/0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6) |
+| DistributionWaterfall   | `0xd2E3481cf9B8769a081B1F1212E8CBcB4dCc4635` | [View](https://basescan.org/address/0xd2E3481cf9B8769a081B1F1212E8CBcB4dCc4635) |
 
 ---
 
