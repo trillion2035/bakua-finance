@@ -110,10 +110,10 @@ Executes pro-rata yield and principal distributions to token holders following a
 
 | Contract                | Address | Basescan |
 | ----------------------- | ------- | -------- |
-| InvestorPositionToken   | `0x4D31B6470dbd2fEb616D7CF9A9b9800Dd809C184` | [View](https://sepolia.basescan.org/address/0x4D31B6470dbd2fEb616D7CF9A9b9800Dd809C184) |
-| SPVVault                | `0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6` | [View](https://sepolia.basescan.org/address/0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6) |
-| OracleAdapter           | `0x31d6EfD454607aa52961A61CB2eE560B3F1a886A` | [View](https://sepolia.basescan.org/address/0x31d6EfD454607aa52961A61CB2eE560B3F1a886A) |
-| DistributionWaterfall   | `0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6` | [View](https://sepolia.basescan.org/address/0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6) |
+| InvestorPositionToken   | `0x4D31B6470dbd2fEb616D7CF9A9b9800Dd809C184` | [View](https://sepolia.basescan.org/address/0x4D31B6470dbd2fEb616D7CF9A9b9800Dd809C184#code) |
+| SPVVault                | `0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6` | [View](https://sepolia.basescan.org/address/0x575b8a2DBe7C8Fb5cB44a05b7518E3A35A2972c6#code) |
+| OracleAdapter           | `0x31d6EfD454607aa52961A61CB2eE560B3F1a886A` | [View](https://sepolia.basescan.org/address/0x31d6EfD454607aa52961A61CB2eE560B3F1a886A#code) |
+| DistributionWaterfall   | `0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6` | [View](https://sepolia.basescan.org/address/0x8aFdb980aa3D8EA01f14aB53f8e5A9e3e7122Fc6#code) |
 
 #### Base Mainnet (Chain ID: 8453)
 
