@@ -166,6 +166,8 @@ serve(async (req) => {
 
     console.log(`Verifying ${fullContractName} at ${contract_address} on ${network}`);
 
+    const verifyUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}`;
+
     const formData = new URLSearchParams({
       apikey: BASESCAN_API_KEY,
       module: "contract",
@@ -178,10 +180,10 @@ serve(async (req) => {
       optimizationUsed: "1",
       runs: "200",
       evmversion: "",
-      licenseType: "3", // MIT
+      licenseType: "3",
     });
 
-    const resp = await fetch(apiBase, {
+    const resp = await fetch(verifyUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: formData.toString(),
