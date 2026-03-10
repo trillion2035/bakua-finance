@@ -173,7 +173,8 @@ serve(async (req) => {
     if (errors.length > 0) throw new Error(`Compile errors: ${errors.map((e: any) => e.formattedMessage).join("\n")}`);
 
     const contracts = output.contracts?.[`${contract_name}.sol`];
-    const cName = Object.keys(contracts)[0];
+    // Pick the actual contract, not interfaces (IERC20, IPositionToken)
+    const cName = Object.keys(contracts).find(n => n === contract_name) || Object.keys(contracts).pop()!;
     const compiled = contracts[cName];
     const abi = compiled.abi;
     const bytecode = "0x" + compiled.evm.bytecode.object;
