@@ -9,3 +9,9 @@ project_id = "pyngcobhnvzerpiuxwaa"
     verify_jwt = false
   [functions.generate-spv-documents]
     verify_jwt = false
+  [functions.deploy-contract-suite]
+    verify_jwt = false
+  [functions.deploy-smart-contract]
+    verify_jwt = false
+  [functions.verify-contract]
+    verify_jwt = false
