@@ -201,7 +201,7 @@ serve(async (req) => {
       for (let i = 0; i < 12; i++) {
         await new Promise(r => setTimeout(r, 5000));
         const checkResp = await fetch(
-          `${apiBase}?apikey=${BASESCAN_API_KEY}&module=contract&action=checkverifystatus&guid=${guid}`
+          `https://api.etherscan.io/v2/api?chainid=${chainId}&apikey=${BASESCAN_API_KEY}&module=contract&action=checkverifystatus&guid=${guid}`
         );
         const check = await checkResp.json();
         console.log(`Check ${i + 1}:`, JSON.stringify(check));
