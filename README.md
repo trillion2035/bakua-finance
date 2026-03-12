@@ -2,7 +2,7 @@
 
 Bakua Finance is an on-chain infrastructure capital marketplace that transforms real-world infrastructure projects in emerging markets into standardised Special Purpose Vehicles (SPVs) on Base Network, connecting them to global DeFi capital. The platform bridges traditional project finance with blockchain-native settlement, enabling transparent, milestone-gated funding for agriculture, trade finance, real estate, and renewable energy assets across Africa.
 
-🌐 **Live deployment:** [bakua-finance.lovable.app](https://bakua.finance)
+🌐 **Live deployment:** [bakua.finance](https://bakua.finance)
 
 ---
 
